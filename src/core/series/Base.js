@@ -2590,8 +2590,8 @@ anychart.core.series.Base.prototype.drawSingleFactoryElement = function(mainFact
         autoFill = this.getMarkerFill(color);
       }
       var autoStroke = anychart.color.darken(autoFill);
-      var fillChanged = element.getFinalAnchor('fill');
-      var strokeChanged = element.getFinalAnchor('stroke');
+      var fillChanged = element.getFinalSettings('fill');
+      var strokeChanged = element.getFinalSettings('stroke');
 
       if (!fillChanged && anychart.color.isNotNullColor(autoFill)) {
         element.autoFill(autoFill);
