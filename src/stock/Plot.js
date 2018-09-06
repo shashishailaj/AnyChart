@@ -230,7 +230,8 @@ anychart.stockModule.Plot = function(chart) {
   anychart.core.settings.createDescriptorsMeta(this.descriptorsMeta, [
     ['pointWidth', anychart.ConsistencyState.STOCK_PLOT_SERIES, anychart.Signal.NEEDS_REDRAW, 0, this.invalidateWidthBasedSeries],
     ['maxPointWidth', anychart.ConsistencyState.STOCK_PLOT_SERIES, anychart.Signal.NEEDS_REDRAW, 0, this.invalidateWidthBasedSeries],
-    ['minPointLength', anychart.ConsistencyState.STOCK_PLOT_SERIES, anychart.Signal.NEEDS_REDRAW, 0, this.resetSeriesStack]
+    ['minPointLength', anychart.ConsistencyState.STOCK_PLOT_SERIES, anychart.Signal.NEEDS_REDRAW, 0, this.resetSeriesStack],
+    ['baseline', anychart.ConsistencyState.STOCK_PLOT_SERIES, anychart.Signal.NEEDS_REDRAW, 0, this.resetSeriesBaseline]
   ]);
 };
 goog.inherits(anychart.stockModule.Plot, anychart.core.VisualBaseWithBounds);
@@ -354,21 +355,12 @@ anychart.stockModule.Plot.PROPERTY_DESCRIPTORS = (function() {
   /** @type {!Object.<string, anychart.core.settings.PropertyDescriptor>} */
   var map = {};
 
-  anychart.core.settings.createDescriptor(
-      map,
-      anychart.enums.PropertyHandlerType.SINGLE_ARG,
-      'pointWidth',
-      anychart.utils.normalizeNumberOrPercent);
-  anychart.core.settings.createDescriptor(
-      map,
-      anychart.enums.PropertyHandlerType.SINGLE_ARG,
-      'maxPointWidth',
-      anychart.utils.normalizeNumberOrPercent);
-  anychart.core.settings.createDescriptor(
-      map,
-      anychart.enums.PropertyHandlerType.SINGLE_ARG,
-      'minPointLength',
-      anychart.utils.normalizeNumberOrPercent);
+  anychart.core.settings.createDescriptors(map, [
+    [anychart.enums.PropertyHandlerType.SINGLE_ARG, 'pointWidth', anychart.utils.normalizeNumberOrPercent],
+    [anychart.enums.PropertyHandlerType.SINGLE_ARG, 'maxPointWidth', anychart.utils.normalizeNumberOrPercent],
+    [anychart.enums.PropertyHandlerType.SINGLE_ARG, 'minPointLength', anychart.utils.normalizeNumberOrPercent],
+    [anychart.enums.PropertyHandlerType.SINGLE_ARG, 'baseline', anychart.core.settings.numberNormalizer]
+  ]);
 
   return map;
 })();
@@ -1066,6 +1058,21 @@ anychart.stockModule.Plot.prototype.invalidateWidthBasedSeries = function() {
   for (var i = this.series_.length; i--;) {
     if (this.series_[i].isWidthBased())
       this.series_[i].invalidate(anychart.ConsistencyState.SERIES_POINTS);
+  }
+};
+
+
+/**
+ * Resets series shared stack.
+ * @param {boolean=} opt_skipInvalidation - Whether to skip width based series invalidation.
+ */
+anychart.stockModule.Plot.prototype.resetSeriesBaseline = function(opt_skipInvalidation) {
+  for (var i = 0; i < this.series_.length; i++) {
+    var series = this.series_[i];
+    if (series)
+      series.resetSharedStack();
+    if (!opt_skipInvalidation)
+      series.invalidate(anychart.ConsistencyState.SERIES_POINTS);
   }
 };
 
@@ -2147,7 +2154,7 @@ anychart.stockModule.Plot.prototype.ensureBoundsDistributed_ = function() {
     }
 
     var legend = /** @type {anychart.core.ui.Legend} */(this.legend());
-    if (legend.positionMode() == anychart.enums.LegendPositionMode.OUTSIDE) {
+    if (legend.getOption('positionMode') == anychart.enums.LegendPositionMode.OUTSIDE) {
       this.updateLegend_(seriesBounds, legendTitleDate);
       // we need forced dispatch signal here to update standalone legend on series enable/disable
       // we do not worry about it because only standalone legend listens this signal
@@ -2193,7 +2200,7 @@ anychart.stockModule.Plot.prototype.ensureBoundsDistributed_ = function() {
       seriesBounds = this.xAxis_.getRemainingBounds();
     }
 
-    if (legend.positionMode() == anychart.enums.LegendPositionMode.INSIDE) {
+    if (legend.getOption('positionMode') == anychart.enums.LegendPositionMode.INSIDE) {
       this.updateLegend_(seriesBounds, legendTitleDate);
       // we need forced dispatch signal here to update standalone legend on series enable/disable
       // we do not worry about it because only standalone legend listens this signal
@@ -2264,7 +2271,7 @@ anychart.stockModule.Plot.prototype.updateLegend_ = function(opt_seriesBounds, o
   if (opt_seriesBounds) {
     legend.parentBounds(opt_seriesBounds);
   }
-  var autoText = this.getLegendAutoText(/** @type {string|Function} */ (legend.titleFormat()), opt_titleValue, opt_rawValue);
+  var autoText = this.getLegendAutoText(/** @type {string|Function} */ (legend.getOption('titleFormat')), opt_titleValue, opt_rawValue);
   if (!goog.isNull(autoText))
     legend.title().autoText(autoText);
   if (!legend.itemsSource())
@@ -2436,7 +2443,7 @@ anychart.stockModule.Plot.prototype.highlight = function(value, rawValue, hlSour
   for (var i = 0; i < this.series_.length; i++) {
     var series = this.series_[i];
     if (series)
-      series.highlight(setValue);
+      series.highlight(setValue, value);
   }
 
   if (this.legend_ && this.legend_.enabled()) {
@@ -3611,6 +3618,7 @@ anychart.stockModule.Plot.Dragger.prototype.limitY = function(y) {
   //proto['sma'] = proto.sma;
   //proto['stochastic'] = proto.stochastic;
   //proto['williamsR'] = proto.williamsR;
+  //proto['baseline'] = proto.baseline;
   proto['palette'] = proto.palette;
   proto['markerPalette'] = proto.markerPalette;
   proto['hatchFillPalette'] = proto.hatchFillPalette;

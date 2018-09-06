@@ -38,7 +38,7 @@ anychart.resourceModule.Chart = function(opt_data, opt_csvSettings) {
   anychart.resourceModule.Chart.base(this, 'constructor');
 
   // it doesn't support other options
-  this.interactivity().hoverMode('single').selectionMode(anychart.enums.SelectionMode.MULTI_SELECT);
+  this.interactivity()['hoverMode']('single')['selectionMode'](anychart.enums.SelectionMode.MULTI_SELECT);
 
   /**
    * Interactivity state.
@@ -132,7 +132,7 @@ anychart.resourceModule.Chart = function(opt_data, opt_csvSettings) {
    * @private
    */
   this.yScroll_ = new anychart.core.ui.Scroller(true);
-  this.yScroll_.inverted(true);
+  this.yScroll_.setOption('inverted', true);
   this.yScroll_.listen(anychart.enums.EventType.SCROLLER_CHANGE, this.handleYScrollChange_, false, this);
   this.yScroll_.listenSignals(this.handleYScrollSignal_, this);
 

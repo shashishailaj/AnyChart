@@ -1,6 +1,8 @@
 goog.provide('anychart.core.series.Base');
 goog.require('acgraph');
 goog.require('anychart.color');
+goog.require('anychart.colorScalesModule.Linear');
+goog.require('anychart.colorScalesModule.Ordinal');
 goog.require('anychart.core.IChart');
 goog.require('anychart.core.IPlot');
 goog.require('anychart.core.IShapeManagerUser');
@@ -141,23 +143,23 @@ anychart.core.series.Base = function(chart, plot, type, config) {
   var normalDescriptorsMeta = {};
   anychart.core.settings.createDescriptorsMeta(normalDescriptorsMeta, [
     ['fill',
-      anychart.ConsistencyState.SERIES_COLOR,
+      anychart.ConsistencyState.SERIES_COLOR | anychart.ConsistencyState.SERIES_POINTS,
       anychart.Signal.NEEDS_REDRAW | anychart.Signal.NEED_UPDATE_LEGEND,
       anychart.core.series.Capabilities.ANY],
     ['negativeFill',
-      anychart.ConsistencyState.SERIES_COLOR,
+      anychart.ConsistencyState.SERIES_COLOR | anychart.ConsistencyState.SERIES_POINTS,
       anychart.Signal.NEEDS_REDRAW | anychart.Signal.NEED_UPDATE_LEGEND,
       anychart.core.series.Capabilities.ANY],
     ['risingFill',
-      anychart.ConsistencyState.SERIES_COLOR,
+      anychart.ConsistencyState.SERIES_COLOR | anychart.ConsistencyState.SERIES_POINTS,
       anychart.Signal.NEEDS_REDRAW | anychart.Signal.NEED_UPDATE_LEGEND,
       anychart.core.series.Capabilities.ANY],
     ['fallingFill',
-      anychart.ConsistencyState.SERIES_COLOR,
+      anychart.ConsistencyState.SERIES_COLOR | anychart.ConsistencyState.SERIES_POINTS,
       anychart.Signal.NEEDS_REDRAW | anychart.Signal.NEED_UPDATE_LEGEND,
       anychart.core.series.Capabilities.ANY],
     ['stroke',
-      anychart.ConsistencyState.SERIES_COLOR,
+      anychart.ConsistencyState.SERIES_COLOR | anychart.ConsistencyState.SERIES_POINTS,
       anychart.Signal.NEEDS_REDRAW | anychart.Signal.NEED_UPDATE_LEGEND,
       anychart.core.series.Capabilities.ANY],
     ['lowStroke',
@@ -168,16 +170,24 @@ anychart.core.series.Base = function(chart, plot, type, config) {
       anychart.ConsistencyState.SERIES_COLOR,
       anychart.Signal.NEEDS_REDRAW | anychart.Signal.NEED_UPDATE_LEGEND,
       anychart.core.series.Capabilities.ANY],
-    ['negativeStroke',
+    ['lowFill',
       anychart.ConsistencyState.SERIES_COLOR,
+      anychart.Signal.NEEDS_REDRAW | anychart.Signal.NEED_UPDATE_LEGEND,
+      anychart.core.series.Capabilities.ANY],
+    ['highFill',
+      anychart.ConsistencyState.SERIES_COLOR,
+      anychart.Signal.NEEDS_REDRAW | anychart.Signal.NEED_UPDATE_LEGEND,
+      anychart.core.series.Capabilities.ANY],
+    ['negativeStroke',
+      anychart.ConsistencyState.SERIES_COLOR | anychart.ConsistencyState.SERIES_POINTS,
       anychart.Signal.NEEDS_REDRAW | anychart.Signal.NEED_UPDATE_LEGEND,
       anychart.core.series.Capabilities.ANY],
     ['risingStroke',
-      anychart.ConsistencyState.SERIES_COLOR,
+      anychart.ConsistencyState.SERIES_COLOR | anychart.ConsistencyState.SERIES_POINTS,
       anychart.Signal.NEEDS_REDRAW | anychart.Signal.NEED_UPDATE_LEGEND,
       anychart.core.series.Capabilities.ANY],
     ['fallingStroke',
-      anychart.ConsistencyState.SERIES_COLOR,
+      anychart.ConsistencyState.SERIES_COLOR | anychart.ConsistencyState.SERIES_POINTS,
       anychart.Signal.NEEDS_REDRAW | anychart.Signal.NEED_UPDATE_LEGEND,
       anychart.core.series.Capabilities.ANY],
     ['medianStroke',
@@ -205,6 +215,14 @@ anychart.core.series.Base = function(chart, plot, type, config) {
       anychart.Signal.NEEDS_REDRAW | anychart.Signal.NEED_UPDATE_LEGEND,
       anychart.core.series.Capabilities.ANY],
     ['fallingHatchFill',
+      anychart.ConsistencyState.SERIES_COLOR,
+      anychart.Signal.NEEDS_REDRAW | anychart.Signal.NEED_UPDATE_LEGEND,
+      anychart.core.series.Capabilities.ANY],
+    ['highHatchFill',
+      anychart.ConsistencyState.SERIES_COLOR,
+      anychart.Signal.NEEDS_REDRAW | anychart.Signal.NEED_UPDATE_LEGEND,
+      anychart.core.series.Capabilities.ANY],
+    ['lowHatchFill',
       anychart.ConsistencyState.SERIES_COLOR,
       anychart.Signal.NEEDS_REDRAW | anychart.Signal.NEED_UPDATE_LEGEND,
       anychart.core.series.Capabilities.ANY],
@@ -240,6 +258,8 @@ anychart.core.series.Base = function(chart, plot, type, config) {
     ['stroke', 0, 0, anychart.core.series.Capabilities.ANY],
     ['lowStroke', 0, 0, anychart.core.series.Capabilities.ANY],
     ['highStroke', 0, 0, anychart.core.series.Capabilities.ANY],
+    ['lowFill', 0, 0, anychart.core.series.Capabilities.ANY],
+    ['highFill', 0, 0, anychart.core.series.Capabilities.ANY],
     ['negativeStroke', 0, 0, anychart.core.series.Capabilities.ANY],
     ['risingStroke', 0, 0, anychart.core.series.Capabilities.ANY],
     ['fallingStroke', 0, 0, anychart.core.series.Capabilities.ANY],
@@ -250,6 +270,8 @@ anychart.core.series.Base = function(chart, plot, type, config) {
     ['negativeHatchFill', 0, 0, anychart.core.series.Capabilities.ANY],
     ['risingHatchFill', 0, 0, anychart.core.series.Capabilities.ANY],
     ['fallingHatchFill', 0, 0, anychart.core.series.Capabilities.ANY],
+    ['highHatchFill', 0, 0, anychart.core.series.Capabilities.ANY],
+    ['lowHatchFill', 0, 0, anychart.core.series.Capabilities.ANY],
     ['whiskerWidth', 0, 0, anychart.core.drawers.Capabilities.SUPPORTS_OUTLIERS],
     ['type', 0, 0, anychart.core.drawers.Capabilities.IS_MARKER_BASED],
     ['size', 0, 0, anychart.core.drawers.Capabilities.IS_MARKER_BASED],
@@ -261,15 +283,22 @@ anychart.core.series.Base = function(chart, plot, type, config) {
   ]);
   this.hovered_ = new anychart.core.StateSettings(this, descriptorsMeta, anychart.PointState.HOVER);
   this.selected_ = new anychart.core.StateSettings(this, descriptorsMeta, anychart.PointState.SELECT);
-  function markAllConsistent(factory) {
+  function markLabelsAllConsistent(factory) {
+    anychart.core.StateSettings.DEFAULT_LABELS_AFTER_INIT_CALLBACK.call(this, factory);
     factory.markConsistent(anychart.ConsistencyState.ALL);
   }
-  this.hovered_.setOption(anychart.core.StateSettings.LABELS_AFTER_INIT_CALLBACK, markAllConsistent);
-  this.hovered_.setOption(anychart.core.StateSettings.MARKERS_AFTER_INIT_CALLBACK, markAllConsistent);
-  this.hovered_.setOption(anychart.core.StateSettings.OUTLIER_MARKERS_AFTER_INIT_CALLBACK, markAllConsistent);
-  this.selected_.setOption(anychart.core.StateSettings.LABELS_AFTER_INIT_CALLBACK, markAllConsistent);
-  this.selected_.setOption(anychart.core.StateSettings.MARKERS_AFTER_INIT_CALLBACK, markAllConsistent);
-  this.selected_.setOption(anychart.core.StateSettings.OUTLIER_MARKERS_AFTER_INIT_CALLBACK, markAllConsistent);
+
+  function markMarkersAllConsistent(factory) {
+    anychart.core.StateSettings.DEFAULT_MARKERS_AFTER_INIT_CALLBACK.call(this, factory);
+    factory.markConsistent(anychart.ConsistencyState.ALL);
+  }
+  this.hovered_.setOption(anychart.core.StateSettings.LABELS_AFTER_INIT_CALLBACK, markLabelsAllConsistent);
+  this.hovered_.setOption(anychart.core.StateSettings.MARKERS_AFTER_INIT_CALLBACK, markMarkersAllConsistent);
+  this.hovered_.setOption(anychart.core.StateSettings.OUTLIER_MARKERS_AFTER_INIT_CALLBACK, markMarkersAllConsistent);
+
+  this.selected_.setOption(anychart.core.StateSettings.LABELS_AFTER_INIT_CALLBACK, markLabelsAllConsistent);
+  this.selected_.setOption(anychart.core.StateSettings.MARKERS_AFTER_INIT_CALLBACK, markMarkersAllConsistent);
+  this.selected_.setOption(anychart.core.StateSettings.OUTLIER_MARKERS_AFTER_INIT_CALLBACK, markMarkersAllConsistent);
 
   anychart.core.settings.createDescriptorsMeta(this.descriptorsMeta, [
     ['color',
@@ -332,6 +361,8 @@ anychart.core.settings.populateAliases(anychart.core.series.Base, [
   'stroke',
   'lowStroke',
   'highStroke',
+  'lowFill',
+  'highFill',
   'negativeStroke',
   'risingStroke',
   'fallingStroke',
@@ -342,6 +373,8 @@ anychart.core.settings.populateAliases(anychart.core.series.Base, [
   'negativeHatchFill',
   'risingHatchFill',
   'fallingHatchFill',
+  'highHatchFill',
+  'lowHatchFill',
   'whiskerWidth',
   'type',
   'size'
@@ -364,7 +397,8 @@ anychart.core.series.Base.prototype.SUPPORTED_CONSISTENCY_STATES =
     anychart.ConsistencyState.SERIES_CLIP |
     anychart.ConsistencyState.SERIES_POINTS |
     anychart.ConsistencyState.SERIES_SHAPE_MANAGER |
-    anychart.ConsistencyState.A11Y;
+    anychart.ConsistencyState.A11Y |
+    anychart.ConsistencyState.SERIES_COLOR_SCALE;
 
 
 /**
@@ -415,11 +449,6 @@ anychart.core.series.Base.DEFAULT_HATCH_FILL_TYPE = acgraph.vector.HatchFill.Hat
 
 //endregion
 //region --- Properties
-//----------------------------------------------------------------------------------------------------------------------
-//
-//  Properties
-//
-//----------------------------------------------------------------------------------------------------------------------
 /**
  * Series cache of resolver functions.
  * @type {Object.<string, function(anychart.core.series.Base, number):(acgraph.vector.Fill|acgraph.vector.Stroke|acgraph.vector.PatternFill)>}
@@ -747,11 +776,6 @@ anychart.core.series.Base.prototype.rendererInvalidated_ = function(e) {
 
 //endregion
 //region --- Index/Id/Name/SeriesMeta
-//----------------------------------------------------------------------------------------------------------------------
-//
-//  Index/Id/Name
-//
-//----------------------------------------------------------------------------------------------------------------------
 /**
  * Returns series index in chart.
  * @return {number}
@@ -858,11 +882,6 @@ anychart.core.series.Base.prototype.meta = function(opt_object_or_key, opt_value
 
 //endregion
 //region --- Support testers
-//----------------------------------------------------------------------------------------------------------------------
-//
-//  Support testers
-//
-//----------------------------------------------------------------------------------------------------------------------
 /**
  * Checks if series supports passed capability.
  * @param {anychart.core.series.Capabilities|anychart.core.drawers.Capabilities|number} capability
@@ -1087,11 +1106,6 @@ anychart.core.series.Base.prototype.hasComplexZero = function() {
 
 //endregion
 //region --- Infrastructure
-//----------------------------------------------------------------------------------------------------------------------
-//
-//  Infrastructure
-//
-//----------------------------------------------------------------------------------------------------------------------
 /**
  * Get point width in case of width-based series.
  * @return {number} Point width.
@@ -1358,11 +1372,6 @@ anychart.core.series.Base.prototype.getPoint = goog.abstractMethod;
 
 //endregion
 //region --- Working with data
-//----------------------------------------------------------------------------------------------------------------------
-//
-//  Working with data
-//
-//----------------------------------------------------------------------------------------------------------------------
 /**
  * Returns NEW DETACHED data iterator. Advancing this iterator doesn't influence series iterator.
  * @return {!anychart.data.IIterator}
@@ -1455,11 +1464,6 @@ anychart.core.series.Base.prototype.scaleInvalidated = function(event) {
 
 //endregion
 //region --- Different public methods
-//----------------------------------------------------------------------------------------------------------------------
-//
-//  Different public methods
-//
-//----------------------------------------------------------------------------------------------------------------------
 /**
  * Transforms x to pix coords.
  * @param {*} value
@@ -1500,11 +1504,6 @@ anychart.core.series.Base.prototype.rendering = function(opt_value) {
 
 //endregion
 //region --- Errors
-//----------------------------------------------------------------------------------------------------------------------
-//
-//  Errors
-//
-//----------------------------------------------------------------------------------------------------------------------
 /**
  * Getter/Setter for an error for series.
  * @param {(Object|null|boolean|string)=} opt_value Error.
@@ -1647,12 +1646,29 @@ anychart.core.series.Base.prototype.drawError = function(point) {
 
 
 //endregion
+//region --- Working with clip
+/**
+ * Clipping settings
+ * @param {(boolean|anychart.math.Rect)=} opt_value [False, if series is created manually.<br/>True, if created via chart
+ *    Enable/disable series clip.
+ * @return {anychart.core.series.Base|boolean|anychart.math.Rect} .
+ */
+anychart.core.series.Base.prototype.clip = function(opt_value) {
+  if (goog.isDef(opt_value)) {
+    if (goog.isNull(opt_value)) opt_value = false;
+    if (this.clip_ != opt_value) {
+      this.clip_ = opt_value;
+      this.invalidate(anychart.ConsistencyState.SERIES_CLIP, anychart.Signal.NEEDS_REDRAW);
+    }
+    return this;
+  } else {
+    return this.clip_;
+  }
+};
+
+
+//endregion
 //region --- Working with legend
-//----------------------------------------------------------------------------------------------------------------------
-//
-//  Working with legend
-//
-//----------------------------------------------------------------------------------------------------------------------
 /**
  * Sets/Gets legend item setting for series.
  * @param {(Object)=} opt_value Legend item settings object.
@@ -1823,11 +1839,6 @@ anychart.core.series.Base.prototype.getLegendItemText = function(context) {
 
 //endregion
 //region --- Working with tooltip
-//----------------------------------------------------------------------------------------------------------------------
-//
-//  Working with tooltip
-//
-//----------------------------------------------------------------------------------------------------------------------
 /**
  * Getter and setter for the tooltip.
  * @param {(Object|boolean|null)=} opt_value Tooltip settings.
@@ -1853,12 +1864,72 @@ anychart.core.series.Base.prototype.tooltip = function(opt_value) {
 
 
 //endregion
-//region --- Color resolution
-//----------------------------------------------------------------------------------------------------------------------
-//
-//  Color resolution
-//
-//----------------------------------------------------------------------------------------------------------------------
+//region --- Coloring
+/**
+ * Color scale.
+ * @param {(anychart.colorScalesModule.Linear|anychart.colorScalesModule.Ordinal|Object|anychart.enums.ScaleTypes)=} opt_value Scale to set.
+ * @return {anychart.colorScalesModule.Ordinal|anychart.colorScalesModule.Linear|anychart.core.series.Base} Default
+ * chart color scale value or itself for method chaining.
+ */
+anychart.core.series.Base.prototype.colorScale = function(opt_value) {
+  if (goog.isDef(opt_value)) {
+    if (goog.isNull(opt_value) && this.colorScale_) {
+      this.colorScale_ = null;
+      this.invalidate(anychart.ConsistencyState.SERIES_COLOR_SCALE,
+          anychart.Signal.NEEDS_REDRAW | anychart.Signal.NEED_UPDATE_COLOR_RANGE);
+    } else {
+      var val = anychart.scales.Base.setupScale(this.colorScale_, opt_value, null,
+          anychart.scales.Base.ScaleTypes.COLOR_SCALES, null, this.colorScaleInvalidated_, this);
+      if (val) {
+        var dispatch = this.colorScale_ == val;
+        this.colorScale_ = val;
+        this.colorScale_.resumeSignalsDispatching(dispatch);
+
+        if (!dispatch) {
+          this.invalidate(anychart.ConsistencyState.SERIES_COLOR_SCALE,
+              anychart.Signal.NEEDS_REDRAW | anychart.Signal.NEED_UPDATE_COLOR_RANGE);
+        }
+      }
+    }
+    return this;
+  }
+  return this.colorScale_;
+};
+
+
+/**
+ * @return {anychart.colorScalesModule.Linear|anychart.colorScalesModule.Ordinal|null}
+ */
+anychart.core.series.Base.prototype.getColorScale = function() {
+  return this.colorScale_;
+};
+
+
+/**
+ * Chart scale invalidation handler.
+ * @param {anychart.SignalEvent} event Event.
+ * @private
+ */
+anychart.core.series.Base.prototype.colorScaleInvalidated_ = function(event) {
+  if (event.hasSignal(anychart.Signal.NEEDS_RECALCULATION | anychart.Signal.NEEDS_REAPPLICATION)) {
+    this.invalidate(anychart.ConsistencyState.SERIES_COLOR_SCALE,
+        anychart.Signal.NEEDS_REDRAW | anychart.Signal.NEED_UPDATE_COLOR_RANGE);
+  }
+};
+
+
+/**
+ * Point provider getter.
+ * @return {!anychart.format.Context}
+ */
+anychart.core.series.Base.prototype.getPointProvider = function() {
+  if (!this.pointProvider_)
+    this.pointProvider_ = new anychart.format.Context();
+
+  return this.pointProvider_;
+};
+
+
 /**
  * Returns color resolution context.
  * This context is used to resolve a fill or stroke set as a function for current point.
@@ -1881,11 +1952,6 @@ anychart.core.series.Base.prototype.getHatchFillResolutionContext = goog.abstrac
 
 //endregion
 //region --- Settings resolution
-//----------------------------------------------------------------------------------------------------------------------
-//
-//  Settings resolution
-//
-//----------------------------------------------------------------------------------------------------------------------
 /**
  * Normal state settings.
  * @param {!Object=} opt_value
@@ -2076,11 +2142,6 @@ anychart.core.series.Base.prototype.resolveOption = function(name, state, point,
 
 //endregion
 //region --- Factories optimization
-//----------------------------------------------------------------------------------------------------------------------
-//
-//  Factories optimization
-//
-//----------------------------------------------------------------------------------------------------------------------
 /**
  * Returns container for factory.
  * @return {acgraph.vector.ILayer}
@@ -2137,6 +2198,9 @@ anychart.core.series.Base.prototype.prepareFactory = function(factory, enabled, 
 anychart.core.series.Base.prototype.drawFactoryElement = function(factory, seriesFactoryGetters, chartFactoryGetters, overrideNames, hasPointOverrides, isLabel, positionYs, point, state, callDraw) {
   var isDraw, positionProvider, i, indexes;
   var index = point.getIndex();
+  if (isNaN(index))
+    return null;
+
   if (positionYs) {
     indexes = this.indexToMarkerIndexes_[index];
     if (!indexes)
@@ -2513,6 +2577,29 @@ anychart.core.series.Base.prototype.drawSingleFactoryElement = function(mainFact
       this.checkBoundsCollision(/** @type {anychart.core.ui.LabelsFactory} */(mainFactory), label);
     }
   } else {
+    var iterator = this.getIterator();
+
+    var color = /** @type {acgraph.vector.Fill|acgraph.vector.Stroke} */(
+        iterator.meta(this.check(anychart.core.drawers.Capabilities.USES_STROKE_AS_FILL) ? 'markerStroke' : 'markerFill'));
+
+    if (goog.isDef(color)) {
+      var autoFill;
+      if (mainFactory == this.normal_.outlierMarkers()) {
+        autoFill = this.getOutliersFill(color);
+      } else {
+        autoFill = this.getMarkerFill(color);
+      }
+      var autoStroke = anychart.color.darken(autoFill);
+      var fillChanged = element.getFinalAnchor('fill');
+      var strokeChanged = element.getFinalAnchor('stroke');
+
+      if (!fillChanged && anychart.color.isNotNullColor(autoFill)) {
+        element.autoFill(autoFill);
+        if (!strokeChanged && anychart.color.isNotNullColor(autoStroke))
+          element.autoStroke(autoStroke);
+      }
+    }
+
     settings.unshift(element);
     this.setupMarkerDrawingPlan.apply(this, settings);
   }
@@ -2525,11 +2612,6 @@ anychart.core.series.Base.prototype.drawSingleFactoryElement = function(mainFact
 
 //endregion
 //region --- Labels
-//----------------------------------------------------------------------------------------------------------------------
-//
-//  Labels
-//
-//----------------------------------------------------------------------------------------------------------------------
 /**
  * Getter/setter for labels.
  * @param {(Object|boolean|null)=} opt_value .
@@ -2630,11 +2712,6 @@ anychart.core.series.Base.prototype.additionalLabelsInitialize = function() {
 
 //endregion
 //region --- Markers
-//----------------------------------------------------------------------------------------------------------------------
-//
-//  Markers
-//
-//----------------------------------------------------------------------------------------------------------------------
 /**
  * Getter/setter for markers.
  * @param {(Object|boolean|null)=} opt_value .
@@ -2704,15 +2781,22 @@ anychart.core.series.Base.prototype.drawMarker = function(point, pointState, poi
 
 /**
  * Return marker color for series.
+ * @param {acgraph.vector.Fill=} opt_baseFill
  * @return {!acgraph.vector.Fill} Marker color for series.
  * @protected
  */
-anychart.core.series.Base.prototype.getMarkerFill = function() {
-  var fillGetter = anychart.color.getColorResolver(
-      this.check(anychart.core.drawers.Capabilities.USES_STROKE_AS_FILL) ? 'stroke' : 'fill',
-      anychart.enums.ColorType.FILL, false);
-  var fill = /** @type {acgraph.vector.Fill} */(fillGetter(this, anychart.PointState.NORMAL, true, true));
-  return /** @type {acgraph.vector.Fill} */(anychart.color.setOpacity(fill, 1, true));
+anychart.core.series.Base.prototype.getMarkerFill = function(opt_baseFill) {
+  var fill;
+  if (goog.isDef(opt_baseFill)) {
+    fill = opt_baseFill;
+  } else {
+    var fillGetter = anychart.color.getColorResolver(
+        this.check(anychart.core.drawers.Capabilities.USES_STROKE_AS_FILL) ? 'stroke' : 'fill',
+        anychart.enums.ColorType.FILL, false);
+    fill = /** @type {acgraph.vector.Fill} */(fillGetter(this, anychart.PointState.NORMAL, true, true));
+  }
+
+  return /** @type {acgraph.vector.Fill} */(anychart.color.setOpacity(/** @type {acgraph.vector.Fill} */(fill), 1, true));
 };
 
 
@@ -2731,11 +2815,6 @@ anychart.core.series.Base.prototype.getMarkerStroke = function() {
 
 //endregion
 //region --- Outliers
-//----------------------------------------------------------------------------------------------------------------------
-//
-//  Outliers
-//
-//----------------------------------------------------------------------------------------------------------------------
 /**
  * Getter/setter for outlier markers.
  * @param {(Object|boolean|null)=} opt_value .
@@ -2802,12 +2881,19 @@ anychart.core.series.Base.prototype.drawPointOutliers = function(iterator, point
 
 /**
  * Return outlier marker color for series.
+ * @param {acgraph.vector.Fill=} opt_baseFill
  * @return {acgraph.vector.Fill} Marker color for series.
  * @protected
  */
-anychart.core.series.Base.prototype.getOutliersFill = function() {
-  var fillGetter = anychart.color.getColorResolver('fill', anychart.enums.ColorType.FILL, false);
-  return /** @type {acgraph.vector.Fill} */(fillGetter(this, anychart.PointState.NORMAL, true));
+anychart.core.series.Base.prototype.getOutliersFill = function(opt_baseFill) {
+  var fill;
+  if (goog.isDef(opt_baseFill)) {
+    fill = opt_baseFill;
+  } else {
+    var fillGetter = anychart.color.getColorResolver('fill', anychart.enums.ColorType.FILL, false);
+    fill = /** @type {acgraph.vector.Fill} */(fillGetter(this, anychart.PointState.NORMAL, true));
+  }
+  return fill;
 };
 
 
@@ -2840,11 +2926,6 @@ anychart.core.series.Base.prototype.getPointIndexByOutlierIndex = function(marke
 
 //endregion
 //region --- Drawing plan related checkers
-//----------------------------------------------------------------------------------------------------------------------
-//
-//  Drawing plan related checkers
-//
-//----------------------------------------------------------------------------------------------------------------------
 /**
  * Should return true if there is a point with a label defined in data.
  * @return {boolean}
@@ -2935,11 +3016,6 @@ anychart.core.series.Base.prototype.resetSharedStack = function() {
 
 //endregion
 //region --- Drawing points
-//----------------------------------------------------------------------------------------------------------------------
-//
-//  Drawing points
-//
-//----------------------------------------------------------------------------------------------------------------------
 /** @inheritDoc */
 anychart.core.series.Base.prototype.remove = function() {
   if (this.check(anychart.core.drawers.Capabilities.USES_CONTAINER_AS_ROOT)) {
@@ -3060,9 +3136,18 @@ anychart.core.series.Base.prototype.draw = function() {
   if (this.hasInvalidationState(anychart.ConsistencyState.SERIES_DATA)) {
     this.getResetIterator();
     this.prepareData();
-    this.invalidate(anychart.ConsistencyState.SERIES_POINTS | anychart.ConsistencyState.SERIES_COLOR | anychart.ConsistencyState.A11Y,
+    this.invalidate(
+        anychart.ConsistencyState.SERIES_COLOR_SCALE |
+        anychart.ConsistencyState.SERIES_POINTS |
+        anychart.ConsistencyState.SERIES_COLOR | anychart.ConsistencyState.A11Y,
         anychart.Signal.NEEDS_REDRAW | anychart.Signal.NEEDS_UPDATE_A11Y);
     this.markConsistent(anychart.ConsistencyState.SERIES_DATA);
+  }
+
+  this.calcColorScale();
+
+  if (this.hasInvalidationState(anychart.ConsistencyState.SERIES_COLOR)) {
+    this.updateAutoMarkersColors();
   }
 
   if (this.hasInvalidationState(anychart.ConsistencyState.SERIES_POINTS)) {
@@ -3189,6 +3274,7 @@ anychart.core.series.Base.prototype.draw = function() {
         this.drawPoint(point, this.getPointState(point.getIndex()));
       }
 
+      var metaName = anychart.utils.instanceOf(this.shapeManager, anychart.core.shapeManagers.PerPoint) ? 'shapes' : 'shapeNames';
       // main points drawing cycle
       iterator.reset();
       while (iterator.advance()) {
@@ -3196,6 +3282,10 @@ anychart.core.series.Base.prototype.draw = function() {
         state = this.getPointState(iterator.getIndex());
         this.makePointMeta(iterator, yValueNames, columns);
         this.drawPoint(iterator, state);
+
+        var group = /** @type {Object.<string, acgraph.vector.Shape>} */(iterator.meta(metaName));
+        this.shapeManager.updateMarkersColors(state, group);
+
         for (i = 0; i < elementsDrawersLength; i++)
           elementsDrawers[i].call(this, iterator, state, false);
       }
@@ -3257,7 +3347,7 @@ anychart.core.series.Base.prototype.draw = function() {
     this.markConsistent(anychart.ConsistencyState.A11Y);
   }
 
-  this.markConsistent(anychart.ConsistencyState.BOUNDS);
+  this.markConsistent(anychart.ConsistencyState.BOUNDS | anychart.ConsistencyState.SERIES_COLOR_SCALE);
 
   this.resumeSignalsDispatching(false);
 
@@ -3422,17 +3512,54 @@ anychart.core.series.Base.prototype.updateColors = function() {
 };
 
 
+/**
+ * Separately updates color settings on shapes.
+ * @protected
+ */
+anychart.core.series.Base.prototype.updateAutoMarkersColors = function() {
+  var metaName = anychart.utils.instanceOf(this.shapeManager, anychart.core.shapeManagers.PerPoint) ? 'shapes' : 'shapeNames';
+  var iterator = this.getResetIterator();
+  while (iterator.advance()) {
+    var group = /** @type {Object.<string, acgraph.vector.Shape>} */(iterator.meta(metaName));
+    var state = this.getPointState(iterator.getIndex());
+    this.shapeManager.updateMarkersColors(state, group);
+  }
+};
+
+
 //endregion
 //region --- Extracting data
-//----------------------------------------------------------------------------------------------------------------------
-//
-//  Extracting data
-//
-//----------------------------------------------------------------------------------------------------------------------
 /**
  * This function is supposed to react on data changes.
  */
-anychart.core.series.Base.prototype.prepareData = function() {
+anychart.core.series.Base.prototype.prepareData = goog.nullFunction;
+
+
+/**
+ * Color scale calculating.
+ */
+anychart.core.series.Base.prototype.calcColorScale = function() {
+  if (this.hasInvalidationState(anychart.ConsistencyState.SERIES_COLOR_SCALE)) {
+    if (this.colorScale_) {
+      var refNames = this.getYValueNames();
+      var iterator = this.getResetIterator();
+
+      this.colorScale_.suspendSignalsDispatching();
+
+      this.colorScale_.startAutoCalc();
+      while (iterator.advance()) {
+        var value = iterator.get(refNames[1]);
+        this.colorScale_.extendDataRange(value);
+      }
+      this.colorScale_.finishAutoCalc();
+
+      this.colorScale_.resumeSignalsDispatching(false);
+
+      this.invalidate(anychart.ConsistencyState.SERIES_COLOR | anychart.ConsistencyState.SERIES_POINTS,
+          anychart.Signal.NEEDS_REDRAW | anychart.Signal.NEED_UPDATE_COLOR_RANGE);
+    }
+    this.markConsistent(anychart.ConsistencyState.SERIES_COLOR_SCALE);
+  }
 };
 
 
@@ -3507,11 +3634,6 @@ anychart.core.series.Base.prototype.getPostLastPoint = function() {
 
 //endregion
 //region --- Data to Pixels transformation
-//----------------------------------------------------------------------------------------------------------------------
-//
-//  Data to Pixels transformation
-//
-//----------------------------------------------------------------------------------------------------------------------
 /**
  * Applies passed ratio (usually transformed by a scale) to bounds where
  * series is drawn.
@@ -3828,11 +3950,27 @@ anychart.core.series.Base.prototype.makeExtremumMeta = function(rowInfo, yNames,
   var isMinPoint = false;
   var isMaxPoint = false;
   if (!pointMissing && 0 <= xRatio && xRatio <= 1) {
-    var max = -Infinity;
     var min = Infinity;
+    var max = -Infinity;
+    var minCache = Math.min.apply(null, this.referenceValuesCache_);
+    var maxCache = Math.max.apply(null, this.referenceValuesCache_);
+
     var i;
     for (i = 0; i < yColumns.length; i++) {
-      var val = Number(rowInfo.getColumn(yColumns[i]));
+      var val;
+      var comparisonMode = anychart.utils.instanceOf(this.yScale(), anychart.scales.Linear) ?
+          /** @type {anychart.scales.Linear} */(this.yScale()).comparisonMode() : null;
+      if (comparisonMode && comparisonMode != anychart.enums.ScaleComparisonMode.NONE) {
+        if (comparisonMode == anychart.enums.ScaleComparisonMode.VALUE)
+          val = Number(rowInfo.meta('valueChange'));
+        else {
+          val = Number(rowInfo.meta('valuePercentChange'));
+          minCache = anychart.math.round(minCache, 2);
+          maxCache = anychart.math.round(maxCache, 2);
+        }
+      } else
+        val = Number(rowInfo.getColumn(yColumns[i]));
+
       if (!isNaN(val)) {
         if (max < val)
           max = val;
@@ -3840,8 +3978,9 @@ anychart.core.series.Base.prototype.makeExtremumMeta = function(rowInfo, yNames,
           min = val;
       }
     }
-    isMinPoint = isFinite(min) && Math.min.apply(null, this.referenceValuesCache_) >= min;
-    isMaxPoint = isFinite(max) && Math.max.apply(null, this.referenceValuesCache_) <= max;
+
+    isMinPoint = isFinite(min) && minCache >= min;
+    isMaxPoint = isFinite(max) && maxCache <= max;
   }
   rowInfo.meta('isMinPoint', isMinPoint);
   rowInfo.meta('isMaxPoint', isMaxPoint);
@@ -3987,7 +4126,9 @@ anychart.core.series.Base.prototype.prepareMetaMakers = function(yNames, yColumn
     this.metaMakers.push(this.makeOutliersMeta);
   }
   if (this.needsZero()) {
-    this.zeroYRatio = goog.math.clamp((scale && scale.transform(0, 0.5)) || 0, 0, 1);
+    var plot = /** @type {anychart.stockModule.Plot|anychart.core.ChartWithSeries} */(this.plot);
+    var baseline = /** @type {number} */(plot.getOption('baseline')) || 0;
+    this.zeroYRatio = goog.math.clamp((scale && scale.transform(baseline, 0.5)) || baseline, 0, 1);
     this.zeroY = this.applyAxesLinesSpace(this.applyRatioToBounds(this.zeroYRatio, false));
   }
 };
@@ -4034,11 +4175,6 @@ anychart.core.series.Base.prototype.makePointMeta = function(rowInfo, yNames, yC
 
 //endregion
 //region --- Format/Position providers generation
-//----------------------------------------------------------------------------------------------------------------------
-//
-//  Format/Position providers generation
-//
-//----------------------------------------------------------------------------------------------------------------------
 /**
  * Creates statistics source to update the context.
  * @param {anychart.data.IRowInfo} rowInfo
@@ -4354,12 +4490,7 @@ anychart.core.series.Base.prototype.createPositionProvider = function(position, 
 
 
 //endregion
-//region --- Optimized Properties
-//----------------------------------------------------------------------------------------------------------------------
-//
-//  Optimized Properties
-//
-//----------------------------------------------------------------------------------------------------------------------
+//region --- Descriptors
 /**
  * Properties that should be defined in series.Base prototype.
  * @type {!Object.<string, anychart.core.settings.PropertyDescriptor>}
@@ -4393,11 +4524,6 @@ anychart.core.settings.populate(anychart.core.series.Base, anychart.core.series.
 
 //endregion
 //region --- Statistics
-//----------------------------------------------------------------------------------------------------------------------
-//
-//  Statistics
-//
-//----------------------------------------------------------------------------------------------------------------------
 /**
  * Series statistics.
  * @param {string=} opt_name Statistics parameter name.
@@ -4437,11 +4563,6 @@ anychart.core.series.Base.prototype.getStat = function(key) {
 
 //endregion
 //region --- Serialization/Deserialization/Dispose
-//----------------------------------------------------------------------------------------------------------------------
-//
-//  Serialization/Deserialization/Dispose
-//
-//----------------------------------------------------------------------------------------------------------------------
 // Fill and stroke settings are located here, but you should export them ONLY in series themselves.
 /**
  * @inheritDoc
@@ -4462,7 +4583,10 @@ anychart.core.series.Base.prototype.serialize = function() {
     json['autoIndex'] = this.autoIndex();
 
   if (this.supportsInteractivity()) {
-    json['tooltip'] = this.tooltip().serialize();
+    var tooltipConfig = this.tooltip().serialize();
+    if (!goog.object.isEmpty(tooltipConfig)) {
+      json['tooltip'] = this.tooltip().serialize();
+    }
     json['legendItem'] = this.legendItem().serialize();
   }
 
@@ -4543,11 +4667,6 @@ anychart.core.series.Base.prototype.disposeInternal = function() {
 
 //endregion
 //region --- These methods don't have non-exported versions
-//----------------------------------------------------------------------------------------------------------------------
-//
-//  These methods don't have non-exported versions
-//
-//----------------------------------------------------------------------------------------------------------------------
 
 //fill
 //hoverFill
@@ -4661,4 +4780,5 @@ anychart.core.series.Base.prototype.disposeInternal = function() {
   proto['getStat'] = proto.getStat;
 
   proto['rendering'] = proto.rendering;
+  proto['colorScale'] = proto.colorScale;
 })();

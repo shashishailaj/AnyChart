@@ -885,7 +885,7 @@ anychart.core.Chart.prototype.showTooltip_ = function(event) {
     }
 
     var interactivity = this.interactivity();
-    if (interactivity.hoverMode() == anychart.enums.HoverMode.SINGLE) {
+    if (interactivity.getOption('hoverMode') == anychart.enums.HoverMode.SINGLE) {
       var points = [];
       if (this.tooltip_.getOption('displayMode') == anychart.enums.TooltipDisplayMode.SINGLE) {
         points = event['seriesStatus'];
@@ -2330,7 +2330,7 @@ anychart.core.Chart.prototype.handleMouseOverAndMove = function(event) {
     if (goog.isDefAndNotNull(evt) && goog.isNumber(evt['pointIndex']) && !isNaN(evt['pointIndex']))
       index = evt['pointIndex'];
     if (evt && ((anychart.utils.checkIfParent(/** @type {!goog.events.EventTarget} */(series), event['relatedTarget'])) || series.dispatchEvent(evt))) {
-      if (interactivity.hoverMode() == anychart.enums.HoverMode.SINGLE) {
+      if (interactivity.getOption('hoverMode') == anychart.enums.HoverMode.SINGLE) {
 
         var whetherNeedHoverIndex = goog.isArray(index) && !goog.array.every(index, function(el) {
               return series.state.hasPointStateByPointIndex(anychart.PointState.HOVER, el);
@@ -2367,7 +2367,7 @@ anychart.core.Chart.prototype.handleMouseOverAndMove = function(event) {
     }
   }
 
-  if (interactivity.hoverMode() != anychart.enums.HoverMode.SINGLE) {
+  if (interactivity.getOption('hoverMode') != anychart.enums.HoverMode.SINGLE) {
     var seriesStatus = this.getSeriesStatus(event);
     var dispatchEvent = false;
 
@@ -2420,7 +2420,7 @@ anychart.core.Chart.prototype.handleMouseOverAndMove = function(event) {
  * @param {anychart.core.MouseEvent} event Event object.
  */
 anychart.core.Chart.prototype.handleMouseOut = function(event) {
-  var hoverMode = this.interactivity().hoverMode();
+  var hoverMode = this.interactivity().getOption('hoverMode');
 
   var tag = anychart.utils.extractTag(event['domTarget']);
   var forbidTooltip = false;
@@ -2520,7 +2520,7 @@ anychart.core.Chart.prototype.onMouseDown = function(event) {
 
   var seriesStatus, eventSeriesStatus, allSeries, alreadySelectedPoints, i;
   var controlKeyPressed = event.ctrlKey || event.metaKey;
-  var multiSelectOnClick = interactivity.multiSelectOnClick();
+  var multiSelectOnClick = /** @type {boolean} */(interactivity.getOption('multiSelectOnClick'));
   var multiSelectKeyPressed = controlKeyPressed || event.shiftKey || multiSelectOnClick;
   var clickWithControlOnSelectedSeries, equalsSelectedPoints;
 
@@ -2562,8 +2562,8 @@ anychart.core.Chart.prototype.onMouseDown = function(event) {
     if (evt && ((anychart.utils.checkIfParent(/** @type {!goog.events.EventTarget} */(series), event['relatedTarget'])) || series.dispatchEvent(evt))) {
       if (!isTargetLegendOrColorRange)
         index = evt['pointIndex'];
-      if (interactivity.hoverMode() == anychart.enums.HoverMode.SINGLE) {
-        if (interactivity.selectionMode() == anychart.enums.SelectionMode.NONE || series.selectionMode() == anychart.enums.SelectionMode.NONE)
+      if (interactivity.getOption('hoverMode') == anychart.enums.HoverMode.SINGLE) {
+        if (interactivity.getOption('selectionMode') == anychart.enums.SelectionMode.NONE || series.selectionMode() == anychart.enums.SelectionMode.NONE)
           return;
 
         alreadySelectedPoints = series.state.getIndexByPointState(anychart.PointState.SELECT);
@@ -2574,7 +2574,7 @@ anychart.core.Chart.prototype.onMouseDown = function(event) {
 
         clickWithControlOnSelectedSeries = multiSelectKeyPressed && series.state.isStateContains(series.state.getSeriesState(), anychart.PointState.SELECT);
         var unselect = !multiSelectOnClick && (clickWithControlOnSelectedSeries || !multiSelectKeyPressed ||
-            (multiSelectKeyPressed && interactivity.selectionMode() != anychart.enums.SelectionMode.MULTI_SELECT));
+            (multiSelectKeyPressed && interactivity.getOption('selectionMode') != anychart.enums.SelectionMode.MULTI_SELECT));
 
         if (unselect) {
           this.unselect();
@@ -2622,7 +2622,7 @@ anychart.core.Chart.prototype.onMouseDown = function(event) {
           this.prevSelectSeriesStatus = eventSeriesStatus;
       }
     }
-  } else if (interactivity.hoverMode() == anychart.enums.HoverMode.SINGLE && interactivity.unselectOnClickOutOfPoint()) {
+  } else if (interactivity.getOption('hoverMode') == anychart.enums.HoverMode.SINGLE && interactivity.getOption('unselectOnClickOutOfPoint')) {
     if (!isTargetLegendOrColorRange)
       this.unselect();
 
@@ -2631,8 +2631,8 @@ anychart.core.Chart.prototype.onMouseDown = function(event) {
     this.prevSelectSeriesStatus = null;
   }
 
-  if (interactivity.hoverMode() != anychart.enums.HoverMode.SINGLE) {
-    if (interactivity.selectionMode() == anychart.enums.SelectionMode.NONE)
+  if (interactivity.getOption('hoverMode') != anychart.enums.HoverMode.SINGLE) {
+    if (interactivity.getOption('selectionMode') == anychart.enums.SelectionMode.NONE)
       return;
 
     var j, len;
@@ -2643,7 +2643,7 @@ anychart.core.Chart.prototype.onMouseDown = function(event) {
       eventSeriesStatus = [];
       var contains, seriesStatus_;
 
-      if (interactivity.selectionMode() == anychart.enums.SelectionMode.SINGLE_SELECT) {
+      if (interactivity.getOption('selectionMode') == anychart.enums.SelectionMode.SINGLE_SELECT) {
         var nearest;
         for (i = 0, len = seriesStatus.length; i < len; i++) {
           seriesStatus_ = seriesStatus[i];
@@ -2853,7 +2853,7 @@ anychart.core.Chart.prototype.interactivity = function(opt_value) {
     if (goog.isObject(opt_value))
       this.interactivity_.setup(opt_value);
     else
-      this.interactivity_.hoverMode(opt_value);
+      this.interactivity_['hoverMode'](opt_value);
     return this;
   }
   return this.interactivity_;
@@ -2878,7 +2878,7 @@ anychart.core.Chart.prototype.onInteractivitySignal = function() {
   var series = this.getAllSeries();
   for (var i = series.length; i--;) {
     if (series[i])
-      series[i].hoverMode(/** @type {anychart.enums.HoverMode} */(this.interactivity().hoverMode()));
+      series[i].hoverMode(/** @type {anychart.enums.HoverMode} */(this.interactivity().getOption('hoverMode')));
   }
 };
 

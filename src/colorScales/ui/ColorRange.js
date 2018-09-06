@@ -873,7 +873,7 @@ anychart.colorScalesModule.ui.ColorRange.prototype.handleMouseClick = function(e
           points = this.rangeRegions_[range.sourceIndex];
           chart = /** @type {anychart.core.SeparateChart} */(target.getChart());
           interactivity = /** @type {anychart.core.utils.Interactivity} */(chart.interactivity());
-          if (interactivity.hoverMode() == anychart.enums.HoverMode.SINGLE) {
+          if (interactivity.getOption('hoverMode') == anychart.enums.HoverMode.SINGLE) {
             this.points_ = {
               series: target,
               points: points
@@ -918,7 +918,7 @@ anychart.colorScalesModule.ui.ColorRange.prototype.handleMouseClick = function(e
         if (scale && target) {
           chart = /** @type {anychart.core.SeparateChart} */(target.getChart());
           interactivity = /** @type {anychart.core.utils.Interactivity} */(chart.interactivity());
-          if (interactivity.hoverMode() == anychart.enums.HoverMode.SINGLE) {
+          if (interactivity.getOption('hoverMode') == anychart.enums.HoverMode.SINGLE) {
             this.points_ = {
               series: target,
               points: points
@@ -967,7 +967,7 @@ anychart.colorScalesModule.ui.ColorRange.prototype.handleMouseOverAndMove = func
         points = this.rangeRegions_[range.sourceIndex];
         chart = /** @type {anychart.core.SeparateChart} */(target.getChart());
         interactivity = /** @type {anychart.core.utils.Interactivity} */(chart.interactivity());
-        if (interactivity.hoverMode() == anychart.enums.HoverMode.SINGLE) {
+        if (interactivity.getOption('hoverMode') == anychart.enums.HoverMode.SINGLE) {
           this.points_ = {
             series: target,
             points: points
@@ -1010,7 +1010,7 @@ anychart.colorScalesModule.ui.ColorRange.prototype.handleMouseOverAndMove = func
         if (scale && target) {
           chart = /** @type {anychart.core.SeparateChart} */(target.getChart());
           interactivity = /** @type {anychart.core.utils.Interactivity} */(chart.interactivity());
-          if (interactivity.hoverMode() == anychart.enums.HoverMode.SINGLE) {
+          if (interactivity.getOption('hoverMode') == anychart.enums.HoverMode.SINGLE) {
             var dispatchUnhover = this.points_ && !goog.array.every(points, function(el) {
                   return goog.array.contains(this.points_.points, el);
                 }, this);

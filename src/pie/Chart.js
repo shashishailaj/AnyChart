@@ -366,10 +366,13 @@ anychart.pieModule.Chart.PIE_ANIMATION_DURATION_RATIO = 0.85;
  */
 anychart.pieModule.Chart.Side3DType = {
   TOP: 'top',
-  FRONT: 'front',
-  BACK: 'back',
+  OUTERFRONT: 'outerFront',
+  INNERBACK: 'innerBack',
   START: 'start',
-  END: 'end'
+  END: 'end',
+  BOTTOM: 'bottom',
+  INNERFRONT: 'innerFront',
+  OUTERBACK: 'outerBack'
 };
 
 
@@ -398,37 +401,6 @@ anychart.pieModule.Chart.prototype.SUPPORTED_CONSISTENCY_STATES =
  * @type {!Object.<string, anychart.core.settings.PropertyDescriptor>}
  */
 anychart.pieModule.Chart.PROPERTY_DESCRIPTORS = (function() {
-  /** @type {!Object.<string, anychart.core.settings.PropertyDescriptor>} */
-  var map = {};
-  anychart.core.settings.createDescriptor(
-      map,
-      anychart.enums.PropertyHandlerType.SINGLE_ARG,
-      'overlapMode',
-      anychart.enums.normalizeLabelsOverlapMode);
-  function radiusNormalizer(opt_value) {
-    return anychart.utils.normalizeNumberOrPercent(opt_value, '100%');
-  }
-  anychart.core.settings.createDescriptor(
-      map,
-      anychart.enums.PropertyHandlerType.SINGLE_ARG,
-      'radius',
-      radiusNormalizer);
-  function innerRadiusNormalizer(opt_value) {
-    return goog.isFunction(opt_value) ? opt_value : anychart.utils.normalizeNumberOrPercent(opt_value);
-  }
-  anychart.core.settings.createDescriptor(
-      map,
-      anychart.enums.PropertyHandlerType.SINGLE_ARG,
-      'innerRadius',
-      innerRadiusNormalizer);
-  function startAngleNormalizer(opt_value) {
-    return goog.math.standardAngle(anychart.utils.toNumber(opt_value) || 0);
-  }
-  anychart.core.settings.createDescriptor(
-      map,
-      anychart.enums.PropertyHandlerType.SINGLE_ARG,
-      'startAngle',
-      startAngleNormalizer);
   // function explodeNormalizer(opt_value) {
   //   return anychart.utils.normalizeNumberOrPercent(opt_value, 15);
   // }
@@ -438,57 +410,40 @@ anychart.pieModule.Chart.PROPERTY_DESCRIPTORS = (function() {
   //     '',
   //     explodeNormalizer,
   //     'explode');
-  anychart.core.settings.createDescriptor(
-      map,
-      anychart.enums.PropertyHandlerType.SINGLE_ARG,
-      'sort',
-      anychart.enums.normalizeSort);
   function outsideLabelsSpaceNormalizer(opt_value) {
     return anychart.utils.normalizeNumberOrPercent(opt_value, '30%');
   }
-  anychart.core.settings.createDescriptor(
-      map,
-      anychart.enums.PropertyHandlerType.SINGLE_ARG_DEPRECATED,
-      '',
-      outsideLabelsSpaceNormalizer,
-      'outsideLabelsSpace');
-  anychart.core.settings.createDescriptor(
-      map,
-      anychart.enums.PropertyHandlerType.SINGLE_ARG,
-      'insideLabelsOffset',
-      anychart.utils.normalizeNumberOrPercent);
   function connectorLengthNormalizer(opt_value) {
     return anychart.utils.normalizeNumberOrPercent(opt_value, '20%');
   }
-  anychart.core.settings.createDescriptor(
-      map,
-      anychart.enums.PropertyHandlerType.SINGLE_ARG,
-      'connectorLength',
-      connectorLengthNormalizer);
   function criticalAngleNormalizer(opt_value) {
     return goog.math.standardAngle(anychart.utils.normalizeSize(opt_value));
   }
-  anychart.core.settings.createDescriptor(
-      map,
-      anychart.enums.PropertyHandlerType.SINGLE_ARG,
-      'outsideLabelsCriticalAngle',
-      criticalAngleNormalizer);
-  anychart.core.settings.createDescriptor(
-      map,
-      anychart.enums.PropertyHandlerType.SINGLE_ARG,
-      'forceHoverLabels',
-      anychart.core.settings.asIsNormalizer);
-  anychart.core.settings.createDescriptor(
-      map,
-      anychart.enums.PropertyHandlerType.MULTI_ARG,
-      'connectorStroke',
-      anychart.core.settings.strokeNormalizer);
-  anychart.core.settings.createDescriptor(
-      map,
-      anychart.enums.PropertyHandlerType.SINGLE_ARG,
-      'mode3d',
-      anychart.core.settings.booleanNormalizer);
-
+  function radiusNormalizer(opt_value) {
+    return anychart.utils.normalizeNumberOrPercent(opt_value, '100%');
+  }
+  function innerRadiusNormalizer(opt_value) {
+    return goog.isFunction(opt_value) ? opt_value : anychart.utils.normalizeNumberOrPercent(opt_value);
+  }
+  function startAngleNormalizer(opt_value) {
+    return goog.math.standardAngle(anychart.utils.toNumber(opt_value) || 0);
+  }
+  /** @type {!Object.<string, anychart.core.settings.PropertyDescriptor>} */
+  var map = {};
+  anychart.core.settings.createDescriptors(map, [
+        [anychart.enums.PropertyHandlerType.SINGLE_ARG, 'overlapMode', anychart.enums.normalizeLabelsOverlapMode],
+        [anychart.enums.PropertyHandlerType.SINGLE_ARG, 'radius', radiusNormalizer],
+        [anychart.enums.PropertyHandlerType.SINGLE_ARG, 'innerRadius', innerRadiusNormalizer],
+        [anychart.enums.PropertyHandlerType.SINGLE_ARG, 'startAngle', startAngleNormalizer],
+        [anychart.enums.PropertyHandlerType.SINGLE_ARG, 'sort', anychart.enums.normalizeSort],
+        [anychart.enums.PropertyHandlerType.SINGLE_ARG_DEPRECATED, '', outsideLabelsSpaceNormalizer, 'outsideLabelsSpace'],
+        [anychart.enums.PropertyHandlerType.SINGLE_ARG, 'insideLabelsOffset', anychart.utils.normalizeNumberOrPercent],
+        [anychart.enums.PropertyHandlerType.SINGLE_ARG, 'connectorLength', connectorLengthNormalizer],
+        [anychart.enums.PropertyHandlerType.SINGLE_ARG, 'outsideLabelsCriticalAngle', criticalAngleNormalizer],
+        [anychart.enums.PropertyHandlerType.SINGLE_ARG, 'forceHoverLabels', anychart.core.settings.asIsNormalizer],
+        [anychart.enums.PropertyHandlerType.MULTI_ARG, 'connectorStroke', anychart.core.settings.strokeNormalizer],
+        [anychart.enums.PropertyHandlerType.SINGLE_ARG, 'mode3d', anychart.core.settings.booleanNormalizer]
+  ]);
   return map;
 })();
 anychart.core.settings.populate(anychart.pieModule.Chart, anychart.pieModule.Chart.PROPERTY_DESCRIPTORS);
@@ -676,7 +631,7 @@ anychart.pieModule.Chart.prototype.getDetachedIterator = function() {
 anychart.pieModule.Chart.prototype.prepareData_ = function(data) {
   if (this.groupedPointFilter_ != null) {
     var oldData = data;
-    data = new anychart.pieModule.DataView(/** @type {!anychart.data.View} */(data), 'value', this.groupedPointFilter_, undefined, function() {
+    data = new anychart.pieModule.DataView(/** @type {!anychart.data.View} */(data), 'value', this.groupedPointName_, this.groupedPointFilter_, undefined, function() {
       return {'value': 0};
     });
     oldData.registerDisposable(data);
@@ -705,13 +660,15 @@ anychart.pieModule.Chart.prototype.prepareData_ = function(data) {
 
 /**
  * Getter/setter for grouping.
- * @param {(string|null|function(*):boolean)=} opt_value Filter function or disablt value (null, 'none').
+ * @param {(string|null|function(*):boolean)=} opt_value Filter function or disable value (null, 'none').
+ * @param {string=} opt_name Name for group
  * @return {(anychart.pieModule.Chart|function(*):boolean|null)} Current grouping function or self for method chaining.
  */
-anychart.pieModule.Chart.prototype.group = function(opt_value) {
+anychart.pieModule.Chart.prototype.group = function(opt_value, opt_name) {
   if (goog.isDef(opt_value)) {
     if (goog.isFunction(opt_value) && opt_value != this.groupedPointFilter_) {
       this.groupedPointFilter_ = opt_value;
+      this.groupedPointName_ = opt_name || 'Grouped point';
       this.redefineView_();
     } else if (anychart.utils.isNone(opt_value)) {
       this.groupedPointFilter_ = null;
@@ -1268,7 +1225,7 @@ anychart.pieModule.Chart.prototype.outlineInvalidated_ = function(event) {
 /**
  * Create pie label format provider.
  * @param {boolean=} opt_force create context provider forcibly.
- * @return {Object} Object with info for labels formatting.
+ * @return {anychart.format.Context} Object with info for labels formatting.
  * @protected
  */
 anychart.pieModule.Chart.prototype.createFormatProvider = function(opt_force) {
@@ -1290,13 +1247,13 @@ anychart.pieModule.Chart.prototype.createFormatProvider = function(opt_force) {
   };
 
   if (iterator.meta('groupedPoint')) {
-    values['name'] = {value: 'Other points', type: anychart.enums.TokenType.STRING};
+    values['name'] = {value: iterator.meta('name'), type: anychart.enums.TokenType.STRING};
     values['groupedPoint'] = {value: true, type: anychart.enums.TokenType.STRING};
     values['names'] = {value: iterator.meta('names'), type: anychart.enums.TokenType.UNKNOWN};
     values['values'] = {value: iterator.meta('values'), type: anychart.enums.TokenType.UNKNOWN};
   }
 
-  return this.pointProvider_.propagate(values);
+  return /** @type {anychart.format.Context} */ (this.pointProvider_.propagate(values));
 };
 
 
@@ -2075,7 +2032,7 @@ anychart.pieModule.Chart.prototype.transformCenterContent = function(contentBoun
  */
 anychart.pieModule.Chart.prototype.beforeDraw = function() {
   if (this.palette_ && anychart.utils.instanceOf(this.palette_, anychart.palettes.RangeColors)) {
-    this.palette_.count(this.getIterator().getRowsCount());
+    this.palette_.setAutoCount(this.getIterator().getRowsCount());
   }
 };
 
@@ -2252,7 +2209,7 @@ anychart.pieModule.Chart.prototype.drawContent = function(bounds) {
   if (this.hasInvalidationState(anychart.ConsistencyState.APPEARANCE)) {
     var hasOutLine = this.normal_.outline().getOption('offset') || this.normal_.outline().getOption('width') ||
         this.hovered_.outline().getOption('offset') || this.hovered_.outline().getOption('width') ||
-        this.selected_.outline().getOption('offset') ||  this.selected_.outline().getOption('width');
+        this.selected_.outline().getOption('offset') || this.selected_.outline().getOption('width');
 
     if (this.outlineLayer_) {
       this.outlineLayer_.clear();
@@ -2760,14 +2717,15 @@ anychart.pieModule.Chart.prototype.drawSlice_ = function(pointState, opt_update)
  * @param {number} endAngle
  * @param {number} sweep
  * @param {anychart.PointState|number} pointState
+ * @param {string} name Name of side
  * @param {boolean=} opt_update
  * @return {acgraph.vector.Path}
  * @private
  */
-anychart.pieModule.Chart.prototype.drawFrontSide_ = function(cx, cy, outerR, startAngle, endAngle, sweep, pointState, opt_update) {
+anychart.pieModule.Chart.prototype.drawFrontSide_ = function(cx, cy, outerR, startAngle, endAngle, sweep, pointState, name, opt_update) {
   // there may be two front sides
   var uniqueValue = String(startAngle);
-  var pathName = 'frontPath' + uniqueValue;
+  var pathName = name + uniqueValue;
   var path = this.createPath_(pathName, opt_update);
   if (!path) return null;
 
@@ -2813,14 +2771,15 @@ anychart.pieModule.Chart.prototype.drawFrontSide_ = function(cx, cy, outerR, sta
  * @param {number} endAngle
  * @param {number} sweep
  * @param {anychart.PointState|number} pointState
+ * @param {string} name Name of side
  * @param {boolean=} opt_update
  * @return {acgraph.vector.Path}
  * @private
  */
-anychart.pieModule.Chart.prototype.drawBackSide_ = function(cx, cy, innerR, startAngle, endAngle, sweep, pointState, opt_update) {
+anychart.pieModule.Chart.prototype.drawBackSide_ = function(cx, cy, innerR, startAngle, endAngle, sweep, pointState, name, opt_update) {
   // there may be two back sides
   var uniqueValue = String(startAngle);
-  var pathName = 'backPath' + uniqueValue;
+  var pathName = name + uniqueValue;
   var path = this.createPath_(pathName, opt_update);
   if (!path) return null;
 
@@ -2903,13 +2862,13 @@ anychart.pieModule.Chart.prototype.drawSimpleSide_ = function(pathName, cx, cy, 
 //region --- Animation
 /** @inheritDoc */
 anychart.pieModule.Chart.prototype.doAnimation = function() {
-  if (!this.getOption('mode3d') && this.animation().enabled() && this.animation().duration() > 0) {
+  if (!this.getOption('mode3d') && this.animation().getOption('enabled') && /** @type {number} */(this.animation().getOption('duration')) > 0) {
     if (this.animationQueue_ && this.animationQueue_.isPlaying()) {
       this.animationQueue_.update();
     } else if (this.hasInvalidationState(anychart.ConsistencyState.CHART_ANIMATION)) {
       goog.dispose(this.animationQueue_);
       this.animationQueue_ = new anychart.animations.AnimationSerialQueue();
-      var duration = /** @type {number} */(this.animation().duration());
+      var duration = /** @type {number} */(this.animation().getOption('duration'));
       var pieDuration = duration * anychart.pieModule.Chart.PIE_ANIMATION_DURATION_RATIO;
       var pieLabelDuration = duration * (1 - anychart.pieModule.Chart.PIE_ANIMATION_DURATION_RATIO);
 
@@ -3060,26 +3019,31 @@ anychart.pieModule.Chart.prototype.prepare3DSlice_ = function() {
     ey: ey
   });
 
-  if (Math.abs(sweep) != 360) {
-    if (this.hasStartSide_(start)) {
-      this.sides3D_.push({
-        index: index,
-        type: anychart.pieModule.Chart.Side3DType.START,
-        angle: start,
-        ex: ex,
-        ey: ey
-      });
-    }
 
-    if (this.hasEndSide_(end)) {
-      this.sides3D_.push({
-        index: index,
-        type: anychart.pieModule.Chart.Side3DType.END,
-        angle: end,
-        ex: ex,
-        ey: ey
-      });
-    }
+  this.sides3D_.push({
+    index: index,
+    type: anychart.pieModule.Chart.Side3DType.BOTTOM,
+    start: start,
+    sweep: sweep,
+    ex: ex,
+    ey: ey
+  });
+
+  if (Math.abs(sweep) != 360) {
+    this.sides3D_.push({
+      index: index,
+      type: anychart.pieModule.Chart.Side3DType.START,
+      angle: start,
+      ex: ex,
+      ey: ey
+    });
+    this.sides3D_.push({
+      index: index,
+      type: anychart.pieModule.Chart.Side3DType.END,
+      angle: end,
+      ex: ex,
+      ey: ey
+    });
   }
 
   var len1;
@@ -3094,7 +3058,7 @@ anychart.pieModule.Chart.prototype.prepare3DSlice_ = function() {
     this.sides3D_.length = len1 + len2;
     for (j = 0; j < len2; j++) {
       frontSides[j].index = index;
-      frontSides[j].type = anychart.pieModule.Chart.Side3DType.FRONT;
+      frontSides[j].type = anychart.pieModule.Chart.Side3DType.OUTERFRONT;
       frontSides[j].sweep = sweep;
       frontSides[j].ex = ex;
       frontSides[j].ey = ey;
@@ -3111,13 +3075,44 @@ anychart.pieModule.Chart.prototype.prepare3DSlice_ = function() {
     this.sides3D_.length = len1 + len2;
     for (j = 0; j < len2; j++) {
       backSides[j].index = index;
-      backSides[j].type = anychart.pieModule.Chart.Side3DType.BACK;
+      backSides[j].type = anychart.pieModule.Chart.Side3DType.INNERBACK;
       backSides[j].sweep = sweep;
       backSides[j].ex = ex;
       backSides[j].ey = ey;
 
       this.sides3D_[len1 + j] = backSides[j];
     }
+  }
+
+  //outer back side
+  var sides = this.getBackSides_(start, end);
+
+  len1 = this.sides3D_.length;
+  len2 = sides.length;
+  this.sides3D_.length = len1 + len2;
+  for (j = 0; j < len2; j++) {
+    sides[j].index = index;
+    sides[j].type = anychart.pieModule.Chart.Side3DType.OUTERBACK;
+    sides[j].sweep = sweep;
+    sides[j].ex = ex;
+    sides[j].ey = ey;
+
+    this.sides3D_[len1 + j] = sides[j];
+  }
+
+  //inner front side
+  sides = this.getFrontSides_(start, end);
+  len1 = this.sides3D_.length;
+  len2 = sides.length;
+  this.sides3D_.length = len1 + len2;
+  for (j = 0; j < len2; j++) {
+    sides[j].index = index;
+    sides[j].type = anychart.pieModule.Chart.Side3DType.INNERFRONT;
+    sides[j].sweep = sweep;
+    sides[j].ex = ex;
+    sides[j].ey = ey;
+
+    this.sides3D_[len1 + j] = sides[j];
   }
 };
 
@@ -3148,15 +3143,24 @@ anychart.pieModule.Chart.prototype.draw3DSlices_ = function(opt_sliceIndex, opt_
         case anychart.pieModule.Chart.Side3DType.TOP:
           side.sortWeight = 1;
           break;
-        case anychart.pieModule.Chart.Side3DType.FRONT:
+        case anychart.pieModule.Chart.Side3DType.OUTERFRONT:
           side.sortWeight = (side.isInFront ?
               1 :
               anychart.math.round(Math.sin(goog.math.toRadians(this.getCenterAngle_(side.start, side.end))), 7));
           break;
-        case anychart.pieModule.Chart.Side3DType.BACK:
+        case anychart.pieModule.Chart.Side3DType.INNERBACK:
           side.sortWeight = (side.isInFront ?
               -1 :
               anychart.math.round(Math.sin(goog.math.toRadians(this.getCenterAngle_(side.start, side.end))), 7));
+          break;
+        case anychart.pieModule.Chart.Side3DType.BOTTOM:
+          side.sortWeight = -3;
+          break;
+        case anychart.pieModule.Chart.Side3DType.INNERFRONT:
+          side.sortWeight = 0;
+          break;
+        case anychart.pieModule.Chart.Side3DType.OUTERBACK:
+          side.sortWeight = -2;
           break;
           // for start or end side
         default:
@@ -3173,6 +3177,7 @@ anychart.pieModule.Chart.prototype.draw3DSlices_ = function(opt_sliceIndex, opt_
       this.draw3DSlice_(this.sides3D_[i]);
     }
   }
+  this.sides3D_.length = 0;
 };
 
 
@@ -3202,13 +3207,22 @@ anychart.pieModule.Chart.prototype.draw3DSlice_ = function(side, opt_update) {
 
   switch (side.type) {
     case anychart.pieModule.Chart.Side3DType.TOP:
-      this.drawTopSide_(cx, cy, outerR, innerR, side.start, side.sweep, pointState, opt_update);
+      this.drawTopOrBottomSide_(cx, cy, outerR, innerR, side.start, side.sweep, pointState, true, opt_update);
       break;
-    case anychart.pieModule.Chart.Side3DType.FRONT:
-      this.drawFrontSide_(cx, cy, outerR, side.start, side.end, side.sweep, pointState, opt_update);
+    case anychart.pieModule.Chart.Side3DType.BOTTOM:
+      this.drawTopOrBottomSide_(cx, cy, outerR, innerR, side.start, side.sweep, pointState, false, opt_update);
       break;
-    case anychart.pieModule.Chart.Side3DType.BACK:
-      this.drawBackSide_(cx, cy, innerR, side.start, side.end, side.sweep, pointState, opt_update);
+    case anychart.pieModule.Chart.Side3DType.OUTERFRONT:
+      this.drawFrontSide_(cx, cy, outerR, side.start, side.end, side.sweep, pointState, anychart.pieModule.Chart.Side3DType.OUTERFRONT, opt_update);
+      break;
+    case anychart.pieModule.Chart.Side3DType.INNERBACK:
+      this.drawBackSide_(cx, cy, innerR, side.start, side.end, side.sweep, pointState, anychart.pieModule.Chart.Side3DType.INNERBACK, opt_update);
+      break;
+    case anychart.pieModule.Chart.Side3DType.OUTERBACK:
+      this.drawFrontSide_(cx, cy, outerR, side.start, side.end, side.sweep, pointState, anychart.pieModule.Chart.Side3DType.OUTERBACK, opt_update);
+      break;
+    case anychart.pieModule.Chart.Side3DType.INNERFRONT:
+      this.drawBackSide_(cx, cy, innerR, side.start, side.end, side.sweep, pointState, anychart.pieModule.Chart.Side3DType.INNERFRONT, opt_update);
       break;
     case anychart.pieModule.Chart.Side3DType.START:
       this.drawSimpleSide_('startPath', cx, cy, outerR, innerR, side.angle, pointState, opt_update);
@@ -3229,11 +3243,12 @@ anychart.pieModule.Chart.prototype.draw3DSlice_ = function(side, opt_update) {
  * @param {number} start Start angle in degrees.
  * @param {number} sweep Sweep angle in degrees.
  * @param {(anychart.PointState|number)} pointState Point state.
+ * @param {boolean} topSide
  * @param {boolean=} opt_update
  * @return {acgraph.vector.Path}
  * @private
  */
-anychart.pieModule.Chart.prototype.drawTopSide_ = function(cx, cy, outerR, innerR, start, sweep, pointState, opt_update) {
+anychart.pieModule.Chart.prototype.drawTopOrBottomSide_ = function(cx, cy, outerR, innerR, start, sweep, pointState, topSide, opt_update) {
   if (outerR < 0) outerR = 0;
   if (innerR < 0) innerR = 0;
   if (outerR < innerR) {
@@ -3242,9 +3257,11 @@ anychart.pieModule.Chart.prototype.drawTopSide_ = function(cx, cy, outerR, inner
     innerR = tmp;
   }
 
+  var pathName = (topSide ? 'top' : 'bottom') + 'Path';
+  cy += topSide ? 0 : this.get3DHeight();
   sweep = goog.math.clamp(sweep, -360, 360);
 
-  var path = this.createPath_('topPath', opt_update);
+  var path = this.createPath_(pathName, opt_update);
   if (!path) return null;
 
   // draw pie
@@ -3255,7 +3272,7 @@ anychart.pieModule.Chart.prototype.drawTopSide_ = function(cx, cy, outerR, inner
       path.moveTo(cx, cy).circularArc(cx, cy, outerR, this.get3DYRadius(outerR), start, sweep, true).close();
     }
 
-    this.colorize3DPath_('topPath', pointState);
+    this.colorize3DPath_(pathName, pointState);
     return path;
   }
 
@@ -3268,7 +3285,7 @@ anychart.pieModule.Chart.prototype.drawTopSide_ = function(cx, cy, outerR, inner
     path.close();
   }
 
-  this.colorize3DPath_('topPath', pointState);
+  this.colorize3DPath_(pathName, pointState);
   return path;
 };
 
@@ -3332,7 +3349,10 @@ anychart.pieModule.Chart.prototype.colorize3DSlice_ = function(pointState) {
   for (i = 0; i < length; i++) {
     side = this.sides3D_[i];
     if (side.index == index) {
-      var uniqueValue = (side.type == anychart.pieModule.Chart.Side3DType.FRONT || side.type == anychart.pieModule.Chart.Side3DType.BACK) ? side.start : '';
+      var uniqueValue = (side.type == anychart.pieModule.Chart.Side3DType.OUTERFRONT ||
+                         side.type == anychart.pieModule.Chart.Side3DType.INNERBACK ||
+                         side.type == anychart.pieModule.Chart.Side3DType.OUTERBACK ||
+                         side.type == anychart.pieModule.Chart.Side3DType.INNERFRONT) ? side.start : '';
       this.colorize3DPath_(side.type + 'Path' + uniqueValue, pointState);
     }
   }
@@ -3365,6 +3385,7 @@ anychart.pieModule.Chart.prototype.get3DFillColor_ = function(pointState) {
     selectFill = anychart.utils.getFirstDefinedValue(
         goog.isDef(pointStateObject) ? pointStateObject['fill'] : void 0,
         iterator.get('selectFill'),
+        this.selected().fill(),
         normalColor);
     rawColor = this.normalizeColor(
         /** @type {acgraph.vector.Fill|Function} */(selectFill), normalColor);
@@ -3374,6 +3395,7 @@ anychart.pieModule.Chart.prototype.get3DFillColor_ = function(pointState) {
     hoverFill = anychart.utils.getFirstDefinedValue(
         goog.isDef(pointStateObject) ? pointStateObject['fill'] : void 0,
         iterator.get('hoverFill'),
+        this.hovered().fill(),
         normalColor);
     rawColor = this.normalizeColor(
         /** @type {acgraph.vector.Fill|Function} */(hoverFill), normalColor);
@@ -3384,6 +3406,8 @@ anychart.pieModule.Chart.prototype.get3DFillColor_ = function(pointState) {
   var parsedColor;
   if (goog.isString(rawColor)) {
     parsedColor = anychart.color.parseColor(rawColor);
+  } else {
+    parsedColor = anychart.color.parseColor(rawColor.color);
   }
 
   var paletteColor = this.palette().itemAt(index);
@@ -3443,50 +3467,73 @@ anychart.pieModule.Chart.prototype.colorize3DPath_ = function(pathName, pointSta
 
   var state = anychart.core.utils.InteractivityState.clarifyState(pointState);
   var hovered = state == anychart.PointState.HOVER;
-  var selected = hovered == anychart.PointState.SELECT;
+  var selected = state == anychart.PointState.SELECT;
 
+  var opacity = anychart.color.getOpacity(hovered ? this.hovered().fill() : selected ? this.selected().fill() : this.fill());
+
+  var innerColor = {
+    color: (hovered || selected) ? anychart.color.lighten(darkPathColor, .2) : darkPathColor,
+    opacity: opacity
+  };
+
+  var outerColor = {
+    'angle': 45,
+    'keys': [{
+      'position': 0,
+      'opacity': opacity,
+      'color': (hovered || selected) ? anychart.color.lighten(color, .2) : anychart.color.lighten(color, .1)
+    }, {
+      'position': .19,
+      'opacity': opacity,
+      'color': (hovered || selected) ? anychart.color.lighten(frontSecondColor, .2) : frontSecondColor
+    }, {
+      'position': 1,
+      'opacity': opacity,
+      'color': (hovered || selected) ? anychart.color.lighten(frontThirdColor, .2) : frontThirdColor
+    }]
+  };
+
+  var topColor;
+  var bottomColor = topColor = {
+    'angle': -50,
+    'keys': [{
+      'position': 0,
+      'opacity': opacity,
+      'color': (hovered || selected) ? anychart.color.lighten(color, .3) : color
+    }, {
+      'position': 1,
+      'opacity': opacity,
+      'color': (hovered || selected) ? anychart.color.lighten(topPathSecondColor, .2) : topPathSecondColor
+    }]
+  };
   if (pathName == 'topPath') {
-    fill = {
-      'angle': -50,
-      'keys': [{
-        'position': 0,
-        'opacity': 1,
-        'color': (hovered || selected) ? anychart.color.lighten(color, .3) : color
-      }, {
-        'position': 1,
-        'opacity': 1,
-        'color': (hovered || selected) ? anychart.color.lighten(topPathSecondColor, .2) : topPathSecondColor
-      }]
-    };
-
-  } else if (goog.string.startsWith(pathName, 'frontPath')) {
-    fill = {
-      'angle': 45,
-      'keys': [{
-        'position': 0,
-        'opacity': 1,
-        'color': (hovered || selected) ? anychart.color.lighten(color, .2) : anychart.color.lighten(color, .1)
-      }, {
-        'position': .19,
-        'opacity': 1,
-        'color': (hovered || selected) ? anychart.color.lighten(frontSecondColor, .2) : frontSecondColor
-      }, {
-        'position': 1,
-        'opacity': 1,
-        'color': (hovered || selected) ? anychart.color.lighten(frontThirdColor, .2) : frontThirdColor
-      }]
-    };
-  } else if (goog.string.startsWith(pathName, 'backPath')) {
-    fill = (hovered || selected) ? anychart.color.lighten(darkPathColor, .2) : darkPathColor;
-
-    // sides (start, end)
+    fill = topColor;
+  } else if (pathName == 'bottomPath') {
+    fill = bottomColor;
+  } else if (goog.string.startsWith(pathName, 'outer')) {
+    fill = outerColor;
+  } else if (goog.string.startsWith(pathName, 'inner')) {
+    fill = innerColor;
   } else {
-    fill = (hovered || selected) ? anychart.color.lighten(darkSidesPathColor, .2) : darkSidesPathColor;
+    // sides (start, end)
+    fill = {
+      color: (hovered || selected) ? anychart.color.lighten(darkSidesPathColor, .2) : darkSidesPathColor,
+      opacity: opacity
+    };
+  }
+
+  var stroke;
+  if (selected && anychart.color.isNotNullColor(this.selected()['stroke']())) {
+    stroke = this.selected()['stroke']();
+  } else if (anychart.color.isNotNullColor(this['stroke']())) {
+    stroke = this['stroke']();
+  } else {
+    stroke = fill;
   }
 
   path.fill(fill);
   // use stroke with some fill for white space compensation between paths of slice
-  path.stroke(fill);
+  path.stroke(stroke);
 
   var hatchPathName = this.get3DHatchPathName_(pathName);
   var hatchPath = iterator.meta(hatchPathName);
@@ -4006,7 +4053,7 @@ anychart.pieModule.Chart.prototype.createLegendItemsProvider = function(sourceMo
     if (!goog.isString(itemText)) {
       var isGrouped = !!iterator.meta('groupedPoint');
       if (isGrouped)
-        itemText = 'Other points';
+        itemText = /** @type {string} */(iterator.meta('name'));
       else
         itemText = String(goog.isDef(iterator.get('name')) ? iterator.get('name') : iterator.get('x'));
     }
@@ -4097,8 +4144,8 @@ anychart.pieModule.Chart.prototype.explodeSlice = function(index, opt_explode) {
   anychart.core.reporting.warning(anychart.enums.WarningCode.DEPRECATED, null, ['explodeSlice()', 'select()'], true);
   var currentPointState = this.state.getPointStateByIndex(index);
   if (opt_explode || !goog.isDef(opt_explode)) {
-      if (!this.state.isStateContains(currentPointState, anychart.PointState.SELECT))
-        this.select(index);
+    if (!this.state.isStateContains(currentPointState, anychart.PointState.SELECT))
+      this.select(index);
   } else {
     this.unselect(index);
   }
@@ -4686,6 +4733,7 @@ anychart.pieModule.Chart.prototype.disposeInternal = function() {
 };
 
 
+
 //endregion
 //region --- PieOutsideLabelsDomain
 /**
@@ -5009,8 +5057,22 @@ anychart.pieModule.Chart.PieOutsideLabelsDomain.prototype.calcDomain = function(
 
     if (dAngle > this.maxAngle || isNaN(this.maxAngle) || isNotValidConnectorLength) {
       this.maxAngle = leg < 0 ? Number.POSITIVE_INFINITY : dAngle;
-      this.labelToDrop = label;
-      this.dropIndex = j;
+
+      var minValue = Infinity;
+      var minIndex = 0;
+      for (var i = 0; i < this.labels.length; i++) {
+        iterator.select(this.labels[i].getIndex());
+        var value = /** @type {number|string} */ (iterator.get('value'));
+        if (!isNaN(+value))
+          value = +value;
+        if (value < minValue) {
+          minValue = value;
+          minIndex = i;
+        }
+      }
+
+      this.labelToDrop = this.labels[minIndex];
+      this.dropIndex = minIndex;
     }
     if (dAngle > criticalAngle || isNotValidConnectorLength) this.isCriticalAngle = true;
 

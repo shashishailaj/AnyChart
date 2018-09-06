@@ -22,55 +22,53 @@ IS_RC_BUILD=false                           # if it is a RC release
 IS_DEV_BUILD=false                          # build without geoData (drop CDN without latest)
 VERSION=''
 
-#### Set Steps
-STEP_BUILD_DIST=true
-STEP_UPLOAD_STATIC=true
-STEP_DROP_CDN=true
-
-STEP_EXPORT_SERVER=false
-STEP_NPM_RELEASE=false
-STEP_GIT_RELEASE=false
-STEP_DOWNLOAD_EXTERNAL=false
-STEP_LEGACY_7x=false
-
 #### Define version
 if [ "${TRAVIS_BRANCH}" = "master" ] || [ ${DRY_RUN_RELEASE} ]; then
+    #TRAVIS_BRANCH =>    master (release) OR Dry-Run
     VERSION=${BUILD_VERSION}
     IS_RELEASE_BUILD=true
 
-    STEP_NPM_RELEASE=true
-    STEP_GIT_RELEASE=true
+    STEP_CHECK_VARIABLES=true
+    STEP_BUILD_DIST=false
+    STEP_UPLOAD_STATIC=true
+    STEP_DROP_CDN=true
 
     STEP_EXPORT_SERVER=true
     STEP_DOWNLOAD_EXTERNAL=true
+
+    STEP_NPM_RELEASE=false
+    STEP_GIT_RELEASE=true
 
     ####  Be sure u wanna uncomment this
     #STEP_LEGACY_7x=true
 
 elif [[ "${TRAVIS_BRANCH}" =~ ^([0-9]+\.[0-9]+\.[0-9]+[-rc]+[0-9]+)$ ]]; then
-    # 8.3.0-rc0 it is RC build
+    #TRAVIS_BRANCH =>      8.3.0-rc0 it is RC build
     VERSION=${TRAVIS_BRANCH}
     IS_RC_BUILD=true
-
+    
+    STEP_CHECK_VARIABLES=true
     STEP_BUILD_DIST=false
+    STEP_UPLOAD_STATIC=true
+    STEP_DROP_CDN=true
 
     STEP_EXPORT_SERVER=true
     STEP_DOWNLOAD_EXTERNAL=true
 
-    STEP_NPM_RELEASE=false
-    STEP_GIT_RELEASE=false
-
 elif [[ "${TRAVIS_BRANCH}" =~ ^v([0-9]+\.[0-9]+\.[0-9]+)$ ]]; then
-    # v8.3.0 it is a tag. Drop build
+    #TRAVIS_BRANCH =>     v8.3.0 it is a tag. Drop build
     echo 'No build needed for TAG'
     echo 'exit...'
     exit 0;
 else
+    #TRAVIS_BRANCH =>  `develop` OR any other brunch
     VERSION=${TRAVIS_BRANCH}
     IS_DEV_BUILD=true
 
-    STEP_NPM_RELEASE=false
-    STEP_GIT_RELEASE=false
+    STEP_BUILD_DIST=true
+    STEP_UPLOAD_STATIC=true
+    STEP_DROP_CDN=true
+
 fi
 INSTALL_PACKAGE_NAME=anychart-installation-package-${VERSION}.zip
 
@@ -92,6 +90,7 @@ echo
 # Include Steps
 #
 ########################################################################################################################
+if [ "${STEP_CHECK_VARIABLES}" = "true" ]; then . ./bin/travis/steps/check_vars.sh; fi
 if [ "${STEP_BUILD_DIST}" = "true" ]; then . ./bin/travis/steps/build_dist.sh; fi
 if [ "${STEP_UPLOAD_STATIC}" = "true" ]; then . ./bin/travis/steps/upload_static.sh; fi
 if [ "${STEP_DROP_CDN}" = "true" ]; then . ./bin/travis/steps/drop_cdn.sh; fi
@@ -102,66 +101,9 @@ if [ "${STEP_DOWNLOAD_EXTERNAL}" = "true" ]; then . ./bin/travis/steps/download_
 if [ "${STEP_LEGACY_7x}" = "true" ]; then . ./bin/travis/steps/legacy_binaries.sh; fi
 
 
-if [ ${IS_RELEASE_BUILD} = "true" ] || [ ${IS_RC_BUILD} = "true" ]; then
-    echo "--"
-    echo Fetching release build variables
-    echo "--"
-
-    ALL_VERSIONS_IS_SET=$(python build.py version -v)
-    if [ "${ALL_VERSIONS_IS_SET}" != "Ok" ]; then
-        echo "Wrong version set in one of the project files, check them all!"
-        echo ${ALL_VERSIONS_IS_SET}
-        exit 1
-    fi
-
-    npm_check_variables
-    git_check_variables
-
-    # used to create latest build
-    MAJOR_VERSION=$(python build.py version -m)
-
-    echo
-fi
-
-########################################################################################################################
-#
-# build binary files
-#
-########################################################################################################################
+check_variables
+download_resources
 build_dist
-
-
-
-if [ ${IS_RELEASE_BUILD} = "true" ] || [ ${IS_RC_BUILD} = "true" ]; then
-    ####################################################################################################################
-    #
-    #  Check dist files (if its actual)
-    #
-    ####################################################################################################################
-    GIT_STATUS=$(git status)
-    if [[ "${GIT_STATUS}" =~ dist/themes/.+ ]]; then
-        echo "Theme files has changes, looks like you forgot update theme files in dist folder"
-        exit 1
-    fi
-
-    if [[ "${GIT_STATUS}" =~ dist/js/.+ ]]; then
-        echo JavaScript files has changes, looks like you forgot update JavaScript files in dist folder
-        exit 1
-    fi
-
-    if [[ "${GIT_STATUS}" =~ dist/css/.+ ]]; then
-        echo CSS files has changes, looks like you forgot update CSS files in dist folder
-        exit 1
-    fi
-
-    ####################################################################################################################
-    #
-    #  Download Docs & Demos
-    #
-    ####################################################################################################################
-    download_resources
-
-fi
 
 ########################################################################################################################
 #

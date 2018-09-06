@@ -632,6 +632,17 @@ anychart.pyramidFunnelModule.Chart.prototype.remove = function() {
 
 
 /**
+ * @inheritDoc
+ */
+anychart.pyramidFunnelModule.Chart.prototype.beforeDraw = function() {
+  var iterator = this.getIterator();
+  if (this.palette_ && anychart.utils.instanceOf(this.palette_, anychart.palettes.RangeColors)) {
+    this.palette_.setAutoCount(iterator.getRowsCount());
+  }
+};
+
+
+/**
  * Draw chart chart content items.
  * @param {anychart.math.Rect} bounds Bounds of chart content area.
  */
@@ -675,10 +686,6 @@ anychart.pyramidFunnelModule.Chart.prototype.drawContent = function(bounds) {
       this.registerDisposable(this.hatchLayer_);
       this.hatchLayer_.parent(this.rootElement);
       this.hatchLayer_.zIndex(anychart.pyramidFunnelModule.Chart.ZINDEX_HATCH_FILL).disablePointerEvents(true);
-    }
-
-    if (this.palette_ && anychart.utils.instanceOf(this.palette_, anychart.palettes.RangeColors)) {
-      this.palette_.count(iterator.getRowsCount());
     }
 
     this.pointsPaddingValue_ = Math.abs(anychart.math.round(anychart.utils.normalizeSize(/** @type {number|string} */ (this.getOption('pointsPadding')), bounds.height), 2));
@@ -1074,13 +1081,13 @@ anychart.pyramidFunnelModule.Chart.prototype.updateLabelsOnAnimate = function(la
 
 /** @inheritDoc */
 anychart.pyramidFunnelModule.Chart.prototype.doAnimation = function() {
-  if (this.animation().enabled() && this.animation().duration() > 0) {
+  if (this.animation().getOption('enabled') && /** @type {number} */(this.animation().getOption('duration')) > 0) {
     if (this.animationQueue_ && this.animationQueue_.isPlaying()) {
       this.animationQueue_.update();
     } else if (this.hasInvalidationState(anychart.ConsistencyState.CHART_ANIMATION)) {
       goog.dispose(this.animationQueue_);
       this.animationQueue_ = new anychart.animations.AnimationSerialQueue();
-      var duration = /** @type {number} */(this.animation().duration());
+      var duration = /** @type {number} */(this.animation().getOption('duration'));
       var pyramidFunnelDuration = duration * anychart.pyramidFunnelModule.Chart.ANIMATION_DURATION_RATIO;
       var pyramidFunnelLabelDuration = duration * (1 - anychart.pyramidFunnelModule.Chart.ANIMATION_DURATION_RATIO);
 
@@ -2981,7 +2988,7 @@ anychart.pyramidFunnelModule.Chart.prototype.calculate = function() {
 
 /**
  * Create chart label/tooltip format provider.
- * @return {Object} Object with info for labels/tooltip formatting.
+ * @return {anychart.format.Context} Object with info for labels/tooltip formatting.
  * @protected
  */
 anychart.pyramidFunnelModule.Chart.prototype.createFormatProvider = function() {

@@ -156,6 +156,22 @@ anychart.heatmapModule.Chart.REVERSE_PROXY_METHODS = ([
 anychart.core.settings.populateAliases(anychart.heatmapModule.Chart, ['fill', 'stroke', 'hatchFill', 'labels', 'markers'], 'normal');
 
 
+/**
+ * @type {!Object.<string, anychart.core.settings.PropertyDescriptor>}
+ */
+anychart.heatmapModule.Chart.PROPERTY_DESCRIPTORS = (function() {
+  /** @type {!Object.<string, anychart.core.settings.PropertyDescriptor>} */
+  var map = {};
+  anychart.core.settings.createDescriptor(
+      map,
+      anychart.enums.PropertyHandlerType.SINGLE_ARG,
+      'labelsDisplayMode',
+      anychart.enums.normalizeLabelsDisplayMode);
+  return map;
+})();
+anychart.core.settings.populate(anychart.heatmapModule.Chart, anychart.heatmapModule.Chart.PROPERTY_DESCRIPTORS);
+
+
 /** @inheritDoc */
 anychart.heatmapModule.Chart.prototype.normalizeSeriesType = function(type) {
   return anychart.enums.normalizeHeatMapSeriesType(type);
@@ -378,7 +394,7 @@ anychart.heatmapModule.Chart.prototype.legendItemCanInteractInMode = function(mo
 anychart.heatmapModule.Chart.prototype.legendItemClick = function(item, event) {
   var meta = /** @type {Object} */(item.meta());
   var series;
-  var sourceMode = this.legend().itemsSourceMode();
+  var sourceMode = /** @type {anychart.enums.LegendItemsSourceMode} */ (this.legend().getOption('itemsSourceMode'));
   if (sourceMode == anychart.enums.LegendItemsSourceMode.CATEGORIES) {
     series = meta.series;
     var scale = meta.scale;
@@ -397,7 +413,7 @@ anychart.heatmapModule.Chart.prototype.legendItemClick = function(item, event) {
 
       var tag = anychart.utils.extractTag(event['domTarget']);
       if (tag) {
-        if (this.interactivity().hoverMode() == anychart.enums.HoverMode.SINGLE) {
+        if (this.interactivity().getOption('hoverMode') == anychart.enums.HoverMode.SINGLE) {
           tag.points_ = {
             series: series,
             points: points
@@ -421,7 +437,7 @@ anychart.heatmapModule.Chart.prototype.legendItemOver = function(item, event) {
   var meta = /** @type {Object} */(item.meta());
   var series;
 
-  var sourceMode = this.legend().itemsSourceMode();
+  var sourceMode = /** @type {anychart.enums.LegendItemsSourceMode} */(this.legend().getOption('itemsSourceMode'));
   if (sourceMode == anychart.enums.LegendItemsSourceMode.CATEGORIES) {
     series = /** @type {anychart.heatmapModule.Series} */(meta.series);
     var scale = meta.scale;
@@ -439,7 +455,7 @@ anychart.heatmapModule.Chart.prototype.legendItemOver = function(item, event) {
 
       var tag = anychart.utils.extractTag(event['domTarget']);
       if (tag) {
-        if (this.interactivity().hoverMode() == anychart.enums.HoverMode.SINGLE) {
+        if (this.interactivity().getOption('hoverMode') == anychart.enums.HoverMode.SINGLE) {
           tag.points_ = {
             series: series,
             points: points
@@ -462,31 +478,15 @@ anychart.heatmapModule.Chart.prototype.legendItemOver = function(item, event) {
 anychart.heatmapModule.Chart.prototype.legendItemOut = function(item, event) {
   var meta = /** @type {Object} */(item.meta());
 
-  var sourceMode = this.legend().itemsSourceMode();
+  var sourceMode = /** @type {anychart.enums.LegendItemsSourceMode} */(this.legend().getOption('itemsSourceMode'));
   if (sourceMode == anychart.enums.LegendItemsSourceMode.CATEGORIES) {
-    if (this.interactivity().hoverMode() == anychart.enums.HoverMode.SINGLE) {
+    if (this.interactivity().getOption('hoverMode') == anychart.enums.HoverMode.SINGLE) {
       var tag = anychart.utils.extractTag(event['domTarget']);
       if (tag)
         tag.series = meta.series;
     }
   }
 };
-
-
-/**
- * @type {!Object.<string, anychart.core.settings.PropertyDescriptor>}
- */
-anychart.heatmapModule.Chart.PROPERTY_DESCRIPTORS = (function() {
-  /** @type {!Object.<string, anychart.core.settings.PropertyDescriptor>} */
-  var map = {};
-  anychart.core.settings.createDescriptor(
-      map,
-      anychart.enums.PropertyHandlerType.SINGLE_ARG,
-      'labelsDisplayMode',
-      anychart.enums.normalizeLabelsDisplayMode);
-  return map;
-})();
-anychart.core.settings.populate(anychart.heatmapModule.Chart, anychart.heatmapModule.Chart.PROPERTY_DESCRIPTORS);
 
 
 /** @inheritDoc */
@@ -669,8 +669,10 @@ anychart.heatmapModule.Chart.prototype.calculateXYScales = function() {
       }
       this.colorScale_.finishAutoCalc();
     }
-    this.series_.invalidate(anychart.ConsistencyState.SERIES_COLOR);
+    if (this.series_)
+      this.series_.invalidate(anychart.ConsistencyState.SERIES_COLOR);
     this.invalidate(anychart.ConsistencyState.SERIES_CHART_SERIES);
+
     this.markConsistent(anychart.ConsistencyState.HEATMAP_COLOR_SCALE);
   }
 };
@@ -819,7 +821,7 @@ anychart.heatmapModule.Chart.prototype.setupByJSONWithScales = function(config, 
   anychart.heatmapModule.Chart.base(this, 'setupByJSONWithScales', config, scalesInstances, opt_default);
 
   anychart.core.settings.deserialize(this, anychart.heatmapModule.Chart.PROPERTY_DESCRIPTORS, config);
-  this.yScroller(config['yScroller']);
+  this.yScroller().setupInternal(!!opt_default, config['yScroller']);
 
   var yZoom = config['yZoom'];
   if (goog.isObject(yZoom) && (goog.isNumber(yZoom['scale']) || goog.isString(yZoom['scale']))) {

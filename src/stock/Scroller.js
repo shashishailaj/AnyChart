@@ -228,25 +228,47 @@ anychart.stockModule.Scroller.prototype.seriesConfig = (function() {
     shapeManagerType: anychart.enums.ShapeManagerTypes.PER_SERIES,
     shapesConfig: [
       anychart.core.shapeManagers.pathScrollerFillStrokeConfig,
-      anychart.core.shapeManagers.pathScrollerHatchConfig
+      anychart.core.shapeManagers.pathScrollerHatchConfig,
+
+      anychart.core.shapeManagers.pathScrollerNegativeFillStrokeConfig,
+      anychart.core.shapeManagers.pathScrollerNegativeHatchConfig,
+
+      anychart.core.shapeManagers.pathScrollerRisingFillStrokeConfig,
+      anychart.core.shapeManagers.pathScrollerRisingHatchConfig,
+      anychart.core.shapeManagers.pathScrollerFallingFillStrokeConfig,
+      anychart.core.shapeManagers.pathScrollerFallingHatchConfig
     ],
     secondaryShapesConfig: [
       anychart.core.shapeManagers.pathScrollerSelectFillStrokeConfig,
-      anychart.core.shapeManagers.pathScrollerSelectHatchConfig
+      anychart.core.shapeManagers.pathScrollerSelectHatchConfig,
+
+      anychart.core.shapeManagers.pathScrollerSelectNegativeFillStrokeConfig,
+      anychart.core.shapeManagers.pathScrollerSelectNegativeHatchConfig,
+
+      anychart.core.shapeManagers.pathScrollerSelectRisingFillStrokeConfig,
+      anychart.core.shapeManagers.pathScrollerSelectRisingHatchConfig,
+      anychart.core.shapeManagers.pathScrollerSelectFallingFillStrokeConfig,
+      anychart.core.shapeManagers.pathScrollerSelectFallingHatchConfig
     ],
     postProcessor: null,
     capabilities: capabilities,
     anchoredPositionTop: 'value',
     anchoredPositionBottom: 'zero'
   };
-  res[anychart.enums.CartesianSeriesType.JUMP_LINE] = {
+  res[anychart.enums.StockSeriesType.JUMP_LINE] = {
     drawerType: anychart.enums.SeriesDrawerTypes.JUMP_LINE,
     shapeManagerType: anychart.enums.ShapeManagerTypes.PER_POINT,
     shapesConfig: [
-      anychart.core.shapeManagers.pathStrokeConfig
+      anychart.core.shapeManagers.pathStrokeConfig,
+      anychart.core.shapeManagers.pathFallingStrokeConfig,
+      anychart.core.shapeManagers.pathRisingStrokeConfig,
+      anychart.core.shapeManagers.pathNegativeStrokeConfig
     ],
     secondaryShapesConfig: [
-      anychart.core.shapeManagers.pathScrollerSelectStrokeConfig
+      anychart.core.shapeManagers.pathScrollerSelectStrokeConfig,
+      anychart.core.shapeManagers.pathScrollerSelectFallingStrokeConfig,
+      anychart.core.shapeManagers.pathScrollerSelectRisingStrokeConfig,
+      anychart.core.shapeManagers.pathScrollerSelectNegativeStrokeConfig
     ],
     postProcessor: null,
     capabilities: capabilities,
@@ -257,10 +279,16 @@ anychart.stockModule.Scroller.prototype.seriesConfig = (function() {
     drawerType: anychart.enums.SeriesDrawerTypes.RANGE_STICK,
     shapeManagerType: anychart.enums.ShapeManagerTypes.PER_POINT,
     shapesConfig: [
-      anychart.core.shapeManagers.pathStrokeConfig
+      anychart.core.shapeManagers.pathStrokeConfig,
+
+      anychart.core.shapeManagers.pathHighStrokeConfig,
+      anychart.core.shapeManagers.pathLowStrokeConfig
     ],
     secondaryShapesConfig: [
-      anychart.core.shapeManagers.pathScrollerSelectStrokeConfig
+      anychart.core.shapeManagers.pathScrollerSelectStrokeConfig,
+
+      anychart.core.shapeManagers.pathScrollerSelectLowStrokeConfig,
+      anychart.core.shapeManagers.pathScrollerSelectHighStrokeConfig
     ],
     postProcessor: null,
     capabilities: capabilities,
@@ -271,10 +299,16 @@ anychart.stockModule.Scroller.prototype.seriesConfig = (function() {
     drawerType: anychart.enums.SeriesDrawerTypes.STICK,
     shapeManagerType: anychart.enums.ShapeManagerTypes.PER_POINT,
     shapesConfig: [
-      anychart.core.shapeManagers.pathStrokeConfig
+      anychart.core.shapeManagers.pathStrokeConfig,
+      anychart.core.shapeManagers.pathFallingStrokeConfig,
+      anychart.core.shapeManagers.pathRisingStrokeConfig,
+      anychart.core.shapeManagers.pathNegativeStrokeConfig
     ],
     secondaryShapesConfig: [
-      anychart.core.shapeManagers.pathScrollerSelectStrokeConfig
+      anychart.core.shapeManagers.pathScrollerSelectStrokeConfig,
+      anychart.core.shapeManagers.pathScrollerSelectFallingStrokeConfig,
+      anychart.core.shapeManagers.pathScrollerSelectRisingStrokeConfig,
+      anychart.core.shapeManagers.pathScrollerSelectNegativeStrokeConfig
     ],
     postProcessor: null,
     capabilities: capabilities,
@@ -285,10 +319,16 @@ anychart.stockModule.Scroller.prototype.seriesConfig = (function() {
     drawerType: anychart.enums.SeriesDrawerTypes.LINE,
     shapeManagerType: anychart.enums.ShapeManagerTypes.PER_SERIES,
     shapesConfig: [
-      anychart.core.shapeManagers.pathScrollerStrokeConfig
+      anychart.core.shapeManagers.pathStrokeConfig,
+      anychart.core.shapeManagers.pathFallingStrokeConfig,
+      anychart.core.shapeManagers.pathRisingStrokeConfig,
+      anychart.core.shapeManagers.pathNegativeStrokeConfig
     ],
     secondaryShapesConfig: [
-      anychart.core.shapeManagers.pathScrollerSelectStrokeConfig
+      anychart.core.shapeManagers.pathScrollerSelectStrokeConfig,
+      anychart.core.shapeManagers.pathScrollerSelectFallingStrokeConfig,
+      anychart.core.shapeManagers.pathScrollerSelectRisingStrokeConfig,
+      anychart.core.shapeManagers.pathScrollerSelectNegativeStrokeConfig
     ],
     postProcessor: null,
     capabilities: capabilities,
@@ -300,11 +340,23 @@ anychart.stockModule.Scroller.prototype.seriesConfig = (function() {
     shapeManagerType: anychart.enums.ShapeManagerTypes.PER_SERIES,
     shapesConfig: [
       anychart.core.shapeManagers.pathScrollerFillStrokeConfig,
-      anychart.core.shapeManagers.pathScrollerHatchConfig
+      anychart.core.shapeManagers.pathScrollerHatchConfig,
+      anychart.core.shapeManagers.pathScrollerRisingHatchConfig,
+      anychart.core.shapeManagers.pathScrollerFallingHatchConfig,
+      anychart.core.shapeManagers.pathScrollerNegativeHatchConfig,
+      anychart.core.shapeManagers.pathScrollerRisingFillStrokeConfig,
+      anychart.core.shapeManagers.pathScrollerFallingFillStrokeConfig,
+      anychart.core.shapeManagers.pathScrollerNegativeFillStrokeConfig
     ],
     secondaryShapesConfig: [
       anychart.core.shapeManagers.pathScrollerSelectFillStrokeConfig,
-      anychart.core.shapeManagers.pathScrollerSelectHatchConfig
+      anychart.core.shapeManagers.pathScrollerSelectHatchConfig,
+      anychart.core.shapeManagers.pathScrollerSelectRisingHatchConfig,
+      anychart.core.shapeManagers.pathScrollerSelectFallingHatchConfig,
+      anychart.core.shapeManagers.pathScrollerSelectNegativeHatchConfig,
+      anychart.core.shapeManagers.pathScrollerSelectRisingFillStrokeConfig,
+      anychart.core.shapeManagers.pathScrollerSelectFallingFillStrokeConfig,
+      anychart.core.shapeManagers.pathScrollerSelectNegativeFillStrokeConfig
     ],
     postProcessor: null,
     capabilities: capabilities,
@@ -334,13 +386,23 @@ anychart.stockModule.Scroller.prototype.seriesConfig = (function() {
       anychart.core.shapeManagers.pathScrollerFillConfig,
       anychart.core.shapeManagers.pathScrollerLowStrokeConfig,
       anychart.core.shapeManagers.pathScrollerHighStrokeConfig,
-      anychart.core.shapeManagers.pathScrollerHatchConfig
+      anychart.core.shapeManagers.pathScrollerHatchConfig,
+
+      anychart.core.shapeManagers.pathScrollerHighFillConfig,
+      anychart.core.shapeManagers.pathScrollerLowFillConfig,
+      anychart.core.shapeManagers.pathScrollerHighHatchConfig,
+      anychart.core.shapeManagers.pathScrollerLowHatchConfig
     ],
     secondaryShapesConfig: [
       anychart.core.shapeManagers.pathScrollerSelectFillConfig,
       anychart.core.shapeManagers.pathScrollerSelectLowStrokeConfig,
       anychart.core.shapeManagers.pathScrollerSelectHighStrokeConfig,
-      anychart.core.shapeManagers.pathScrollerSelectHatchConfig
+      anychart.core.shapeManagers.pathScrollerSelectHatchConfig,
+
+      anychart.core.shapeManagers.pathScrollerSelectHighFillConfig,
+      anychart.core.shapeManagers.pathScrollerSelectLowFillConfig,
+      anychart.core.shapeManagers.pathScrollerSelectHighHatchConfig,
+      anychart.core.shapeManagers.pathScrollerSelectLowHatchConfig
     ],
     postProcessor: null,
     capabilities: capabilities,
@@ -352,11 +414,21 @@ anychart.stockModule.Scroller.prototype.seriesConfig = (function() {
     shapeManagerType: anychart.enums.ShapeManagerTypes.PER_SERIES,
     shapesConfig: [
       anychart.core.shapeManagers.pathScrollerFillStrokeConfig,
-      anychart.core.shapeManagers.pathScrollerHatchConfig
+      anychart.core.shapeManagers.pathScrollerHatchConfig,
+
+      anychart.core.shapeManagers.pathScrollerHighFillStrokeConfig,
+      anychart.core.shapeManagers.pathScrollerLowFillStrokeConfig,
+      anychart.core.shapeManagers.pathScrollerHighHatchConfig,
+      anychart.core.shapeManagers.pathScrollerLowHatchConfig
     ],
     secondaryShapesConfig: [
       anychart.core.shapeManagers.pathScrollerSelectFillStrokeConfig,
-      anychart.core.shapeManagers.pathScrollerSelectHatchConfig
+      anychart.core.shapeManagers.pathScrollerSelectHatchConfig,
+
+      anychart.core.shapeManagers.pathScrollerSelectHighFillStrokeConfig,
+      anychart.core.shapeManagers.pathScrollerSelectLowFillStrokeConfig,
+      anychart.core.shapeManagers.pathScrollerSelectHighHatchConfig,
+      anychart.core.shapeManagers.pathScrollerSelectLowHatchConfig
     ],
     postProcessor: null,
     capabilities: capabilities,
@@ -368,15 +440,25 @@ anychart.stockModule.Scroller.prototype.seriesConfig = (function() {
     shapeManagerType: anychart.enums.ShapeManagerTypes.PER_SERIES,
     shapesConfig: [
       anychart.core.shapeManagers.pathScrollerFillConfig,
-      anychart.core.shapeManagers.pathScrollerHighStrokeConfig,
       anychart.core.shapeManagers.pathScrollerLowStrokeConfig,
-      anychart.core.shapeManagers.pathScrollerHatchConfig
+      anychart.core.shapeManagers.pathScrollerHighStrokeConfig,
+      anychart.core.shapeManagers.pathScrollerHatchConfig,
+
+      anychart.core.shapeManagers.pathScrollerHighFillConfig,
+      anychart.core.shapeManagers.pathScrollerLowFillConfig,
+      anychart.core.shapeManagers.pathScrollerHighHatchConfig,
+      anychart.core.shapeManagers.pathScrollerLowHatchConfig
     ],
     secondaryShapesConfig: [
       anychart.core.shapeManagers.pathScrollerSelectFillConfig,
-      anychart.core.shapeManagers.pathScrollerSelectHighStrokeConfig,
       anychart.core.shapeManagers.pathScrollerSelectLowStrokeConfig,
-      anychart.core.shapeManagers.pathScrollerSelectHatchConfig
+      anychart.core.shapeManagers.pathScrollerSelectHighStrokeConfig,
+      anychart.core.shapeManagers.pathScrollerSelectHatchConfig,
+
+      anychart.core.shapeManagers.pathScrollerSelectHighFillConfig,
+      anychart.core.shapeManagers.pathScrollerSelectLowFillConfig,
+      anychart.core.shapeManagers.pathScrollerSelectHighHatchConfig,
+      anychart.core.shapeManagers.pathScrollerSelectLowHatchConfig
     ],
     postProcessor: null,
     capabilities: capabilities,
@@ -407,10 +489,16 @@ anychart.stockModule.Scroller.prototype.seriesConfig = (function() {
     drawerType: anychart.enums.SeriesDrawerTypes.SPLINE,
     shapeManagerType: anychart.enums.ShapeManagerTypes.PER_SERIES,
     shapesConfig: [
-      anychart.core.shapeManagers.pathScrollerStrokeConfig
+      anychart.core.shapeManagers.pathStrokeConfig,
+      anychart.core.shapeManagers.pathFallingStrokeConfig,
+      anychart.core.shapeManagers.pathRisingStrokeConfig,
+      anychart.core.shapeManagers.pathNegativeStrokeConfig
     ],
     secondaryShapesConfig: [
-      anychart.core.shapeManagers.pathScrollerSelectStrokeConfig
+      anychart.core.shapeManagers.pathScrollerSelectStrokeConfig,
+      anychart.core.shapeManagers.pathScrollerSelectFallingStrokeConfig,
+      anychart.core.shapeManagers.pathScrollerSelectRisingStrokeConfig,
+      anychart.core.shapeManagers.pathScrollerSelectNegativeStrokeConfig
     ],
     postProcessor: null,
     capabilities: capabilities,
@@ -457,10 +545,16 @@ anychart.stockModule.Scroller.prototype.seriesConfig = (function() {
     drawerType: anychart.enums.SeriesDrawerTypes.STEP_LINE,
     shapeManagerType: anychart.enums.ShapeManagerTypes.PER_SERIES,
     shapesConfig: [
-      anychart.core.shapeManagers.pathScrollerStrokeConfig
+      anychart.core.shapeManagers.pathStrokeConfig,
+      anychart.core.shapeManagers.pathFallingStrokeConfig,
+      anychart.core.shapeManagers.pathRisingStrokeConfig,
+      anychart.core.shapeManagers.pathNegativeStrokeConfig
     ],
     secondaryShapesConfig: [
-      anychart.core.shapeManagers.pathScrollerSelectStrokeConfig
+      anychart.core.shapeManagers.pathScrollerSelectStrokeConfig,
+      anychart.core.shapeManagers.pathScrollerSelectFallingStrokeConfig,
+      anychart.core.shapeManagers.pathScrollerSelectRisingStrokeConfig,
+      anychart.core.shapeManagers.pathScrollerSelectNegativeStrokeConfig
     ],
     postProcessor: null,
     capabilities: capabilities,

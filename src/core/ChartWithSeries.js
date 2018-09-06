@@ -50,20 +50,6 @@ anychart.core.ChartWithSeries = function() {
   this.hatchFillPalette_ = null;
 
   /**
-   * Max size for all bubbles on the chart.
-   * @type {string|number}
-   * @private
-   */
-  this.maxBubbleSize_;
-
-  /**
-   * Min size for all bubbles on the chart.
-   * @type {string|number}
-   * @private
-   */
-  this.minBubbleSize_;
-
-  /**
    * Cache of chart data bounds.
    * @type {anychart.math.Rect}
    * @protected
@@ -103,9 +89,12 @@ anychart.core.ChartWithSeries = function() {
 
   anychart.core.settings.createDescriptorsMeta(this.descriptorsMeta, [
     ['defaultSeriesType', 0, 0],
+    ['maxBubbleSize', anychart.ConsistencyState.SERIES_CHART_SERIES, anychart.Signal.NEEDS_REDRAW, 0, this.invalidateSizeBasedSeries],
+    ['minBubbleSize', anychart.ConsistencyState.SERIES_CHART_SERIES, anychart.Signal.NEEDS_REDRAW, 0, this.invalidateSizeBasedSeries],
     ['pointWidth', anychart.ConsistencyState.SERIES_CHART_SERIES, anychart.Signal.NEEDS_REDRAW, 0, this.invalidateWidthBasedSeries],
     ['maxPointWidth', anychart.ConsistencyState.SERIES_CHART_SERIES, anychart.Signal.NEEDS_REDRAW, 0, this.invalidateWidthBasedSeries],
-    ['minPointLength', anychart.ConsistencyState.SERIES_CHART_SERIES, anychart.Signal.NEEDS_REDRAW, 0, this.resetSeriesStack]
+    ['minPointLength', anychart.ConsistencyState.SERIES_CHART_SERIES, anychart.Signal.NEEDS_REDRAW, 0, this.resetSeriesStack],
+    ['baseline', anychart.ConsistencyState.SERIES_CHART_SERIES, anychart.Signal.NEEDS_REDRAW, 0, this.resetSeriesBaseLine]
   ]);
 };
 goog.inherits(anychart.core.ChartWithSeries, anychart.core.SeparateChart);
@@ -254,9 +243,12 @@ anychart.core.ChartWithSeries.PROPERTY_DESCRIPTORS = (function() {
   }
   anychart.core.settings.createDescriptors(map, [
     [anychart.enums.PropertyHandlerType.SINGLE_ARG, 'defaultSeriesType', seriesTypeNormalizer],
+    [anychart.enums.PropertyHandlerType.SINGLE_ARG, 'maxBubbleSize', anychart.core.settings.numberOrStringNormalizer],
+    [anychart.enums.PropertyHandlerType.SINGLE_ARG, 'minBubbleSize', anychart.core.settings.numberOrStringNormalizer],
     [anychart.enums.PropertyHandlerType.SINGLE_ARG, 'pointWidth', anychart.utils.normalizeNumberOrPercent],
     [anychart.enums.PropertyHandlerType.SINGLE_ARG, 'maxPointWidth', anychart.utils.normalizeNumberOrPercent],
-    [anychart.enums.PropertyHandlerType.SINGLE_ARG, 'minPointLength', anychart.utils.normalizeNumberOrPercent]
+    [anychart.enums.PropertyHandlerType.SINGLE_ARG, 'minPointLength', anychart.utils.normalizeNumberOrPercent],
+    [anychart.enums.PropertyHandlerType.SINGLE_ARG, 'baseline', anychart.core.settings.numberNormalizer]
   ]);
   return map;
 })();
@@ -510,7 +502,7 @@ anychart.core.ChartWithSeries.prototype.seriesInvalidated = function(event) {
   }
   if (event.hasSignal(anychart.Signal.DATA_CHANGED)) {
     state |= anychart.ConsistencyState.CHART_LABELS;
-    if (this.legend().itemsSourceMode() == anychart.enums.LegendItemsSourceMode.CATEGORIES) {
+    if (/** @type {anychart.enums.LegendItemsSourceMode} */(this.legend().getOption('itemsSourceMode')) == anychart.enums.LegendItemsSourceMode.CATEGORIES) {
       // CHART_LABELS invalidation for no data label.
       state |= anychart.ConsistencyState.CHART_LEGEND;
     }
@@ -605,39 +597,20 @@ anychart.core.ChartWithSeries.prototype.allowLegendCategoriesMode = function() {
 //  Series specific settings
 //
 //----------------------------------------------------------------------------------------------------------------------
-/**
- * Sets max size for all bubbles on the charts.
- * @param {(number|string)=} opt_value
- * @return {number|string|anychart.core.ChartWithSeries}
- */
-anychart.core.ChartWithSeries.prototype.maxBubbleSize = function(opt_value) {
-  if (goog.isDef(opt_value)) {
-    if (this.maxBubbleSize_ != opt_value) {
-      this.maxBubbleSize_ = opt_value;
-      this.invalidateSizeBasedSeries();
-      this.invalidate(anychart.ConsistencyState.SERIES_CHART_SERIES, anychart.Signal.NEEDS_REDRAW);
-    }
-    return this;
-  }
-  return this.maxBubbleSize_;
-};
 
 
 /**
- * Sets min size for all bubbles on the charts.
- * @param {(number|string)=} opt_value
- * @return {number|string|anychart.core.ChartWithSeries}
+ * Resets series shared stack.
+ * @param {boolean=} opt_skipInvalidation - Whether to skip width based series invalidation.
  */
-anychart.core.ChartWithSeries.prototype.minBubbleSize = function(opt_value) {
-  if (goog.isDef(opt_value)) {
-    if (this.minBubbleSize_ != opt_value) {
-      this.minBubbleSize_ = opt_value;
-      this.invalidateSizeBasedSeries();
-      this.invalidate(anychart.ConsistencyState.SERIES_CHART_SERIES, anychart.Signal.NEEDS_REDRAW);
-    }
-    return this;
+anychart.core.ChartWithSeries.prototype.resetSeriesBaseLine = function(opt_skipInvalidation) {
+  for (var i = 0; i < this.seriesList.length; i++) {
+    var series = this.seriesList[i];
+    if (series)
+      series.resetSharedStack();
+    if (!opt_skipInvalidation)
+      series.invalidate(anychart.ConsistencyState.SERIES_POINTS);
   }
-  return this.minBubbleSize_;
 };
 
 
@@ -977,7 +950,7 @@ anychart.core.ChartWithSeries.prototype.calcBubbleSizes = function() {
   }
   for (i = this.seriesList.length; i--;) {
     if (this.seriesList[i].isSizeBased()) {
-      this.seriesList[i].setAutoSizeScale(minMax[0], minMax[1], this.minBubbleSize_, this.maxBubbleSize_);
+      this.seriesList[i].setAutoSizeScale(minMax[0], minMax[1], /** @type {number|string} */(this.getOption('minBubbleSize')), /** @type {number|string} */(this.getOption('maxBubbleSize')));
     }
   }
 };
@@ -1128,6 +1101,9 @@ anychart.core.ChartWithSeries.prototype.invalidateAnnotations = function() {};
 anychart.core.ChartWithSeries.prototype.beforeDraw = function() {
   if (this.isConsistent())
     return;
+
+  if (anychart.utils.instanceOf(this.palette_, anychart.palettes.RangeColors))
+    this.palette_.setAutoCount(this.getAllSeries().length);
 
   if (this.hasInvalidationState(anychart.ConsistencyState.SERIES_CHART_PALETTE |
           anychart.ConsistencyState.SERIES_CHART_MARKER_PALETTE |
@@ -1400,8 +1376,6 @@ anychart.core.ChartWithSeries.prototype.setupByJSON = function(config, opt_defau
 
   anychart.core.settings.deserialize(this, anychart.core.ChartWithSeries.PROPERTY_DESCRIPTORS, config, opt_default);
 
-  this.minBubbleSize(config['minBubbleSize']);
-  this.maxBubbleSize(config['maxBubbleSize']);
   this.palette(config['palette']);
   this.markerPalette(config['markerPalette']);
   this.hatchFillPalette(config['hatchFillPalette']);
@@ -1421,8 +1395,6 @@ anychart.core.ChartWithSeries.prototype.serialize = function() {
   var json = anychart.core.ChartWithSeries.base(this, 'serialize');
 
   anychart.core.settings.serialize(this, anychart.core.ChartWithSeries.PROPERTY_DESCRIPTORS, json);
-  json['minBubbleSize'] = this.minBubbleSize();
-  json['maxBubbleSize'] = this.maxBubbleSize();
   json['palette'] = this.palette().serialize();
   json['markerPalette'] = this.markerPalette().serialize();
   json['hatchFillPalette'] = this.hatchFillPalette().serialize();

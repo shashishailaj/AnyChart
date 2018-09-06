@@ -59,7 +59,10 @@ anychart.scatterModule.Chart.prototype.seriesConfig = (function() {
     drawerType: anychart.enums.SeriesDrawerTypes.LINE,
     shapeManagerType: anychart.enums.ShapeManagerTypes.PER_SERIES,
     shapesConfig: [
-      anychart.core.shapeManagers.pathStrokeConfig
+      anychart.core.shapeManagers.pathStrokeConfig,
+      anychart.core.shapeManagers.pathContiniousFallingStrokeConfig,
+      anychart.core.shapeManagers.pathContiniousRisingStrokeConfig,
+      anychart.core.shapeManagers.pathContiniousNegativeStrokeConfig
     ],
     secondaryShapesConfig: null,
     postProcessor: null,
@@ -72,7 +75,15 @@ anychart.scatterModule.Chart.prototype.seriesConfig = (function() {
     shapeManagerType: anychart.enums.ShapeManagerTypes.PER_POINT,
     shapesConfig: [
       anychart.core.shapeManagers.pathFillStrokeConfig,
-      anychart.core.shapeManagers.pathHatchConfig
+      anychart.core.shapeManagers.pathHatchConfig,
+
+      anychart.core.shapeManagers.pathNegativeFillStrokeConfig,
+      anychart.core.shapeManagers.pathNegativeHatchConfig,
+
+      anychart.core.shapeManagers.pathRisingFillStrokeConfig,
+      anychart.core.shapeManagers.pathRisingHatchConfig,
+      anychart.core.shapeManagers.pathFallingFillStrokeConfig,
+      anychart.core.shapeManagers.pathFallingHatchConfig
     ],
     secondaryShapesConfig: null,
     postProcessor: null,
@@ -167,9 +178,9 @@ anychart.scatterModule.Chart.prototype.serialize = function() {
   proto['markerPalette'] = proto.markerPalette;
   proto['hatchFillPalette'] = proto.hatchFillPalette;
   proto['getType'] = proto.getType;
-  proto['maxBubbleSize'] = proto.maxBubbleSize;
-  proto['minBubbleSize'] = proto.minBubbleSize;
   // auto from ChartWithSeries
+  // proto['maxBubbleSize'] = proto.maxBubbleSize;
+  // proto['minBubbleSize'] = proto.minBubbleSize;
   // proto['defaultSeriesType'] = proto.defaultSeriesType;
   proto['addSeries'] = proto.addSeries;
   proto['getSeriesAt'] = proto.getSeriesAt;
