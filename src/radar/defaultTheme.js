@@ -30,7 +30,8 @@ goog.mixin(goog.global['anychart']['themes']['defaultTheme'], {
       }
     },
     'yAxis': {
-      'scale': 1
+      'scale': 1,
+      'zIndex': 35
     },
     'startAngle': 0,
     'innerRadius': 0,

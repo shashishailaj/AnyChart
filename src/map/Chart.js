@@ -1814,7 +1814,9 @@ anychart.mapModule.Chart.prototype.setAutoSetting = function(series, index) {
   series.autoIndex(index);
   series.setupAutoZIndex();
   series.setAutoColor(this.palette().itemAt(index));
-  // series.setAutoMarkerType(/** @type {anychart.enums.MarkerType} */(this.markerPalette().itemAt(index)));
+  if (series.drawer.type !== anychart.enums.SeriesDrawerTypes.CONNECTOR) {
+    series.setAutoMarkerType(/** @type {anychart.enums.MarkerType} */(this.markerPalette().itemAt(index)));
+  }
   series.setAutoHatchFill(/** @type {acgraph.vector.HatchFill|acgraph.vector.PatternFill} */(this.hatchFillPalette().itemAt(index)));
   series.setParentEventTarget(this);
 
