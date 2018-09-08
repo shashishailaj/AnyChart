@@ -38,7 +38,8 @@ goog.mixin(goog.global['anychart']['themes']['defaultTheme'], {
               } else {
                 return 'lat: ' + this['lat'] + '\nlong: ' + this['long'];
               }
-            }
+            },
+            'clip': false
           },
           'markers': {
             'enabled': false,

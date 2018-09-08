@@ -939,35 +939,35 @@ goog.exportSymbol('anychart.themes.defaultTheme', {
       'fontSize': 13,
       'text': 'Axis title',
       'fontColor': anychart.core.defaultTheme.fontColorBright,
-      'zIndex': 35
+      'zIndex': 29
     },
     'labels': {
       'enabled': true,
       'format': anychart.core.defaultTheme.returnValue,
       'position': 'outside',
-      'zIndex': 35
+      'zIndex': 29
     },
     'minorLabels': {
       'fontSize': 9,
       'format': anychart.core.defaultTheme.returnValue,
       'position': 'outside',
-      'zIndex': 35
+      'zIndex': 29
     },
     'ticks': {
       'enabled': true,
       'length': 6,
       'position': 'outside',
       'stroke': anychart.core.defaultTheme.colorStrokeNormal,
-      'zIndex': 35
+      'zIndex': 29
     },
     'minorTicks': {
       'enabled': false,
       'length': 4,
       'position': 'outside',
       'stroke': anychart.core.defaultTheme.colorStrokeThin,
-      'zIndex': 35
+      'zIndex': 29
     },
-    'zIndex': 35
+    'zIndex': 29
   },
 
   'defaultGridSettings': {

@@ -158,14 +158,14 @@ anychart.core.ChartWithSeries.generateSeriesConstructors = function(chartConstru
  * Series z-index in chart root layer.
  * @type {number}
  */
-anychart.core.ChartWithSeries.ZINDEX_SERIES = 36;
+anychart.core.ChartWithSeries.ZINDEX_SERIES = 30;
 
 
 /**
  * Line-like series should have bigger zIndex value than other series.
  * @type {number}
  */
-anychart.core.ChartWithSeries.ZINDEX_LINE_SERIES = 37;
+anychart.core.ChartWithSeries.ZINDEX_LINE_SERIES = 31;
 
 
 //endregion
@@ -304,13 +304,23 @@ anychart.core.ChartWithSeries.prototype.setupSeries = function(series) {
   var index = lastSeries ? /** @type {number} */(lastSeries.autoIndex()) + 1 : 0;
   this.seriesList.push(series);
 
+  this.setAutoSetting(series, index);
+
+  series.listenSignals(this.seriesInvalidated, this);
+};
+
+
+/**
+ * @param {!(anychart.core.series.Cartesian|anychart.mapModule.Series)} series
+ * @param {number} index
+ */
+anychart.core.ChartWithSeries.prototype.setAutoSetting = function(series, index) {
   series.autoIndex(index);
   series.setupAutoZIndex();
   series.setAutoColor(this.palette().itemAt(index));
   series.setAutoMarkerType(/** @type {anychart.enums.MarkerType} */(this.markerPalette().itemAt(index)));
   series.setAutoHatchFill(/** @type {acgraph.vector.HatchFill|acgraph.vector.PatternFill} */(this.hatchFillPalette().itemAt(index)));
   series.setParentEventTarget(this);
-  series.listenSignals(this.seriesInvalidated, this);
 };
 
 
@@ -1121,9 +1131,7 @@ anychart.core.ChartWithSeries.prototype.beforeDraw = function() {
     for (var i = this.seriesList.length; i--;) {
       var series = this.seriesList[i];
       var index = /** @type {number} */(series.autoIndex());
-      series.setAutoColor(this.palette().itemAt(index));
-      series.setAutoMarkerType(/** @type {anychart.enums.MarkerType} */(this.markerPalette().itemAt(index)));
-      series.setAutoHatchFill(/** @type {acgraph.vector.HatchFill|acgraph.vector.PatternFill} */(this.hatchFillPalette().itemAt(index)));
+      this.setAutoSetting(series, index);
       series.invalidate(state);
     }
     this.invalidate(anychart.ConsistencyState.SERIES_CHART_SERIES);

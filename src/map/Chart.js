@@ -1810,12 +1810,17 @@ anychart.mapModule.Chart.prototype.getBaseSeriesZIndex = function(series) {
 
 
 /** @inheritDoc */
-anychart.mapModule.Chart.prototype.setupSeries = function(series) {
+anychart.mapModule.Chart.prototype.setAutoSetting = function(series, index) {
+  series.autoIndex(index);
+  series.setupAutoZIndex();
+  series.setAutoColor(this.palette().itemAt(index));
+  // series.setAutoMarkerType(/** @type {anychart.enums.MarkerType} */(this.markerPalette().itemAt(index)));
+  series.setAutoHatchFill(/** @type {acgraph.vector.HatchFill|acgraph.vector.PatternFill} */(this.hatchFillPalette().itemAt(index)));
+  series.setParentEventTarget(this);
+
   series.setAutoGeoIdField(/** @type {string} */(this.getOption('geoIdField')));
   if (this.internalGeoData)
     series.setGeoData(this.internalGeoData);
-
-  anychart.mapModule.Chart.base(this, 'setupSeries', series);
 };
 
 
