@@ -1,5 +1,7 @@
 //region --- Requiring and Providing
 goog.provide('anychart.core.utils.MarkersFactory');
+goog.provide('anychart.standalones.MarkersFactory');
+goog.provide('anychart.standalones.MarkersFactory.Marker');
 goog.require('anychart.core.Marker');
 goog.require('anychart.core.utils.Factory');
 //endregion
@@ -76,3 +78,68 @@ anychart.core.utils.MarkersFactory.prototype.makeBrowserEvent = function(e) {
 
 
 //endregion
+//region --- Standalone
+
+
+
+//------------------------------------------------------------------------------
+//
+//  Standalone
+//
+//------------------------------------------------------------------------------
+/**
+ * @constructor
+ * @param {function():anychart.core.IFactoryElement=} opt_ctor .
+ * @param {boolean=} opt_isNonInteractive .
+ * @extends {anychart.core.utils.MarkersFactory}
+ */
+anychart.standalones.MarkersFactory = function(opt_ctor, opt_isNonInteractive) {
+  anychart.standalones.MarkersFactory.base(this, 'constructor', function () {
+    return new anychart.standalones.MarkersFactory.Marker();
+  }, opt_isNonInteractive);
+};
+goog.inherits(anychart.standalones.MarkersFactory, anychart.core.utils.MarkersFactory);
+anychart.core.makeStandalone(anychart.standalones.MarkersFactory, anychart.core.utils.MarkersFactory);
+
+
+
+/**
+ * @constructor
+ * @extends {anychart.core.Marker}
+ */
+anychart.standalones.MarkersFactory.Marker = function() {
+  anychart.standalones.MarkersFactory.Marker.base(this, 'constructor');
+};
+goog.inherits(anychart.standalones.MarkersFactory.Marker, anychart.core.Marker);
+
+
+/**
+ * Constructor function.
+ * @return {!anychart.standalones.MarkersFactory}
+ */
+anychart.standalones.markersFactory = function() {
+  var factory = new anychart.standalones.MarkersFactory();
+  factory.setup(anychart.getFullTheme('standalones.markersFactory'));
+  return factory;
+};
+
+
+//endregion
+//exports
+(function() {
+  var proto = anychart.standalones.MarkersFactory.prototype;
+  goog.exportSymbol('anychart.standalones.markersFactory', anychart.standalones.markersFactory);
+  proto['draw'] = proto.draw;
+  proto['parentBounds'] = proto.parentBounds;
+  proto['container'] = proto.container;
+  proto['add'] = proto.add;
+  proto['clear'] = proto.clear;
+
+  proto = anychart.standalones.MarkersFactory.Marker.prototype;
+  proto['enabled'] = proto.enabled;
+  proto['draw'] = proto.draw;
+  proto['clear'] = proto.clear;
+  proto['getIndex'] = proto.getIndex;
+})();
+
+

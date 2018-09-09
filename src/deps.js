@@ -176,7 +176,7 @@ goog.addDependency('../../../../src/core/utils/InteractivityState.js', ['anychar
 goog.addDependency('../../../../src/core/utils/LegendItemSettings.js', ['anychart.core.utils.LegendItemSettings'], ['anychart.core.Text', 'anychart.enums'], {});
 goog.addDependency('../../../../src/core/utils/LocalTooltipContainer.js', ['anychart.core.utils.LocalTooltipContainer'], ['acgraph', 'goog.Disposable', 'goog.dom', 'goog.userAgent'], {});
 goog.addDependency('../../../../src/core/utils/Margin.js', ['anychart.core.utils.Margin'], ['anychart.core.utils.Space', 'anychart.math.Rect'], {});
-goog.addDependency('../../../../src/core/utils/MarkersFactory.js', ['anychart.core.utils.MarkersFactory'], ['anychart.core.Marker', 'anychart.core.utils.Factory'], {});
+goog.addDependency('../../../../src/core/utils/MarkersFactory.js', ['anychart.core.utils.MarkersFactory', 'anychart.standalones.MarkersFactory', 'anychart.standalones.MarkersFactory.Marker'], ['anychart.core.Marker', 'anychart.core.utils.Factory'], {});
 goog.addDependency('../../../../src/core/utils/OrdinalIterator.js', ['anychart.core.utils.OrdinalIterator'], ['anychart.core.utils.ScatterIterator'], {});
 goog.addDependency('../../../../src/core/utils/OrdinalZoom.js', ['anychart.core.utils.IZoomableChart', 'anychart.core.utils.OrdinalZoom'], [], {});
 goog.addDependency('../../../../src/core/utils/Padding.js', ['anychart.core.utils.Padding'], ['anychart.core.utils.Space', 'anychart.math.Rect', 'anychart.utils'], {});
