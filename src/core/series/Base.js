@@ -2561,6 +2561,10 @@ anychart.core.series.Base.prototype.drawSingleFactoryElement = function(mainFact
       element = mainFactory.add(index);
       element.positionProvider(positionProvider);
     }
+  } else {
+    if (formatProvider)
+      element.formatProvider(formatProvider);
+    element.positionProvider(positionProvider);
   }
   element.resetSettings();
 

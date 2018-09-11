@@ -621,7 +621,7 @@ anychart.pyramidFunnelModule.Chart.prototype.applyHatchFill = function(pointStat
  * @inheritDoc
  */
 anychart.pyramidFunnelModule.Chart.prototype.remove = function() {
-  this.markers().container(null);
+  this.markersFactory_.container(null);
   this.labels().container(null);
   this.clearLabelDomains_();
 
@@ -761,8 +761,9 @@ anychart.pyramidFunnelModule.Chart.prototype.drawContent = function(bounds) {
   }
 
   if (this.hasInvalidationState(anychart.ConsistencyState.PYRAMID_FUNNEL_MARKERS)) {
-    if (!this.markers().container()) this.markers().container(this.rootElement);
-    this.markers().clear();
+    if (!this.markersFactory_.container())
+      this.markersFactory_.container(this.rootElement);
+    this.markersFactory_.clear();
 
     iterator.reset();
     while (iterator.advance()) {
@@ -770,7 +771,7 @@ anychart.pyramidFunnelModule.Chart.prototype.drawContent = function(bounds) {
       this.drawMarker(this.state.seriesState | this.state.getPointStateByIndex(iterator.getIndex()));
     }
 
-    this.markers().draw();
+    this.markersFactory_.draw();
     this.markConsistent(anychart.ConsistencyState.PYRAMID_FUNNEL_MARKERS);
   }
 
@@ -2760,6 +2761,7 @@ anychart.pyramidFunnelModule.Chart.prototype.drawMarker = function(pointState) {
 
   var index = this.getIterator().getIndex();
   var markersFactory;
+  var normalSettings = this.markers();
   var hoverMarkers = /** @type {anychart.core.Marker} */(this.hovered().markers());
   var selectMarkers = /** @type {anychart.core.Marker} */(this.selected().markers());
   if (selected) {
@@ -2772,29 +2774,33 @@ anychart.pyramidFunnelModule.Chart.prototype.drawMarker = function(pointState) {
 
   var marker = /** @type {anychart.core.Marker} */(this.markersFactory_.getElement(index));
 
-  var markerEnabledState = pointMarker && goog.isDef(pointMarker['enabled']) ? pointMarker['enabled'] : null;
-  var markerHoverEnabledState = hoverPointMarker && goog.isDef(hoverPointMarker['enabled']) ? hoverPointMarker['enabled'] : null;
-  var markerSelectEnabledState = selectPointMarker && goog.isDef(selectPointMarker['enabled']) ? selectPointMarker['enabled'] : null;
+  var markerPointEnabledState = pointMarker && goog.isDef(pointMarker['enabled']) ? pointMarker['enabled'] : null;
+  var markerPointHoverEnabledState = hoverPointMarker && goog.isDef(hoverPointMarker['enabled']) ? hoverPointMarker['enabled'] : null;
+  var markerPointSelectEnabledState = selectPointMarker && goog.isDef(selectPointMarker['enabled']) ? selectPointMarker['enabled'] : null;
+
+  var markerEnabledState = normalSettings && goog.isDef(normalSettings.enabled()) ? normalSettings.enabled() : null;
+  var markerHoverEnabledState = hoverMarkers && goog.isDef(hoverMarkers.enabled()) ? hoverMarkers.enabled() : null;
+  var markerSelectEnabledState = selectMarkers && goog.isDef(selectMarkers.enabled()) ? selectMarkers.enabled() : null;
 
   var isDraw = hovered || selected ?
       hovered ?
-          goog.isNull(markerHoverEnabledState) ?
-              goog.isNull(hoverMarkers.enabled()) ?
-                  goog.isNull(markerEnabledState) ?
-                      this.markers().enabled() :
+          goog.isNull(markerPointHoverEnabledState) ?
+              goog.isNull(markerHoverEnabledState) ?
+                  goog.isNull(markerPointEnabledState) ?
                       markerEnabledState :
-                  hoverMarkers.enabled() :
-              markerHoverEnabledState :
-          goog.isNull(markerSelectEnabledState) ?
-              goog.isNull(selectMarkers.enabled()) ?
-                  goog.isNull(markerEnabledState) ?
-                      this.markers().enabled() :
+                      markerPointEnabledState :
+                markerHoverEnabledState :
+              markerPointHoverEnabledState :
+          goog.isNull(markerPointSelectEnabledState) ?
+              goog.isNull(markerSelectEnabledState) ?
+                  goog.isNull(markerPointEnabledState) ?
                       markerEnabledState :
-                  selectMarkers.enabled() :
-              markerSelectEnabledState :
-      goog.isNull(markerEnabledState) ?
-          this.markers().enabled() :
-          markerEnabledState;
+                      markerPointEnabledState :
+                markerSelectEnabledState :
+              markerPointSelectEnabledState :
+      goog.isNull(markerPointEnabledState) ?
+          markerEnabledState :
+          markerPointEnabledState;
 
   if (isDraw) {
     var markerPosition = pointMarker && pointMarker['position'] ? pointMarker['position'] : null;
@@ -2864,7 +2870,13 @@ anychart.pyramidFunnelModule.Chart.prototype.drawMarker = function(pointState) {
       markerSettings.stroke = finalMarkerStroke;
 
     marker.resetSettings();
-    marker.settings([(hovered ? hoverPointMarker : selectPointMarker), markerSettings, markersFactory, this.markers()]);
+    marker.settings([
+      (hovered ? hoverPointMarker : selectPointMarker),
+      markerSettings,
+      markersFactory.ownSettings, normalSettings.ownSettings,
+      markersFactory.autoSettings, normalSettings.autoSettings,
+      markersFactory.themeSettings, normalSettings.themeSettings
+    ]);
     marker.draw();
   } else if (marker) {
     marker.clear();
@@ -3186,6 +3198,7 @@ anychart.pyramidFunnelModule.Chart.prototype.setupByJSON = function(config, opt_
 
   anychart.core.settings.deserialize(this, anychart.pyramidFunnelModule.Chart.PROPERTY_DESCRIPTORS, config);
 
+  this.markersFactory_.setupByJSON(config['normal']['markers'], true);
   this.normal_.setupInternal(!!opt_default, config);
   this.normal_.setupInternal(!!opt_default, config['normal']);
   this.hovered_.setupInternal(!!opt_default, config['hovered']);
