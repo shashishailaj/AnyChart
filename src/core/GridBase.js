@@ -295,7 +295,7 @@ anychart.core.GridBase.prototype.zIndex = function(opt_value) {
     }
     return this;
   }
-  return /** @type {number} */(goog.isDef(this.getOwnOption('zIndex')) ? this.getOwnOption('zIndex') : goog.isDef(this.autoZIndex) ? this.autoZIndex : this.getOption('zIndex'));
+  return /** @type {number} */(goog.isDef(this.getOwnOption('zIndex')) ? this.getOwnOption('zIndex') : goog.isDef(this.autoSettings['zIndex']) ? this.autoSettings['zIndex'] : this.getOption('zIndex'));
 };
 
 

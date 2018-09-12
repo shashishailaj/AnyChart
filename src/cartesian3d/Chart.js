@@ -663,7 +663,7 @@ anychart.cartesian3dModule.Chart.prototype.prepare3d = function() {
           }
         } else {
           //Set zIndex for area and line series if it was set manually.
-          if (series.zIndex() != series.autoZIndex &&
+          if (series.zIndex() != series.autoSettings['zIndex'] &&
               series.zIndex() != maxZIndex) {
             maxZIndex = series.zIndex();
           }

@@ -98,14 +98,6 @@ anychart.core.VisualBase.prototype.doubleSuspension;
 
 
 /**
- * Auto z index of the element.
- * @type {number}
- * @protected
- */
-anychart.core.VisualBase.prototype.autoZIndex;
-
-
-/**
  * Supported signals.
  * @type {number}
  */
