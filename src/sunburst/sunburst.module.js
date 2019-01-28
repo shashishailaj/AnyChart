@@ -18,8 +18,6 @@ goog.require('anychart.sunburstModule.Chart');
 anychart.sunburst = function(opt_data, opt_fillMethod) {
   var chart = new anychart.sunburstModule.Chart(opt_data, opt_fillMethod);
 
-  chart.setupInternal(true, anychart.getFullTheme('sunburst'));
-
   return chart;
 };
 anychart.chartTypesMap[anychart.enums.ChartTypes.SUNBURST] = anychart.sunburst;

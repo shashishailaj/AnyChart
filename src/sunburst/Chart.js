@@ -111,7 +111,9 @@ anychart.sunburstModule.Chart = function(opt_data, opt_fillMethod) {
     ['labels', 0, 0]
   ]);
   this.normal_ = new anychart.core.StateSettings(this, normalDescriptorsMeta, anychart.PointState.NORMAL);
-  this.normal_.setOption(anychart.core.StateSettings.LABELS_FACTORY_CONSTRUCTOR, anychart.core.StateSettings.CIRCULAR_LABELS_CONSTRUCTOR_NO_THEME);
+  this.normal_.addThemes(this.themeSettings);
+  this.setupCreated('normal', this.normal_);
+  this.normal_.setOption(anychart.core.StateSettings.LABELS_FACTORY_CONSTRUCTOR, anychart.core.StateSettings.CIRCULAR_LABELS_CONSTRUCTOR);
   this.normal_.setOption(anychart.core.StateSettings.LABELS_AFTER_INIT_CALLBACK, /** @this {anychart.sunburstModule.Chart} */ function(factory) {
     factory.listenSignals(this.labelsInvalidated, this);
     factory.setParentEventTarget(this);
@@ -126,6 +128,7 @@ anychart.sunburstModule.Chart = function(opt_data, opt_fillMethod) {
     ['labels', 0, 0]
   ]);
   this.hovered_ = new anychart.core.StateSettings(this, hoveredDescriptorsMeta, anychart.PointState.HOVER);
+  this.setupCreated('hovered', this.hovered_);
   this.hovered_.setOption(anychart.core.StateSettings.LABELS_FACTORY_CONSTRUCTOR, anychart.core.StateSettings.CIRCULAR_LABELS_CONSTRUCTOR_NO_THEME);
 
   var selectedDescriptorsMeta = {};
@@ -136,6 +139,7 @@ anychart.sunburstModule.Chart = function(opt_data, opt_fillMethod) {
     ['labels', 0, 0]
   ]);
   this.selected_ = new anychart.core.StateSettings(this, selectedDescriptorsMeta, anychart.PointState.SELECT);
+  this.setupCreated('selected', this.selected_);
   this.selected_.setOption(anychart.core.StateSettings.LABELS_FACTORY_CONSTRUCTOR, anychart.core.StateSettings.CIRCULAR_LABELS_CONSTRUCTOR_NO_THEME);
 
   /**
@@ -809,6 +813,7 @@ anychart.sunburstModule.Chart.prototype.setupPalette_ = function(cls, opt_cloneF
 anychart.sunburstModule.Chart.prototype.hatchFillPalette = function(opt_value) {
   if (!this.hatchFillPalette_) {
     this.hatchFillPalette_ = new anychart.palettes.HatchFills();
+    this.setupCreated('hatchFillPalette', this.hatchFillPalette_);
     this.hatchFillPalette_.listenSignals(this.paletteInvalidated_, this);
     this.registerDisposable(this.hatchFillPalette_);
   }
@@ -1304,6 +1309,7 @@ anychart.sunburstModule.Chart.prototype.colorizePoint = function(pointState) {
 anychart.sunburstModule.Chart.prototype.center = function(opt_value) {
   if (!this.center_) {
     this.center_ = new anychart.core.ui.Center(this);
+    this.setupCreated('center', this.center_);
     this.center_.listenSignals(this.centerInvalidated_, this);
   }
 
@@ -1426,7 +1432,7 @@ anychart.sunburstModule.Chart.prototype.level = function(index, opt_value) {
     var level = levels[index];
     if (!level) {
       level = levels[index] = new anychart.sunburstModule.Level(this);
-      level.setupInternal(true, anychart.getFullTheme('sunburst.level'));
+      // level.setupInternal(true, anychart.getFullTheme('sunburst.level'));
       level.listenSignals(this.levelListener_, this);
     }
     if (goog.isDef(opt_value)) {
@@ -1448,8 +1454,7 @@ anychart.sunburstModule.Chart.prototype.level = function(index, opt_value) {
  */
 anychart.sunburstModule.Chart.prototype.leaves = function(opt_value) {
   if (!this.leavesLevel_) {
-    this.leavesLevel_ = new anychart.sunburstModule.Level(this);
-    this.leavesLevel_.setupInternal(true, anychart.getFullTheme('sunburst.level'));
+    this.leavesLevel_ = new anychart.sunburstModule.Level(this, 'sunburst.leaves');
     this.leavesLevel_.listenSignals(this.levelListener_, this);
   }
 
@@ -2016,7 +2021,7 @@ anychart.sunburstModule.Chart.prototype.drawContent = function(bounds) {
   this.calculate();
 
   if (this.hasInvalidationState(anychart.ConsistencyState.SUNBURST_CENTER_CONTENT)) {
-    if (this.center_.contentLayer) {
+    if (this.center().contentLayer) {
       this.center_.clearContent();
       this.center_.contentLayer.parent(this.rootElement);
       this.center_.contentLayer.zIndex(anychart.sunburstModule.Chart.ZINDEX_CENTER_CONTENT_LAYER);

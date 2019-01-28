@@ -45,7 +45,12 @@ goog.mixin(goog.global['anychart']['themes']['defaultTheme'], {
       'enabled': null,
       'normal': {
         'labels': {
-          'padding': '10%',
+          'padding': {
+            'left': '10%',
+            'top': '10%',
+            'bottom': '10%',
+            'right': '10%'
+          },
           'hAlign': 'end',
           'position': 'radial',
           'format': anychart.core.defaultTheme.returnName
@@ -64,7 +69,12 @@ goog.mixin(goog.global['anychart']['themes']['defaultTheme'], {
         'adjustFontSize': [true, true],
         'maxFontSize': 14,
         'minFontSize': 1,
-        'padding': [1, '5%', 1, '5%'],
+        'padding': {
+          'top': 1,
+          'right': '5%',
+          'bottom':1,
+          'left': '5%'
+        },
         'enabled': true,
         'hAlign': 'center',
         'vAlign': 'middle',
