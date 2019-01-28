@@ -148,6 +148,8 @@ anychart.sunburstModule.Chart = function(opt_data, opt_fillMethod) {
    * @private
    */
   this.initInteractivityControlsWrapper_ = goog.bind(this.initInteractivityControls_, this);
+
+  this.getCreated('tooltip');
 };
 goog.inherits(anychart.sunburstModule.Chart, anychart.treeChartBase.Chart);
 anychart.core.settings.populateAliases(anychart.sunburstModule.Chart, ['fill', 'stroke', 'hatchFill', 'labels'], 'normal');
