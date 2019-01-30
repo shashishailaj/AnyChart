@@ -1434,7 +1434,7 @@ anychart.sunburstModule.Chart.prototype.level = function(index, opt_value) {
     var level = levels[index];
     if (!level) {
       level = levels[index] = new anychart.sunburstModule.Level(this);
-      // level.setupInternal(true, anychart.getFullTheme('sunburst.level'));
+      level.setupElements();
       level.listenSignals(this.levelListener_, this);
     }
     if (goog.isDef(opt_value)) {
@@ -1456,7 +1456,9 @@ anychart.sunburstModule.Chart.prototype.level = function(index, opt_value) {
  */
 anychart.sunburstModule.Chart.prototype.leaves = function(opt_value) {
   if (!this.leavesLevel_) {
-    this.leavesLevel_ = new anychart.sunburstModule.Level(this, 'sunburst.leaves');
+    this.leavesLevel_ = new anychart.sunburstModule.Level(this);
+    this.setupCreated('leaves', this.leavesLevel_);
+    this.leavesLevel_.setupElements();
     this.leavesLevel_.listenSignals(this.levelListener_, this);
   }
 

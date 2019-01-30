@@ -10,17 +10,14 @@ goog.require('anychart.core.settings');
 /**
  * Map axes settings.
  * @param {!anychart.sunburstModule.Chart} target .
- * @param {(Array|Object|string)=} opt_themes .
  * @extends {anychart.core.Base}
  * @implements {anychart.core.settings.IResolvable}
  * @constructor
  */
-anychart.sunburstModule.Level = function(target, opt_themes) {
+anychart.sunburstModule.Level = function(target) {
   anychart.sunburstModule.Level.base(this, 'constructor');
 
   this.addThemes('sunburst.level');
-  if (opt_themes)
-    this.addThemes(opt_themes);
 
   /**
    * Owner.
@@ -55,7 +52,6 @@ anychart.sunburstModule.Level = function(target, opt_themes) {
   ]);
   this.normal_ = new anychart.core.StateSettings(this, normalDescriptorsMeta, anychart.PointState.NORMAL);
   this.normal_.addThemes(this.themeSettings);
-  this.setupCreated('normal', this.normal_);
   this.normal_.setOption(anychart.core.StateSettings.LABELS_FACTORY_CONSTRUCTOR, anychart.core.StateSettings.CIRCULAR_LABELS_CONSTRUCTOR_NO_THEME);
   this.normal_.setOption(anychart.core.StateSettings.LABELS_AFTER_INIT_CALLBACK, /** @this {anychart.sunburstModule.Level} */ function(factory) {
     factory.listenSignals(this.labelsSignalHandler, this);
@@ -68,7 +64,6 @@ anychart.sunburstModule.Level = function(target, opt_themes) {
     ['labels', anychart.ConsistencyState.ONLY_DISPATCHING, 0]
   ]);
   this.hovered_ = new anychart.core.StateSettings(this, hoveredDescriptorsMeta, anychart.PointState.HOVER);
-  this.setupCreated('hovered', this.hovered_);
   this.hovered_.setOption(anychart.core.StateSettings.LABELS_FACTORY_CONSTRUCTOR, anychart.core.StateSettings.CIRCULAR_LABELS_CONSTRUCTOR_NO_THEME);
 
   var selectedDescriptorsMeta = {};
@@ -76,9 +71,8 @@ anychart.sunburstModule.Level = function(target, opt_themes) {
     ['labels', anychart.ConsistencyState.ONLY_DISPATCHING, 0]
   ]);
   this.selected_ = new anychart.core.StateSettings(this, selectedDescriptorsMeta, anychart.PointState.SELECT);
-  this.setupCreated('hovered', this.selected_);
   this.selected_.setOption(anychart.core.StateSettings.LABELS_FACTORY_CONSTRUCTOR, anychart.core.StateSettings.CIRCULAR_LABELS_CONSTRUCTOR_NO_THEME);
-  this.normal_.labels().markConsistent(anychart.ConsistencyState.ALL);
+  // this.normal_.labels().markConsistent(anychart.ConsistencyState.ALL);
 };
 goog.inherits(anychart.sunburstModule.Level, anychart.core.Base);
 anychart.core.settings.populateAliases(anychart.sunburstModule.Level, ['labels'], 'normal');
@@ -106,18 +100,10 @@ anychart.sunburstModule.Level.PROPERTY_DESCRIPTORS = (function() {
   function thicknessNormalizer(opt_value) {
     return goog.isNull(opt_value) ? opt_value : anychart.utils.normalizeNumberOrPercent(opt_value);
   }
-  anychart.core.settings.createDescriptor(
-      map,
-      anychart.enums.PropertyHandlerType.SINGLE_ARG,
-      'thickness',
-      thicknessNormalizer);
-
-  anychart.core.settings.createDescriptor(
-      map,
-      anychart.enums.PropertyHandlerType.SINGLE_ARG,
-      'enabled',
-      anychart.core.settings.boolOrNullNormalizer);
-
+  anychart.core.settings.createDescriptors(map, [
+    [anychart.enums.PropertyHandlerType.SINGLE_ARG, 'thickness', thicknessNormalizer],
+    [anychart.enums.PropertyHandlerType.SINGLE_ARG, 'enabled', anychart.core.settings.boolOrNullNormalizer]
+  ]);
   return map;
 })();
 anychart.core.settings.populate(anychart.sunburstModule.Level, anychart.sunburstModule.Level.PROPERTY_DESCRIPTORS);
@@ -224,6 +210,18 @@ anychart.sunburstModule.Level.prototype.getHighPriorityResolutionChain = functio
 
 //endregion
 //region --- Setup and Dispose
+
+
+/**
+ * Setup state settings
+ * */
+anychart.sunburstModule.Level.prototype.setupElements = function() {
+  this.setupCreated('normal', this.normal_);
+  this.setupCreated('hovered', this.hovered_);
+  this.setupCreated('selected', this.selected_);
+};
+
+
 /** @inheritDoc */
 anychart.sunburstModule.Level.prototype.resolveSpecialValue = function(var_args) {
   var arg0 = arguments[0];
