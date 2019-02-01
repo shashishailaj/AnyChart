@@ -17,8 +17,7 @@ goog.require('anychart.treemapModule.Chart');
  */
 anychart.treeMap = function(opt_data, opt_fillMethod) {
   var chart = new anychart.treemapModule.Chart(opt_data, opt_fillMethod);
-
-  chart.setupInternal(true, anychart.getFullTheme('treeMap'));
+  chart.setupElements();
 
   return chart;
 };

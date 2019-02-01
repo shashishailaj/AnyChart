@@ -75,8 +75,10 @@ anychart.treemapModule.Chart = function(opt_data, opt_fillMethod) {
     ['headers', 0, 0]
   ]);
   this.normal_ = new anychart.core.StateSettings(this, normalDescriptorsMeta, anychart.PointState.NORMAL);
+  this.normal_.addThemes(this.themeSettings);
   this.normal_.setOption(anychart.core.StateSettings.LABELS_AFTER_INIT_CALLBACK, anychart.core.StateSettings.DEFAULT_LABELS_AFTER_INIT_CALLBACK);
-  this.normal_.setOption(anychart.core.StateSettings.MARKERS_FACTORY_CONSTRUCTOR, anychart.core.StateSettings.DEFAULT_MARKERS_CONSTRUCTOR_NO_THEME);
+  this.normal_.setOption(anychart.core.StateSettings.MARKERS_FACTORY_CONSTRUCTOR, anychart.core.StateSettings.DEFAULT_MARKERS_CONSTRUCTOR);
+  this.normal_.setOption(anychart.core.StateSettings.LABELS_FACTORY_CONSTRUCTOR, anychart.core.StateSettings.DEFAULT_LABELS_CONSTRUCTOR);
   this.normal_.setOption(anychart.core.StateSettings.MARKERS_AFTER_INIT_CALLBACK, /** @this {anychart.treemapModule.Chart} */ function(factory) {
     factory.setParentEventTarget(this);
     factory.setAutoType(anychart.enums.MarkerType.STAR5);
@@ -93,6 +95,7 @@ anychart.treemapModule.Chart = function(opt_data, opt_fillMethod) {
   ]);
 
   this.selected_ = new anychart.core.StateSettings(this, hoveredSelectedDescriptorsMeta, anychart.PointState.SELECT);
+  this.selected_.setOption(anychart.core.StateSettings.MARKERS_FACTORY_CONSTRUCTOR, anychart.core.StateSettings.DEFAULT_MARKERS_CONSTRUCTOR_NO_THEME);
   this.selected_.setOption(anychart.core.StateSettings.LABELS_FACTORY_CONSTRUCTOR, anychart.core.StateSettings.DEFAULT_LABELS_CONSTRUCTOR_NO_THEME);
   function factoryEnabledNull(factory) {
     factory.enabled(null);
@@ -100,6 +103,7 @@ anychart.treemapModule.Chart = function(opt_data, opt_fillMethod) {
   this.selected_.setOption(anychart.core.StateSettings.LABELS_AFTER_INIT_CALLBACK, factoryEnabledNull);
 
   this.hovered_ = new anychart.core.StateSettings(this, hoveredSelectedDescriptorsMeta, anychart.PointState.HOVER);
+  this.hovered_.setOption(anychart.core.StateSettings.MARKERS_FACTORY_CONSTRUCTOR, anychart.core.StateSettings.DEFAULT_MARKERS_CONSTRUCTOR_NO_THEME);
   this.hovered_.setOption(anychart.core.StateSettings.LABELS_FACTORY_CONSTRUCTOR, anychart.core.StateSettings.DEFAULT_LABELS_CONSTRUCTOR_NO_THEME);
   this.hovered_.setMeta('headers', [0, 0]);
   this.hovered_.setOption(anychart.core.StateSettings.LABELS_AFTER_INIT_CALLBACK, factoryEnabledNull);
@@ -293,13 +297,14 @@ anychart.treemapModule.Chart.prototype.makePointEvent = function(event) {
 /** @inheritDoc */
 anychart.treemapModule.Chart.prototype.doAdditionActionsOnMouseOverAndMove = function(index, series) {
   index = goog.isArray(index) && index.length ? index[0] : index;
-  if (this.colorRange_ && this.colorRange_.target()) {
-    var target = this.colorRange_.target();
+  var colorRange = this.getCreated('colorRange');
+  if (colorRange && colorRange.target()) {
+    var target = colorRange.target();
     if (target == series) {
       var iterator = target.getIterator();
       iterator.select(index);
       var value = iterator.meta(anychart.treemapModule.Chart.DataFields.META_VALUE);
-      this.colorRange_.showMarker(value);
+      colorRange.showMarker(value);
     }
   }
 };
@@ -307,8 +312,9 @@ anychart.treemapModule.Chart.prototype.doAdditionActionsOnMouseOverAndMove = fun
 
 /** @inheritDoc */
 anychart.treemapModule.Chart.prototype.doAdditionActionsOnMouseOut = function() {
-  if (this.colorRange_ && this.colorRange_.enabled()) {
-    this.colorRange_.hideMarker();
+  var colorRange = this.getCreated('colorRange');
+  if (colorRange && colorRange.enabled()) {
+    colorRange.hideMarker();
   }
 };
 
@@ -529,9 +535,9 @@ anychart.treemapModule.Chart.prototype.legendItemOver = function(item, event) {
           }];
         }
       }
-
-      if (this.colorRange_ && this.colorRange_.enabled() && this.colorRange_.target()) {
-        this.colorRange_.showMarker((range.start + range.end) / 2);
+      var colorRange = this.getCreated('colorRange');
+      if (colorRange && colorRange.enabled() && colorRange.target()) {
+        colorRange.showMarker((range.start + range.end) / 2);
       }
     }
   }
@@ -549,8 +555,10 @@ anychart.treemapModule.Chart.prototype.legendItemOut = function(item, event) {
       if (tag)
         tag.series = meta.series;
     }
-    if (this.colorRange_ && this.colorRange_.enabled() && this.colorRange_.target()) {
-      this.colorRange_.hideMarker();
+
+    var colorRange = this.getOption('colorRange');
+    if (colorRange && colorRange.enabled() && colorRange.target()) {
+      colorRange.hideMarker();
     }
   }
 };
@@ -973,6 +981,7 @@ anychart.treemapModule.Chart.prototype.colorRange = function(opt_value) {
   if (!this.colorRange_) {
     this.colorRange_ = new anychart.colorScalesModule.ui.ColorRange();
     this.colorRange_.dropThemes();
+    this.setupCreated('colorRange', this.colorRange_);
     this.colorRange_.setParentEventTarget(this);
     this.colorRange_.listenSignals(this.colorRangeInvalidated_, this);
     this.invalidate(anychart.ConsistencyState.TREEMAP_COLOR_RANGE | anychart.ConsistencyState.BOUNDS,
@@ -1894,20 +1903,21 @@ anychart.treemapModule.Chart.prototype.drawContent = function(bounds) {
   if (!this.rootNode_)
     return;
 
+  var colorRange = /**@type {anychart.colorScalesModule.ui.ColorRange}*/(this.getCreated('colorRange'));
   if (this.hasInvalidationState(anychart.ConsistencyState.TREEMAP_COLOR_RANGE)) {
-    if (this.colorRange_) {
-      this.colorRange_.suspendSignalsDispatching();
-      this.colorRange_.scale(this.colorScale());
-      this.colorRange_.target(this);
-      this.colorRange_.resumeSignalsDispatching(false);
+    if (colorRange) {
+      colorRange.suspendSignalsDispatching();
+      colorRange.scale(this.colorScale());
+      colorRange.target(this);
+      colorRange.resumeSignalsDispatching(false);
       this.invalidate(anychart.ConsistencyState.BOUNDS);
     }
   }
   var normal = this.normal();
   if (this.hasInvalidationState(anychart.ConsistencyState.BOUNDS)) {
-    if (this.colorRange_) {
-      this.colorRange_.parentBounds(bounds.clone().round());
-      this.dataBounds_ = this.colorRange_.getRemainingBounds();
+    if (colorRange) {
+      colorRange.parentBounds(bounds.clone().round());
+      this.dataBounds_ = colorRange.getRemainingBounds();
     } else {
       this.dataBounds_ = bounds.clone();
     }
@@ -1918,12 +1928,12 @@ anychart.treemapModule.Chart.prototype.drawContent = function(bounds) {
   }
 
   if (this.hasInvalidationState(anychart.ConsistencyState.TREEMAP_COLOR_RANGE)) {
-    if (this.colorRange_) {
-      this.colorRange_.suspendSignalsDispatching();
-      this.colorRange_.container(this.rootElement);
-      this.colorRange_.zIndex(50);
-      this.colorRange_.draw();
-      this.colorRange_.resumeSignalsDispatching(false);
+    if (colorRange) {
+      colorRange.suspendSignalsDispatching();
+      colorRange.container(this.rootElement);
+      colorRange.zIndex(50);
+      colorRange.draw();
+      colorRange.resumeSignalsDispatching(false);
     }
     this.markConsistent(anychart.ConsistencyState.TREEMAP_COLOR_RANGE);
   }
@@ -2065,11 +2075,10 @@ anychart.treemapModule.Chart.prototype.isNoData = function() {
 
 
 /**
- * @inheritDoc
+ * Setup colorScale
+ * @param {Object} config
  */
-anychart.treemapModule.Chart.prototype.setupByJSON = function(config, opt_default) {
-  anychart.treemapModule.Chart.base(this, 'setupByJSON', config, opt_default);
-
+anychart.treemapModule.Chart.prototype.setupColorScale = function(config) {
   if ('colorScale' in config) {
     var json = config['colorScale'];
     var scale = null;
@@ -2083,8 +2092,25 @@ anychart.treemapModule.Chart.prototype.setupByJSON = function(config, opt_defaul
     if (scale)
       this.colorScale(/** @type {anychart.colorScalesModule.Linear|anychart.colorScalesModule.Ordinal} */ (scale));
   }
+};
 
+
+/**
+ * Setup elements
+ */
+anychart.treemapModule.Chart.prototype.setupElements = function() {
+  this.setupColorScale(this.themeSettings);
+};
+
+
+/**
+ * @inheritDoc
+ */
+anychart.treemapModule.Chart.prototype.setupByJSON = function(config, opt_default) {
+  anychart.treemapModule.Chart.base(this, 'setupByJSON', config, opt_default);
   anychart.core.settings.deserialize(this, anychart.treemapModule.Chart.PROPERTY_DESCRIPTORS, config);
+
+  this.setupColorScale(config);
   this.hoverMode(config['hoverMode']);
   this.selectionMode(config['selectionMode']);
 
