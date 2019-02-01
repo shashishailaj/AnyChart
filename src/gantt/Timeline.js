@@ -3188,6 +3188,13 @@ anychart.ganttModule.TimeLine.prototype.rowMouseDown = function(evt) {
 };
 
 
+/** @inheritDoc */
+anychart.ganttModule.TimeLine.prototype.rowMouseUp = function(evt) {
+  this.tooltip().enabled(this.tooltipEnabledBackup_);
+  this.tooltipEnabledBackup_ = void 0;
+};
+
+
 /**
  * Actually reacts on mouse down.
  * @param {Object} evt - Event object.
@@ -3711,9 +3718,8 @@ anychart.ganttModule.TimeLine.prototype.drawMarkers_ = function(dataItem, totalT
             var top = Math.round(totalTop + (itemHeight - height) / 2);
 
             var markerEl = this.markers().add({value: {x: left, y: top}});
-            markerEl
-                .size(height / 2)
-                .setup(marker);
+            markerEl.setOption('size', height / 2);
+            markerEl.setup(marker);
           }
         }
       }
