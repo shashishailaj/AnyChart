@@ -3094,6 +3094,8 @@ anychart.ganttModule.TimeLine.prototype.addMouseMoveAndOver = function(evt, orig
       } else {
         if (domTarget && (!domTarget.tag || !domTarget.tag.isEdit)) {
           /*
+            If domTarget is range (text, line) marker, it also has own tag, we have to
+            consider this case and check whether domTarget is edit control.
             This condition allows to:
               - hide edit controls on element mouse leave
               - hide edit controls when text-line-range marker is under the mouse on element leave
