@@ -722,6 +722,7 @@ anychart.ganttModule.TimeLine.prototype.createTag = function(item, element, boun
  */
 anychart.ganttModule.TimeLine.prototype.createEditTag = function(item, index, type, bounds, opt_periodIndex) {
   var tag = {
+    isEdit: true,
     item: item,
     index: index,
     type: type,
@@ -3091,8 +3092,15 @@ anychart.ganttModule.TimeLine.prototype.addMouseMoveAndOver = function(evt, orig
           }
         }
       } else {
-        if (domTarget && !domTarget.tag)
+        if (domTarget && (!domTarget.tag || !domTarget.tag.isEdit)) {
+          /*
+            This condition allows to:
+              - hide edit controls on element mouse leave
+              - hide edit controls when text-line-range marker is under the mouse on element leave
+              - leave edit controls if control itself is hovered (prevents edit control blinking)
+           */
           this.clearEdit_(true);
+        }
       }
 
       var connEvent = this.patchConnectorEvent_(evt);
