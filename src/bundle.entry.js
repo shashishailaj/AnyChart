@@ -15,6 +15,7 @@ goog.require('anychart.core.entry');
 goog.require('anychart.dataAdapterModule.entry');
 goog.require('anychart.exportsModule.entry');
 goog.require('anychart.ganttModule.entry');
+goog.require('anychart.graphModule.entry');
 goog.require('anychart.heatmapModule.entry');
 goog.require('anychart.linearGaugeModule.entry');
 goog.require('anychart.mapModule.entry');

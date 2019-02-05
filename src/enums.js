@@ -67,7 +67,8 @@ anychart.enums.ChartTypes = {
   SUNBURST: 'sunburst',
   SANKEY: 'sankey',
   SURFACE: 'surface',
-  WORDTREE: 'wordtree'
+  WORDTREE: 'wordtree',
+  GRAPH: 'graph'
 };
 
 

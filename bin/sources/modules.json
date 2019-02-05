@@ -254,6 +254,12 @@
         "core"
       ]
     },
+    "graph": {
+      "entry": "anychart.graphModule.entry",
+      "deps": [
+        "core"
+      ]
+    },
     "theme-annotations": {
       "entry": "anychart.annotationsModule.defaultTheme",
       "deps": [
@@ -458,6 +464,13 @@
     },
     "theme-wordtree": {
       "entry": "anychart.wordtreeModule.defaultTheme",
+      "deps": [
+        "core",
+        "theme-core"
+      ]
+    },
+    "theme-graph": {
+      "entry": "anychart.graphModule.defaultTheme",
       "deps": [
         "core",
         "theme-core"
@@ -917,6 +930,17 @@
         "tree-data",
         "wordtree",
         "theme-wordtree"
+      ]
+    },
+    "anychart-graph": {
+      "type": "chart-type",
+      "name": "Graph",
+      "desc": "Graph charts module.",
+      "docs": "https://docs.anychart.com/Basic_Charts/Graph_Chart",
+      "icon": "/_design/img/upload/charts/types/graph-chart.svg",
+      "parts": [
+        "graph",
+        "theme-graph"
       ]
     }
   },
