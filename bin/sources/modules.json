@@ -209,6 +209,12 @@
         "color-scales"
       ]
     },
+    "timeline": {
+      "entry": "anychart.timelineModule.entry",
+      "deps": [
+        "core"
+      ]
+    },
     "tree-data": {
       "entry": "anychart.treeDataModule.entry",
       "deps": [
@@ -409,6 +415,13 @@
     },
     "theme-tag-cloud": {
       "entry": "anychart.tagCloudModule.defaultTheme",
+      "deps": [
+        "core",
+        "theme-core"
+      ]
+    },
+    "theme-timeline": {
+      "entry": "anychart.timelineModule.defaultTheme",
       "deps": [
         "core",
         "theme-core"
@@ -857,6 +870,17 @@
         "theme-color-scales",
         "tag-cloud-part",
         "theme-tag-cloud"
+      ]
+    },
+    "anychart-timeline": {
+      "type": "chart-type",
+      "name": "Timeline",
+      "desc": "Timeline chart module.",
+      "docs": "https://docs.anychart.com/Basic_Charts/Timeline_Chart",
+      "icon": "/_design/img/upload/charts/types/timeline-chart.svg",
+      "parts": [
+        "timeline",
+        "theme-timeline"
       ]
     },
     "anychart-treemap": {

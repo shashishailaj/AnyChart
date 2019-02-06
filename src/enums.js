@@ -61,6 +61,7 @@ anychart.enums.ChartTypes = {
   MOSAIC: 'mosaic',
   BARMEKKO: 'barmekko',
   TAG_CLOUD: 'tag-cloud',
+  TIMELINE: 'timeline',
   VENN: 'venn',
   HILO: 'hilo',
   WATERFALL: 'waterfall',
@@ -2305,6 +2306,33 @@ anychart.enums.ScatterSeriesType = {
 anychart.enums.normalizeScatterSeriesType = function(value, opt_default) {
   return /** @type {anychart.enums.ScatterSeriesType} */(anychart.enums.normalize(anychart.enums.ScatterSeriesType, value,
       opt_default || anychart.enums.ScatterSeriesType.LINE));
+};
+
+
+//----------------------------------------------------------------------------------------------------------------------
+//
+//  TimelineSeriesType
+//
+//----------------------------------------------------------------------------------------------------------------------
+/**
+ * List of all series types.
+ * @enum {string}
+ */
+anychart.enums.TimelineSeriesType = {
+  RANGE: 'range',
+  EVENT: 'event'
+};
+
+
+/**
+ * Normalizes timeline series type.
+ * @param {*} value Series type to normalize.
+ * @param {anychart.enums.TimelineSeriesType=} opt_default Custom default value (defaults to timeline chart).
+ * @return {anychart.enums.TimelineSeriesType}
+ */
+anychart.enums.normalizeTimelineSeriesType = function(value, opt_default) {
+  return /** @type {anychart.enums.TimelineSeriesType} */(anychart.enums.normalize(anychart.enums.TimelineSeriesType, value,
+      opt_default || anychart.enums.TimelineSeriesType.EVENT));
 };
 
 
@@ -4704,7 +4732,9 @@ anychart.enums.SeriesDrawerTypes = {
   HEAT_MAP: 30,
   RANGE_STICK: 31,
   WATERFALL: 32,
-  LINE_3D: 33
+  LINE_3D: 33,
+  EVENT: 34,
+  RANGE: 35
 };
 
 

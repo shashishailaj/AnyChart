@@ -25,6 +25,7 @@ goog.require('anychart.stockModule.defaultTheme');
 goog.require('anychart.sunburstModule.defaultTheme');
 goog.require('anychart.surfaceModule.defaultTheme');
 goog.require('anychart.tagCloudModule.defaultTheme');
+goog.require('anychart.timelineModule.defaultTheme');
 goog.require('anychart.treemapModule.defaultTheme');
 goog.require('anychart.vennModule.defaultTheme');
 goog.require('anychart.waterfallModule.defaultTheme');

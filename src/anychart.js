@@ -932,6 +932,7 @@ goog.exportSymbol('anychart.resource', anychart.getFeatureOrError('anychart.reso
 goog.exportSymbol('anychart.quadrant', anychart.getFeatureOrError('anychart.quadrant', 'Quadrant chart'));
 goog.exportSymbol('anychart.venn', anychart.getFeatureOrError('anychart.venn', 'Venn chart'));
 goog.exportSymbol('anychart.tagCloud', anychart.getFeatureOrError('anychart.tagCloud', 'TagCloud chart'));
+goog.exportSymbol('anychart.timeline', anychart.getFeatureOrError('anychart.timeline', 'Timeline chart'));
 goog.exportSymbol('anychart.mekko', anychart.getFeatureOrError('anychart.mekko', 'Mekko chart'));
 goog.exportSymbol('anychart.mosaic', anychart.getFeatureOrError('anychart.mosaic', 'Mosaic chart'));
 goog.exportSymbol('anychart.barmekko', anychart.getFeatureOrError('anychart.barmekko', 'Barmekko chart'));

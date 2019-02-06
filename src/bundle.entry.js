@@ -35,6 +35,7 @@ goog.require('anychart.sunburstModule.entry');
 goog.require('anychart.surfaceModule.entry');
 goog.require('anychart.tableModule.entry');
 goog.require('anychart.tagCloudModule.entry');
+goog.require('anychart.timelineModule.entry');
 goog.require('anychart.treeDataModule.entry');
 goog.require('anychart.treemapModule.entry');
 goog.require('anychart.ui.entry');
