@@ -2,7 +2,7 @@ goog.provide('anychart.timelineModule.Chart');
 
 
 //region -- Requirements.
-goog.require('anychart.core.SeparateChart');
+goog.require('anychart.core.ChartWithSeries');
 goog.require('anychart.core.StateSettings');
 goog.require('anychart.core.settings');
 
