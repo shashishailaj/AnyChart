@@ -12,7 +12,7 @@ anychart.graph = function(opt_data) {
   var chart = new anychart.graphModule.Chart(opt_data);
   return chart;
 };
-anychart.chartTypesMap[anychart.enums.ChartTypes.WORDTREE] = anychart.graph;
+anychart.chartTypesMap[anychart.enums.ChartTypes.GRAPH] = anychart.graph;
 
 //exports
 goog.exportSymbol('anychart.graph', anychart.graph);

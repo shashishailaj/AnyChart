@@ -11,7 +11,8 @@ goog.require('anychart.core.Base');
 anychart.graphModule.elements.Connector = function() {
 
   anychart.core.settings.createDescriptorsMeta(this.descriptorsMeta, [
-    ['stroke', 0, anychart.Signal.NEEDS_REDRAW]
+    ['stroke', 0, anychart.Signal.NEEDS_REDRAW],
+    ['targetShape', 0, anychart.Signal.NEEDS_REDRAW]
   ]);
 };
 
