@@ -7,6 +7,7 @@ goog.require('anychart.circularGaugeModule.defaultTheme');
 goog.require('anychart.colorScalesModule.defaultTheme');
 goog.require('anychart.core.defaultTheme');
 goog.require('anychart.ganttModule.defaultTheme');
+goog.require('anychart.graphModule.defaultTheme');
 goog.require('anychart.heatmapModule.defaultTheme');
 goog.require('anychart.linearGaugeModule.defaultTheme');
 goog.require('anychart.mapModule.defaultTheme');

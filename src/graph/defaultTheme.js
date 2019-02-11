@@ -6,7 +6,9 @@ goog.mixin(goog.global['anychart']['themes']['defaultTheme'], {
     'nodes': {
       'normal': {
         'fill': 'blue',
-        'stroke': 'yellow'
+        'stroke': 'yellow',
+        'size': 10,
+        'type': 'circle'
       },
       'hovered': {
         'fill': 'red',
@@ -19,6 +21,9 @@ goog.mixin(goog.global['anychart']['themes']['defaultTheme'], {
     },
     'connectors': {
       'stroke': '#ccc'
+    },
+    'layout': {
+      'type': 'explicit'
     }
   }
 });

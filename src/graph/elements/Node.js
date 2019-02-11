@@ -8,24 +8,31 @@ goog.require('anychart.core.StateSettings');
 /**
  * @constructor
  * @param {anychart.graphModule.Chart} chart
+ * @param {string=} opt_nodeId
  * @extends {anychart.core.Base}
  * */
-anychart.graphModule.elements.Node = function(chart) {
+anychart.graphModule.elements.Node = function(chart, opt_nodeId) {
   anychart.graphModule.elements.Node.base(this, 'constructor');
 
   this.chart_ = chart;
+  this.nodeId = opt_nodeId;
+
+  // /**
+  //  * Array of dom elements.
+  //  * For settings class contains all nodes without instance.
+  //  * */
+  // this.domElements = [];
 
   var normalDescriptorsMeta = {};
   anychart.core.settings.createDescriptorsMeta(normalDescriptorsMeta, [
     ['fill', 0, anychart.Signal.NEEDS_REDRAW_APPEARANCE],
     ['stroke', 0, anychart.Signal.NEEDS_REDRAW_APPEARANCE],
-    ['labels', 0, 0],
-    ['markers', 0, 0]
+    ['size', 0, anychart.Signal.NEEDS_REDRAW_APPEARANCE], //todo
+    ['type', 0, anychart.Signal.NEEDS_REDRAW_APPEARANCE], //todo
+    ['labels', 0, 0]
   ]);
 
   this.normal_ = new anychart.core.StateSettings(this, normalDescriptorsMeta, anychart.PointState.NORMAL);
-  this.normal_.setOption(anychart.core.StateSettings.MARKERS_FACTORY_CONSTRUCTOR, anychart.core.StateSettings.DEFAULT_MARKERS_CONSTRUCTOR_NO_THEME);
-  this.normal_.setOption(anychart.core.StateSettings.MARKERS_AFTER_INIT_CALLBACK, anychart.core.StateSettings.DEFAULT_MARKERS_AFTER_INIT_CALLBACK);
   this.normal_.setOption(anychart.core.StateSettings.LABELS_FACTORY_CONSTRUCTOR, anychart.core.StateSettings.DEFAULT_LABELS_CONSTRUCTOR_NO_THEME);
   this.normal_.setOption(anychart.core.StateSettings.LABELS_AFTER_INIT_CALLBACK, function(factory) {
     factory.listenSignals(this.labelsInvalidated_, this);
@@ -35,28 +42,25 @@ anychart.graphModule.elements.Node = function(chart) {
   anychart.core.settings.createDescriptorsMeta(descriptorsMeta, [
     ['fill', 0, anychart.Signal.NEEDS_REDRAW_APPEARANCE],
     ['stroke', 0, anychart.Signal.NEEDS_REDRAW_APPEARANCE],
-    ['labels', 0, 0],
-    ['markers', 0, 0]
+    ['size', 0, anychart.Signal.NEEDS_REDRAW_APPEARANCE], //todo
+    ['type', 0, anychart.Signal.NEEDS_REDRAW_APPEARANCE], //todo
+    ['labels', 0, 0]
   ]);
   this.hovered_ = new anychart.core.StateSettings(this, descriptorsMeta, anychart.PointState.HOVER);
   this.hovered_.setOption(anychart.core.StateSettings.LABELS_FACTORY_CONSTRUCTOR, anychart.core.StateSettings.DEFAULT_LABELS_CONSTRUCTOR_NO_THEME);
-  this.hovered_.setOption(anychart.core.StateSettings.MARKERS_FACTORY_CONSTRUCTOR, anychart.core.StateSettings.DEFAULT_MARKERS_CONSTRUCTOR_NO_THEME);
 
   this.selected_ = new anychart.core.StateSettings(this, descriptorsMeta, anychart.PointState.SELECT);
   this.selected_.setOption(anychart.core.StateSettings.LABELS_FACTORY_CONSTRUCTOR, anychart.core.StateSettings.DEFAULT_LABELS_CONSTRUCTOR_NO_THEME);
-  this.selected_.setOption(anychart.core.StateSettings.MARKERS_FACTORY_CONSTRUCTOR, anychart.core.StateSettings.DEFAULT_MARKERS_CONSTRUCTOR_NO_THEME);
 
-  function markAllConsistent (factory) {
+  function markAllConsistent(factory) {
     factory.markConsistent(anychart.ConsistencyState.ALL);
   }
 
   this.hovered_.setOption(anychart.core.StateSettings.LABELS_AFTER_INIT_CALLBACK, markAllConsistent);
-  this.hovered_.setOption(anychart.core.StateSettings.MARKERS_AFTER_INIT_CALLBACK, markAllConsistent);
   this.selected_.setOption(anychart.core.StateSettings.LABELS_AFTER_INIT_CALLBACK, markAllConsistent);
-  this.selected_.setOption(anychart.core.StateSettings.MARKERS_AFTER_INIT_CALLBACK, markAllConsistent);
 };
 goog.inherits(anychart.graphModule.elements.Node, anychart.core.Base);
-anychart.core.settings.populateAliases(anychart.graphModule.elements.Node, ['fill', 'stroke', 'labels', 'markers'], 'normal');
+anychart.core.settings.populateAliases(anychart.graphModule.elements.Node, ['fill', 'stroke', 'labels'], 'normal');
 
 
 /**
@@ -108,6 +112,17 @@ anychart.graphModule.elements.Node.prototype.selected = function(opt_value) {
     return this;
   }
   return this.selected_;
+};
+
+
+anychart.graphModule.elements.Node.prototype.moveTo = function(x, y) {
+  if (this.nodeId) {
+    this.chart_.nodes_[this.nodeId].position = {
+      x: x,
+      y: y
+    };
+    //todo Update dom only for current node
+  }
 };
 
 
@@ -184,25 +199,10 @@ anychart.graphModule.elements.Node.prototype.getNodeIds = function() {
 };
 //endregion
 //region Exports
-// (function() {
-//   var proto = anychart.graphModule.elements.Node.prototype;
-//   proto['getAllNodes'] = proto.getAllNodes;
-//   proto['node'] = proto.node;
-// })();
-// /**
-//  * Properties that should be defined in class prototype.
-//  * @type {!Object.<string, anychart.core.settings.PropertyDescriptor>}
-//  */
-// anychart.graphModule.elements.Node.OWN_DESCRIPTORS = (function() {
-//   /** @type {!Object.<string, anychart.core.settings.PropertyDescriptor>} */
-//   var map = {};
-//
-//   anychart.core.settings.createDescriptors(map, [
-//     anychart.core.settings.descriptors.FILL,
-//     anychart.core.settings.descriptors.STROKE,
-//     anychart.core.settings.descriptors.SIZE
-//   ]);
-//
-//   return map;
-// })();
-// anychart.core.settings.populate(anychart.graphModule.elements.Node, anychart.graphModule.Chart.OWN_DESCRIPTORS);
+(function() {
+  var proto = anychart.graphModule.elements.Node.prototype;
+  proto['getAllNodes'] = proto.getAllNodes;
+  proto['node'] = proto.node;
+  proto['getNodeIds'] = proto.getNodeIds;
+})();
+//endregion
