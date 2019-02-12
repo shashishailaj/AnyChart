@@ -5,9 +5,15 @@ goog.mixin(goog.global['anychart']['themes']['defaultTheme'], {
   'graph': {
     'nodes': {
       'normal': {
-        'fill': 'blue',
-        'stroke': 'yellow',
-        'size': 10,
+        'fill': {
+          'opacity': 0.4,
+          'color': '#ccc'
+        },
+        'stroke': {
+          'thickness': 2,
+          'color': 'yellow'
+        },
+        'size': 15,
         'type': 'circle'
       },
       'hovered': {
@@ -19,7 +25,7 @@ goog.mixin(goog.global['anychart']['themes']['defaultTheme'], {
         'stroke': 'pink'
       }
     },
-    'connectors': {
+    'edges': {
       'stroke': '#ccc'
     },
     'layout': {

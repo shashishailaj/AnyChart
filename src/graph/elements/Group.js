@@ -170,25 +170,9 @@ anychart.graphModule.elements.Group.prototype.getGroupIds = function() {
 
 //endregion
 //region Exports
-// (function() {
-//   var proto = anychart.graphModule.elements.Group.prototype;
-//   proto['getAllGroups'] = proto.getAllGroups;
-//   proto['node'] = proto.node;
-// })();
-// /**
-//  * Properties that should be defined in class prototype.
-//  * @type {!Object.<string, anychart.core.settings.PropertyDescriptor>}
-//  */
-// anychart.graphModule.elements.Group.OWN_DESCRIPTORS = (function() {
-//   /** @type {!Object.<string, anychart.core.settings.PropertyDescriptor>} */
-//   var map = {};
-//
-//   anychart.core.settings.createDescriptors(map, [
-//     anychart.core.settings.descriptors.FILL,
-//     anychart.core.settings.descriptors.STROKE,
-//     anychart.core.settings.descriptors.SIZE
-//   ]);
-//
-//   return map;
-// })();
-// anychart.core.settings.populate(anychart.graphModule.elements.Group, anychart.graphModule.Chart.OWN_DESCRIPTORS);
+(function() {
+  var proto = anychart.graphModule.elements.Group.prototype;
+  proto['normal'] = proto.normal;
+  proto['selected'] = proto.selected;
+  proto['hovered'] = proto.hovered;
+})();

@@ -8,14 +8,12 @@ goog.require('anychart.core.StateSettings');
 /**
  * @constructor
  * @param {anychart.graphModule.Chart} chart
- * @param {string=} opt_nodeId
  * @extends {anychart.core.Base}
  * */
-anychart.graphModule.elements.Node = function(chart, opt_nodeId) {
+anychart.graphModule.elements.Node = function(chart) {
   anychart.graphModule.elements.Node.base(this, 'constructor');
 
   this.chart_ = chart;
-  this.nodeId = opt_nodeId;
 
   // /**
   //  * Array of dom elements.
@@ -166,43 +164,43 @@ anychart.graphModule.elements.Node.prototype.getSettings = function() {
 };
 
 
-/**
- * @param {string} nodeId id of node.
- * @return {?anychart.graphModule.elements.Node}
- * */
-anychart.graphModule.elements.Node.prototype.node = function(nodeId) {
-  return /** @type {anychart.graphModule.elements.Node} */(this.chart_.getElementInstance(anychart.graphModule.Chart.Element.NODE, nodeId));
-};
-
-
-/**
- * @return {Array.<anychart.graphModule.elements.Node>}
- * */
-anychart.graphModule.elements.Node.prototype.getAllNodes = function() {
-  var nodes = [];
-  for (var node in this.chart_.nodes_) {
-    nodes.push(this.node(node));
-  }
-  return nodes;
-};
-
-
-/**
- * @return {Array.<anychart.graphModule.elements.Node>}
- * */
-anychart.graphModule.elements.Node.prototype.getNodeIds = function() {
-  var ids = [];
-  for (var node in this.chart_.nodes_) {
-    ids.push(node);
-  }
-  return ids;
-};
+// /**
+//  * @param {string} nodeId id of node.
+//  * @return {?anychart.graphModule.elements.Node}
+//  * */
+// anychart.graphModule.elements.Node.prototype.node = function(nodeId) {
+//   return /** @type {anychart.graphModule.elements.Node} */(this.chart_.getElementInstance(anychart.graphModule.Chart.Element.NODE, nodeId));
+// };
+//
+//
+// /**
+//  * @return {Array.<anychart.graphModule.elements.Node>}
+//  * */
+// anychart.graphModule.elements.Node.prototype.getAllNodes = function() {
+//   var nodes = [];
+//   for (var node in this.chart_.nodes_) {
+//     nodes.push(this.node(node));
+//   }
+//   return nodes;
+// };
+//
+//
+// /**
+//  * @return {Array.<anychart.graphModule.elements.Node>}
+//  * */
+// anychart.graphModule.elements.Node.prototype.getNodeIds = function() {
+//   var ids = [];
+//   for (var node in this.chart_.nodes_) {
+//     ids.push(node);
+//   }
+//   return ids;
+// };
 //endregion
 //region Exports
 (function() {
   var proto = anychart.graphModule.elements.Node.prototype;
-  proto['getAllNodes'] = proto.getAllNodes;
-  proto['node'] = proto.node;
-  proto['getNodeIds'] = proto.getNodeIds;
+  proto['normal'] = proto.normal;
+  proto['hovered'] = proto.hovered;
+  proto['selected'] = proto.selected;
 })();
 //endregion

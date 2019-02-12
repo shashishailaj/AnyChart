@@ -1,4 +1,4 @@
-goog.provide('anychart.graphModule.elements.Connector');
+goog.provide('anychart.graphModule.elements.Edge');
 
 goog.require('anychart.core.Base');
 
@@ -8,19 +8,20 @@ goog.require('anychart.core.Base');
  * @constructor
  * @extends {anychart.core.Base}
  * */
-anychart.graphModule.elements.Connector = function() {
+anychart.graphModule.elements.Edge = function() {
+  anychart.graphModule.elements.Edge.base(this, 'constructor');
   anychart.core.settings.createDescriptorsMeta(this.descriptorsMeta, [
     ['stroke', 0, anychart.Signal.NEEDS_REDRAW]
     //['targetShape', 0, anychart.Signal.NEEDS_REDRAW]?
   ]);
 };
-
+goog.inherits(anychart.graphModule.elements.Edge, anychart.core.Base);
 
 /**
  * Properties that should be defined in class prototype.
  * @type {!Object.<string, anychart.core.settings.PropertyDescriptor>}
  */
-anychart.graphModule.elements.Connector.OWN_DESCRIPTORS = (function() {
+anychart.graphModule.elements.Edge.OWN_DESCRIPTORS = (function() {
   /** @type {!Object.<string, anychart.core.settings.PropertyDescriptor>} */
   var map = {};
 
@@ -30,4 +31,4 @@ anychart.graphModule.elements.Connector.OWN_DESCRIPTORS = (function() {
 
   return map;
 })();
-anychart.core.settings.populate(anychart.graphModule.elements.Connector, anychart.graphModule.Chart.OWN_DESCRIPTORS);
+anychart.core.settings.populate(anychart.graphModule.elements.Edge, anychart.graphModule.elements.Edge.OWN_DESCRIPTORS);

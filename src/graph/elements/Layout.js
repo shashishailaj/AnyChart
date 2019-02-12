@@ -4,6 +4,7 @@ goog.require('anychart.core.Base');
 goog.require('anychart.core.StateSettings');
 
 
+
 /**
  * @constructor
  * @param {anychart.graphModule.Chart} chart
@@ -81,7 +82,8 @@ anychart.graphModule.elements.Layout.OWN_DESCRIPTORS = (function() {
 
   anychart.core.settings.createDescriptors(map, [
     [anychart.enums.PropertyHandlerType.SINGLE_ARG, 'type', layoutNormalizer],
-    [anychart.enums.PropertyHandlerType.SINGLE_ARG, 'type', anychart.core.settings.numberNormalizer]]
+    [anychart.enums.PropertyHandlerType.SINGLE_ARG, 'edgeLength', anychart.core.settings.numberNormalizer]]
   );
+  return map;
 });
-
+anychart.core.settings.populate(anychart.graphModule.elements.Layout, anychart.graphModule.elements.Layout.OWN_DESCRIPTORS);
