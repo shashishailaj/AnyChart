@@ -266,7 +266,13 @@ anychart.core.ui.OptimizedText.prototype.compareObject = function(oldObj, newObj
  * @inheritDoc
  */
 anychart.core.ui.OptimizedText.prototype.addSegment = function(text, opt_style, opt_break) {
-  //TODO (A.Kudryavtsev): Impl.
+  /*
+    In current implementation (13 Feb 2019) this
+    method is used by acgraph.utils.HTMLParser
+    only for IE because it doesn't support svg foreignObject.
+    That's why HTML text just turns to a regular text.
+   */
+  this.text(this.text() + text);
 };
 
 
@@ -274,7 +280,13 @@ anychart.core.ui.OptimizedText.prototype.addSegment = function(text, opt_style, 
  * @inheritDoc
  */
 anychart.core.ui.OptimizedText.prototype.addBreak = function() {
-  //TODO (A.Kudryavtsev): impl.
+  /*
+    In current implementation (13 Feb 2019) this
+    method is used by acgraph.utils.HTMLParser
+    only for IE because it doesn't support svg foreignObject.
+    That's why HTML text just turns to a regular text.
+   */
+  this.text(this.text() + '\n');
 };
 
 
@@ -282,7 +294,13 @@ anychart.core.ui.OptimizedText.prototype.addBreak = function() {
  * @inheritDoc
  */
 anychart.core.ui.OptimizedText.prototype.finalizeTextLine = function() {
-  //TODO (A.Kudryavtsev): impl.
+  /*
+    In current implementation (13 Feb 2019) this
+    method is used by acgraph.utils.HTMLParser
+    only for IE because it doesn't support svg foreignObject.
+    That's why HTML text just turns to a regular text.
+   */
+  this.prepareHotHtmlComplexity_();
 };
 
 
@@ -393,26 +411,7 @@ anychart.core.ui.OptimizedText.prototype.prepareComplexity = function() {
     if (this.style_['useHtml']) {
       this.prepareHtmlComplexity_();
     } else {
-      var lines = this.text_.split(/\n/g); // splitting 'sentence1 \n sentence2' to ['sentence1', 'sentence2'].
-
-      var width = this.style_['width'];
-      var height = this.style_['height'];
-      var wordBreak = this.style_['wordBreak'];
-      var wordWrap = this.style_['wordWrap'];
-
-      if (wordBreak && goog.isDefAndNotNull(width)) {
-        if (wordBreak == anychart.enums.WordBreak.BREAK_ALL) {
-          this.prepareWordBreakBreakAll_(lines);
-        } else {
-          this.prepareWordBreakKeepAll_(lines);
-        }
-        //TODO (A.Kudryavtsev): Check if we need this.
-        this.disposeTextsToRender_(true);
-      } else if (goog.isDefAndNotNull(wordWrap)) {
-        //TODO (A.Kudryavtsev): Future implementation.
-      } else if (lines.length > 1) {
-        this.prepareMultilineOnly_(lines);
-      }
+      this.prepareHotHtmlComplexity_();
     }
   }
 };
@@ -423,16 +422,47 @@ anychart.core.ui.OptimizedText.prototype.prepareComplexity = function() {
  * @private
  */
 anychart.core.ui.OptimizedText.prototype.prepareHtmlComplexity_ = function() {
-  this.useHtml_ = true;
   if (goog.labs.userAgent.browser.isIE()) {
     acgraph.utils.HTMLParser.getInstance().parseText(this);
     //TODO (A.Kudryavtsev): Impl.
   } else {
-    this.foreignObject_ = this.renderer.createSVGElement_('foreignObject');
-    this.foreignDiv_ = goog.dom.createDom('div');
+    this.useHtml_ = true;
+    if (!this.foreignObject_) {
+      this.foreignObject_ = this.renderer.createSVGElement_('foreignObject');
+      this.foreignDiv_ = goog.dom.createDom('div');
+      this.foreignDiv_.setAttribute('xmlns', 'http://www.w3.org/1999/xhtml');
+      goog.dom.appendChild(this.foreignObject_, this.foreignDiv_);
+    }
     this.foreignDiv_.innerHTML = this.text_ || '';
-    this.foreignDiv_.setAttribute('xmlns', 'http://www.w3.org/1999/xhtml');
-    goog.dom.appendChild(this.foreignObject_, this.foreignDiv_);
+  }
+};
+
+
+/**
+ * Prepares not html complexity.
+ * @private
+ */
+anychart.core.ui.OptimizedText.prototype.prepareHotHtmlComplexity_ = function() {
+  this.useHtml_ = false;
+
+  var lines = this.text_.split(/\n/g); // splitting 'sentence1 \n sentence2' to ['sentence1', 'sentence2'].
+  var width = this.style_['width'];
+  var height = this.style_['height'];
+  var wordBreak = this.style_['wordBreak'];
+  var wordWrap = this.style_['wordWrap'];
+
+  if (wordBreak && goog.isDefAndNotNull(width)) {
+    if (wordBreak == anychart.enums.WordBreak.BREAK_ALL) {
+      this.prepareWordBreakBreakAll_(lines);
+    } else {
+      this.prepareWordBreakKeepAll_(lines);
+    }
+    //TODO (A.Kudryavtsev): Check if we need this.
+    this.disposeTextsToRender_(true);
+  } else if (goog.isDefAndNotNull(wordWrap)) {
+    //TODO (A.Kudryavtsev): Future implementation.
+  } else if (lines.length > 1) {
+    this.prepareMultilineOnly_(lines);
   }
 };
 
@@ -522,34 +552,47 @@ anychart.core.ui.OptimizedText.prototype.prepareMultilineOnly_ = function(lines)
  * putAt() methods). That's why applying final settings doesn't break the bounds correct values.
  */
 anychart.core.ui.OptimizedText.prototype.finalizeComplexity = function() {
-  if (this.consistency.complexity) {
-    this.consistency.complexity = false;
-    var i, text;
+  if (this.useHtml_) {
+    this.resetComplexity();
+    this.disposeTextsToRender_(true);
+    goog.dom.removeNode(this.getDomElement());
+  } else {
+    if (this.consistency.complexity) {
+      this.consistency.complexity = false;
+      var i, text;
 
-    //TODO (A.Kudryavtsev): Kind of same conditions? O_o
-    if (this.wordBreakKeepAll_ || this.wordBreakBreakAll_) {
-      for (i = 0; i < this.textsToRender_.length; i++) {
-        text = this.textsToRender_[i];
-        text.applySettings();
-        text.renderTo(this.container);
+
+      if (this.foreignObject_) {
+        goog.dom.removeNode(this.foreignObject_);
+        this.foreignObject_ = null;
+        this.foreignDiv_ = null;
       }
-      if (this.domElement) {
-        goog.dom.removeNode(this.domElement);
-        this.container = null;
-      }
-    } else if (this.multilineOnly_) {
-      // if (this.domElement) {
-      //   goog.dom.removeNode(this.domElement);
-      //   this.container = null;
-      // }
-      for (i = 0; i < this.textsToRender_.length; i++) {
-        text = this.textsToRender_[i];
-        text.applySettings();
-        text.renderTo(this.container);
-      }
-      if (this.domElement) {
-        goog.dom.removeNode(this.domElement);
-        this.container = null;
+
+      //TODO (A.Kudryavtsev): Kind of same conditions? O_o
+      if (this.wordBreakKeepAll_ || this.wordBreakBreakAll_) {
+        for (i = 0; i < this.textsToRender_.length; i++) {
+          text = this.textsToRender_[i];
+          text.applySettings();
+          text.renderTo(this.container);
+        }
+        if (this.domElement) {
+          goog.dom.removeNode(this.domElement);
+          this.container = null;
+        }
+      } else if (this.multilineOnly_) {
+        // if (this.domElement) {
+        //   goog.dom.removeNode(this.domElement);
+        //   this.container = null;
+        // }
+        for (i = 0; i < this.textsToRender_.length; i++) {
+          text = this.textsToRender_[i];
+          text.applySettings();
+          text.renderTo(this.container);
+        }
+        if (this.domElement) {
+          goog.dom.removeNode(this.domElement);
+          this.container = null;
+        }
       }
     }
   }
@@ -751,6 +794,9 @@ anychart.core.ui.OptimizedText.prototype.putAt = function(bounds, opt_stage) {
     this.foreignObject_.setAttribute('y', bounds.top);
     this.foreignObject_.setAttribute('width', bounds.width);
     this.foreignObject_.setAttribute('height', bounds.height);
+
+    var style = this.getDivStyle(bounds.width, bounds.height);
+    this.foreignDiv_.setAttribute('style', style);
   } else if (!this.style_['textOverflow'] || (this.style_['textOverflow'] && bounds.width >= 1)) {
     /*
       bounds.width >= 1 condition is added because:
@@ -1059,6 +1105,53 @@ anychart.core.ui.OptimizedText.prototype.setClassName = function(val) {
   this.cssClass_ = val;
   var dom = this.getDomElement();
   goog.dom.classlist.add(dom, val);
+};
+
+
+/**
+ * Forms suitable CSS-string that contains text settings suitable to be
+ * applied to DIV wrapper in foreignObject. Used in useHtml-mode only.
+ * @param {number} width - Width of div.
+ * @param {number} height - Height of div.
+ * @return {string} - Style string.
+ */
+anychart.core.ui.OptimizedText.prototype.getDivStyle = function(width, height) {
+  var style = this.style_;
+  var result = 'display: table-cell; ';
+
+  if ('fontStyle' in style)
+    result += ('font-style: ' + style['fontStyle'] + '; ');
+
+  if ('fontVariant' in style)
+    result += ('font-variant: ' + style['fontVariant'] + '; ');
+
+  if ('fontFamily' in style)
+    result += ('font-family: ' + style['fontFamily'] + '; ');
+
+  if ('fontSize' in style)
+    result += ('font-size: ' + style['fontSize'] + '; ');
+
+  if ('fontWeight' in style)
+    result += ('font-weight: ' + style['fontWeight'] + '; ');
+
+  if ('letterSpacing' in style)
+    result += ('letter-spacing: ' + style['letterSpacing'] + '; ');
+
+  if ('fontDecoration' in style)
+    result += ('text-decoration: ' + style['fontDecoration'] + '; ');
+
+  if ('fontColor' in style)
+    result += ('color: ' + style['fontColor'] + '; ');
+
+  if ('vAlign' in style)
+    result += ('vertical-align: ' + style['vAlign'] + '; ');
+
+  if ('wordBreak' in style)
+    result += ('word-break: ' + style['wordBreak'] + '; ');
+
+  result += ('width: ' + width + 'px; height: ' + height + 'px; ');
+
+  return result;
 };
 
 
