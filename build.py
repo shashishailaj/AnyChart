@@ -994,18 +994,23 @@ def __compile_project(*args, **kwargs):
 
         # resource_json = {'modules': modules_json, 'addons': {}, 'css': {}, 'fonts': {}}
         resource_json = {}
-        resource_json['modules'] = modules_json
-        resource_json['css'] = build_css_indexes()
-        resource_json['fonts'] = build_fonts_indexes()
+        # resource_json['modules'] = modules_json
+        # resource_json['css'] = build_css_indexes()
+        # resource_json['fonts'] = build_fonts_indexes()
+
+        # We are still need to generate resources.json with themes
+        # section cause /bin/sources/modules.json are not presented
+        # on cdn.
+        # resources.json will be overwritten on cdn
         resource_json['themes'] = __get_modules_config()['themes']
-        resource_json['locales'] = build_locales_indexes()
-        resource_json['geodata'] = build_geodata_indexes()
+        # resource_json['locales'] = build_locales_indexes()
+        # resource_json['geodata'] = build_geodata_indexes()
         # resource_json['addons'] = [ {'name': 'anychart-chart-editor.min.js'},
         #                             {'name': 'graphics.js'},
         #                             {'name': 'graphics.min.js'} ]
 
-        with open(os.path.join(output, 'resources.json'), 'w') as f:
-            f.write(json.dumps(resource_json))
+        # with open(os.path.join(output, 'resources.json'), 'w') as f:
+        #     f.write(json.dumps(resource_json))
 
     print ''
     print compile_errors
