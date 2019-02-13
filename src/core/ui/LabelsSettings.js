@@ -99,8 +99,8 @@ anychart.core.ui.LabelsSettings = function() {
     ['letterSpacing', 0, anychart.Signal.BOUNDS_CHANGED, 0, this.resetFlatSettings],
     ['textDirection', 0, 0], //TODO (A.Kudryavtsev): Not supported for a while.
     ['textIndent', 0, anychart.Signal.BOUNDS_CHANGED, 0, this.resetFlatSettings],
-    ['textOverflow', 0, anychart.Signal.BOUNDS_CHANGED, 0, this.resetFlatSettings],
-    ['useHtml', 0, 0], //TODO (A.Kudryavtsev): Not supported for a while.
+    ['textOverflow', 0, anychart.Signal.NEEDS_REDRAW, 0, this.resetFlatSettings], //Doesn't affect bounds.
+    ['useHtml', 0, anychart.Signal.BOUNDS_CHANGED, 0, this.resetFlatSettings],
     ['wordBreak', 0, anychart.Signal.BOUNDS_CHANGED, 0, this.resetFlatSettings],
     ['wordWrap', 0, anychart.Signal.BOUNDS_CHANGED, 0, this.resetFlatSettings],
     ['fontColor', 0, anychart.Signal.NEEDS_REDRAW, 0, this.resetFlatSettings], //Doesn't affect bounds.
@@ -438,7 +438,11 @@ anychart.core.ui.LabelsSettings.prototype.getText = function(context) {
  * @return {boolean} - If text needs bounds calculation to be placed correctly.
  */
 anychart.core.ui.LabelsSettings.prototype.needsBoundsCalculation = function() {
-  return (this.considerHAlign() || this.considerWordWrap() || this.considerTextOverflow() || this.considerWordBreak());
+  return (
+      this.considerHAlign() ||
+      this.considerWordWrap() ||
+      this.considerWordBreak()
+  );
 };
 
 

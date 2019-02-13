@@ -1,6 +1,7 @@
 goog.provide('anychart.core.ui.OptimizedText');
 
 //region -- Requirements.
+goog.require('acgraph.vector.IHtmlText');
 goog.require('anychart.math.Rect');
 
 goog.require('goog.string');
@@ -22,6 +23,7 @@ goog.require('goog.string');
  *    6) Set the position and parentBounds with putAt().
  *    7) Call finalizeComplexity().
  * @constructor
+ * @implements {acgraph.vector.IHtmlText}
  */
 anychart.core.ui.OptimizedText = function() {
 
@@ -125,6 +127,14 @@ anychart.core.ui.OptimizedText = function() {
 
 
   /**
+   * Flag whether text uses html.
+   * @type {boolean}
+   * @private
+   */
+  this.useHtml_ = false;
+
+
+  /**
    * Text that contains styled textValue 'W W'.
    * Used to calculate the styled space width with this.wText_.
    * @type {?anychart.core.ui.OptimizedText}
@@ -164,25 +174,6 @@ anychart.core.ui.OptimizedText = function() {
 
 //endregion
 //region -- Simplified API.
-/**
- * Text value getter/setter.
- * @param {string=} opt_value - Text value to set.
- * @return {string|anychart.core.ui.OptimizedText}
- */
-anychart.core.ui.OptimizedText.prototype.text = function(opt_value) {
-  if (goog.isDef(opt_value)) {
-    var value = goog.string.normalizeSpaces(opt_value);
-    value = goog.string.canonicalizeNewlines(value);
-    if (this.text_ != value) {
-      this.consistency.text = true;
-      this.text_ = value;
-    }
-    return this;
-  }
-  return this.text_;
-};
-
-
 /**
  * Gets width by bounds.
  * If bounds are not calculated, returns 0 without developer notification.
@@ -266,6 +257,49 @@ anychart.core.ui.OptimizedText.prototype.compareObject = function(oldObj, newObj
       diff[key] = true;
   }
   return diff;
+};
+
+
+//endregion
+//region -- acgraph.vector.IHtmlText implementation.
+/**
+ * @inheritDoc
+ */
+anychart.core.ui.OptimizedText.prototype.addSegment = function(text, opt_style, opt_break) {
+  //TODO (A.Kudryavtsev): Impl.
+};
+
+
+/**
+ * @inheritDoc
+ */
+anychart.core.ui.OptimizedText.prototype.addBreak = function() {
+  //TODO (A.Kudryavtsev): impl.
+};
+
+
+/**
+ * @inheritDoc
+ */
+anychart.core.ui.OptimizedText.prototype.finalizeTextLine = function() {
+  //TODO (A.Kudryavtsev): impl.
+};
+
+
+/**
+ * @inheritDoc
+ */
+anychart.core.ui.OptimizedText.prototype.text = function(opt_value) {
+  if (goog.isDef(opt_value)) {
+    var value = goog.string.normalizeSpaces(opt_value);
+    value = goog.string.canonicalizeNewlines(value);
+    if (this.text_ != value) {
+      this.consistency.text = true;
+      this.text_ = value;
+    }
+    return this;
+  }
+  return this.text_;
 };
 
 
@@ -355,73 +389,129 @@ anychart.core.ui.OptimizedText.prototype.disposeTextsToRender_ = function(opt_ha
 anychart.core.ui.OptimizedText.prototype.prepareComplexity = function() {
   if (!this.consistency.complexity) {
     this.consistency.complexity = true;
-    var lines = this.text_.split(/\n/g); // splitting 'sentence1 \n sentence2' to ['sentence1', 'sentence2'].
 
-    var i, j, line, textsInLine;
-    var width = this.style_['width'];
-    var height = this.style_['height'];
-    var wordBreak = this.style_['wordBreak'];
-    var wordWrap = this.style_['wordWrap'];
-    if (wordBreak && goog.isDefAndNotNull(width)) {
-      if (wordBreak == anychart.enums.WordBreak.BREAK_ALL) {
-        this.wordBreakBreakAll_ = true;
-        //TODO (A.Kudryavtsev): Performance super fail.
-        if (!this.multilineTexts_.length) {
-          for (i = 0; i < lines.length; i++) {
-            line = lines[i];
-            textsInLine = [];
-            var cut = '';
-            for (j = 0; j < line.length; j++) {
-              cut += line[j];
-              textsInLine.push(this.setupSubText(cut));
-            }
+    if (this.style_['useHtml']) {
+      this.prepareHtmlComplexity_();
+    } else {
+      var lines = this.text_.split(/\n/g); // splitting 'sentence1 \n sentence2' to ['sentence1', 'sentence2'].
 
-            this.multilineTexts_.push(textsInLine);
-          }
-        }
-      } else {
-        this.wordBreakKeepAll_ = true;
-        if (!this.multilineTexts_.length) {
-          this.w_wText_ = this.setupSubText('W W', this.w_wText_); //w_wText_ can be undefined here.
-          this.wText_ = this.setupSubText('W', this.wText_); //wText_ can be undefined here.
+      var width = this.style_['width'];
+      var height = this.style_['height'];
+      var wordBreak = this.style_['wordBreak'];
+      var wordWrap = this.style_['wordWrap'];
 
-          for (i = 0; i < lines.length; i++) {
-            line = lines[i];
-            var splitted = line.split(' '); //TODO (A.Kudryavtsev): Can we replace this with splitting by regex to avoid the next passage?
-            var toAdd = '';
-
-            textsInLine = [];
-            for (j = 0; j < splitted.length; j++) {
-              toAdd += splitted[j];
-              textsInLine.push(this.setupSubText(toAdd));
-              toAdd += ((j == splitted.length - 1) ? '' : ' ');
-            }
-
-            this.multilineTexts_.push(textsInLine);
-          }
-        }
-
-      }
-      //TODO (A.Kudryavtsev): Check if we need this.
-      this.disposeTextsToRender_(true);
-    } else if (goog.isDefAndNotNull(wordWrap)) {
-      //TODO (A.Kudryavtsev): Future implementation.
-    } else if (lines.length > 1) {
-      for (i = 0; i < lines.length; i++) {
-        this.multilineOnly_ = true;
-        line = lines[i];
-        if (this.textsToRender_[i]) {
-          this.setupSubText(line, this.textsToRender_[i]);
+      if (wordBreak && goog.isDefAndNotNull(width)) {
+        if (wordBreak == anychart.enums.WordBreak.BREAK_ALL) {
+          this.prepareWordBreakBreakAll_(lines);
         } else {
-          this.textsToRender_.push(this.setupSubText(line));
+          this.prepareWordBreakKeepAll_(lines);
         }
+        //TODO (A.Kudryavtsev): Check if we need this.
+        this.disposeTextsToRender_(true);
+      } else if (goog.isDefAndNotNull(wordWrap)) {
+        //TODO (A.Kudryavtsev): Future implementation.
+      } else if (lines.length > 1) {
+        this.prepareMultilineOnly_(lines);
       }
-      for (j = i; j < this.textsToRender_.length; j++) {
-        this.textsToRender_[j].dispose();
-      }
-      this.textsToRender_.length = lines.length;
     }
   }
+};
+
+
+/**
+ * Prepares html complexity.
+ * @private
+ */
+anychart.core.ui.OptimizedText.prototype.prepareHtmlComplexity_ = function() {
+  this.useHtml_ = true;
+  if (goog.labs.userAgent.browser.isIE()) {
+    acgraph.utils.HTMLParser.getInstance().parseText(this);
+    //TODO (A.Kudryavtsev): Impl.
+  } else {
+    this.foreignObject_ = this.renderer.createSVGElement_('foreignObject');
+    this.foreignDiv_ = goog.dom.createDom('div');
+    this.foreignDiv_.innerHTML = this.text_ || '';
+    this.foreignDiv_.setAttribute('xmlns', 'http://www.w3.org/1999/xhtml');
+    goog.dom.appendChild(this.foreignObject_, this.foreignDiv_);
+  }
+};
+
+
+/**
+ * TODO (A.Kudryavtsev): Descr.
+ * @param {Array.<string>} lines - Lines to prepare.
+ * @private
+ */
+anychart.core.ui.OptimizedText.prototype.prepareWordBreakBreakAll_ = function(lines) {
+  var line, textsInLine;
+
+  this.wordBreakBreakAll_ = true;
+  //TODO (A.Kudryavtsev): Performance super fail.
+  if (!this.multilineTexts_.length) {
+    for (var i = 0; i < lines.length; i++) {
+      line = lines[i];
+      textsInLine = [];
+      var cut = '';
+      for (var j = 0; j < line.length; j++) {
+        cut += line[j];
+        textsInLine.push(this.setupSubText(cut));
+      }
+
+      this.multilineTexts_.push(textsInLine);
+    }
+  }
+};
+
+
+/**
+ * TODO (A.Kudryavtsev): Descr.
+ * @param {Array.<string>} lines - Lines to prepare.
+ * @private
+ */
+anychart.core.ui.OptimizedText.prototype.prepareWordBreakKeepAll_ = function(lines) {
+  var line, textsInLine;
+  this.wordBreakKeepAll_ = true;
+  if (!this.multilineTexts_.length) {
+    this.w_wText_ = this.setupSubText('W W', this.w_wText_); //w_wText_ can be undefined here.
+    this.wText_ = this.setupSubText('W', this.wText_); //wText_ can be undefined here.
+
+    for (var i = 0; i < lines.length; i++) {
+      line = lines[i];
+      var splitted = line.split(' '); //TODO (A.Kudryavtsev): Can we replace this with splitting by regex to avoid the next passage?
+      var toAdd = '';
+
+      textsInLine = [];
+      for (var j = 0; j < splitted.length; j++) {
+        toAdd += splitted[j];
+        textsInLine.push(this.setupSubText(toAdd));
+        toAdd += ((j == splitted.length - 1) ? '' : ' ');
+      }
+
+      this.multilineTexts_.push(textsInLine);
+    }
+  }
+};
+
+
+/**
+ * TODO (A.Kudryavtsev): Descr.
+ * @param {Array.<string>} lines - Lines to prepare.
+ * @private
+ */
+anychart.core.ui.OptimizedText.prototype.prepareMultilineOnly_ = function(lines) {
+  this.multilineOnly_ = true;
+  for (var i = 0; i < lines.length; i++) {
+    var line = lines[i];
+    if (this.textsToRender_[i]) {
+      this.setupSubText(line, this.textsToRender_[i]);
+    } else {
+      this.textsToRender_.push(this.setupSubText(line));
+    }
+  }
+  for (var j = i; j < this.textsToRender_.length; j++) {
+    this.textsToRender_[j].dispose();
+  }
+  this.textsToRender_.length = lines.length;
 };
 
 
@@ -574,42 +664,53 @@ anychart.core.ui.OptimizedText.prototype.setupFadeGradient = function(bounds, op
  *  Used to get a linear fade gradient.
  */
 anychart.core.ui.OptimizedText.prototype.renderTo = function(element, opt_stage) {
-  var i, line;
-  if (this.wordBreakKeepAll_ || this.wordBreakBreakAll_) {
-    this.container = element;
-    if (this.wText_)
-      this.wText_.renderTo(element);
-    if (this.w_wText_)
-      this.w_wText_.renderTo(element);
-    for (i = 0; i < this.multilineTexts_.length; i++) {
-      line = this.multilineTexts_[i];
-      if (line) {
-        for (var j = 0; j < line.length; j++) {
-          line[j].renderTo(element, opt_stage);
+  if (this.useHtml_) {
+    if (this.container != element) {
+      this.container = element;
+      if (element) {
+        element.appendChild(this.foreignObject_);
+      } else {
+        goog.dom.removeNode(this.foreignObject_);
+      }
+    }
+  } else {
+    var i, line;
+    if (this.wordBreakKeepAll_ || this.wordBreakBreakAll_) {
+      this.container = element;
+      if (this.wText_)
+        this.wText_.renderTo(element);
+      if (this.w_wText_)
+        this.w_wText_.renderTo(element);
+      for (i = 0; i < this.multilineTexts_.length; i++) {
+        line = this.multilineTexts_[i];
+        if (line) {
+          for (var j = 0; j < line.length; j++) {
+            line[j].renderTo(element, opt_stage);
+          }
         }
       }
-    }
-    for (i = 0; i < this.textsToRender_.length; i++) {
-      line = this.textsToRender_[i];
-      if (line) {
-        line.renderTo(element, opt_stage);
+      for (i = 0; i < this.textsToRender_.length; i++) {
+        line = this.textsToRender_[i];
+        if (line) {
+          line.renderTo(element, opt_stage);
+        }
       }
-    }
-  } else if (this.multilineOnly_) {
-    this.container = element;
-    for (i = 0; i < this.textsToRender_.length; i++) {
-      line = this.textsToRender_[i];
-      if (line) {
-        line.renderTo(element, opt_stage);
+    } else if (this.multilineOnly_) {
+      this.container = element;
+      for (i = 0; i < this.textsToRender_.length; i++) {
+        line = this.textsToRender_[i];
+        if (line) {
+          line.renderTo(element, opt_stage);
+        }
       }
-    }
-  } else if (this.container != element) {
-    this.container = element;
-    var dom = this.getDomElement();
-    if (element) {
-      element.appendChild(dom);
-    } else {
-      goog.dom.removeNode(dom);
+    } else if (this.container != element) {
+      this.container = element;
+      var dom = this.getDomElement();
+      if (element) {
+        element.appendChild(dom);
+      } else {
+        goog.dom.removeNode(dom);
+      }
     }
   }
 };
@@ -645,14 +746,19 @@ anychart.core.ui.OptimizedText.prototype.putAt = function(bounds, opt_stage) {
   if (goog.isDef(opt_stage))
     this.stage = opt_stage;
 
-  /*
-    bounds.width >= 1 condition is added because:
-      - text in 1px width is useless
-      - fade gradient issue: some browsers (for 11 Feb 2019) don't apply gradient like
-          <linearGradient x1="26" y1="35" x2="26" y2="35" spreadMethod="pad" gradientUnits="userSpaceOnUse"> </linearGradient>
-        (same values of x1 and x2). Width that exceeds 1 guarantees that x1 differs from x2.
-   */
-  if (!this.style_['textOverflow'] || (this.style_['textOverflow'] && bounds.width >= 1)) {
+  if (this.useHtml_) {
+    this.foreignObject_.setAttribute('x', bounds.left);
+    this.foreignObject_.setAttribute('y', bounds.top);
+    this.foreignObject_.setAttribute('width', bounds.width);
+    this.foreignObject_.setAttribute('height', bounds.height);
+  } else if (!this.style_['textOverflow'] || (this.style_['textOverflow'] && bounds.width >= 1)) {
+    /*
+      bounds.width >= 1 condition is added because:
+        - text in 1px width is useless
+        - fade gradient issue: some browsers (for 11 Feb 2019) don't apply gradient like
+            <linearGradient x1="26" y1="35" x2="26" y2="35" spreadMethod="pad" gradientUnits="userSpaceOnUse"> </linearGradient>
+          (same values of x1 and x2). Width that exceeds 1 guarantees that x1 differs from x2.
+    */
     if (this.wordBreakBreakAll_) {
       this.putWordBreakKeepAll_(bounds);
     } else if (this.wordBreakKeepAll_) {
@@ -1146,7 +1252,7 @@ anychart.core.ui.OptimizedText.prototype.prepareBounds = function() {
  * Working with anychart.core.ui.LabelsSettings, here are a lot of cases
  * when text bounds calculation is not necessary (just @see prepareBounds() method).
  * Calling this method is NOT A GUARANTEE of you'll get the bounds anytime you wish.
- * Event the call of prepareBounds() is not a guarantee of getting required
+ * Even the call of prepareBounds() is not a guarantee of getting required
  * bounds because it may calculate bounds for correct complex text features.
  *
  * Sometimes bounds are calculated only after the text is rendered for optimization
