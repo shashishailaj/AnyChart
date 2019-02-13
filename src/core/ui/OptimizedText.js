@@ -1157,10 +1157,13 @@ anychart.core.ui.OptimizedText.prototype.getDivStyle = function(width, height) {
   if ('vAlign' in style)
     result += ('vertical-align: ' + style['vAlign'] + '; ');
 
+  if ('hAlign' in style)
+    result += ('text-align: ' + style['hAlign'] + '; ');
+
   if ('wordBreak' in style && style['wordBreak'])
     result += ('word-break: ' + style['wordBreak'] + '; ');
 
-  result += ('width: ' + width + 'px; height: ' + height + 'px; ');
+  result += ('width: ' + width + 'px; height: ' + height + 'px; ' + 'max-width: ' + width + 'px;');
 
   return result;
 };
