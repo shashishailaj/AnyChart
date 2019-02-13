@@ -169,6 +169,13 @@ anychart.core.ui.OptimizedText = function() {
    */
   this.fadeGradientId_ = null;
 
+  /**
+   * Text got by HTML parser if browser is IE.
+   * @type {string}
+   * @private
+   */
+  this.accumulatedIEText_ = '';
+
 };
 
 
@@ -272,7 +279,7 @@ anychart.core.ui.OptimizedText.prototype.addSegment = function(text, opt_style, 
     only for IE because it doesn't support svg foreignObject.
     That's why HTML text just turns to a regular text.
    */
-  this.text(this.text() + text);
+  this.accumulatedIEText_ += text;
 };
 
 
@@ -286,7 +293,7 @@ anychart.core.ui.OptimizedText.prototype.addBreak = function() {
     only for IE because it doesn't support svg foreignObject.
     That's why HTML text just turns to a regular text.
    */
-  this.text(this.text() + '\n');
+  this.accumulatedIEText_ += '\n';
 };
 
 
@@ -300,6 +307,8 @@ anychart.core.ui.OptimizedText.prototype.finalizeTextLine = function() {
     only for IE because it doesn't support svg foreignObject.
     That's why HTML text just turns to a regular text.
    */
+  this.text(this.accumulatedIEText_);
+  this.accumulatedIEText_ = '';
   this.prepareHotHtmlComplexity_();
 };
 
@@ -424,7 +433,6 @@ anychart.core.ui.OptimizedText.prototype.prepareComplexity = function() {
 anychart.core.ui.OptimizedText.prototype.prepareHtmlComplexity_ = function() {
   if (goog.labs.userAgent.browser.isIE()) {
     acgraph.utils.HTMLParser.getInstance().parseText(this);
-    //TODO (A.Kudryavtsev): Impl.
   } else {
     this.useHtml_ = true;
     if (!this.foreignObject_) {
@@ -1128,8 +1136,11 @@ anychart.core.ui.OptimizedText.prototype.getDivStyle = function(width, height) {
   if ('fontFamily' in style)
     result += ('font-family: ' + style['fontFamily'] + '; ');
 
-  if ('fontSize' in style)
-    result += ('font-size: ' + style['fontSize'] + '; ');
+  if ('fontSize' in style) {
+    var fontSize = parseFloat(style['fontSize']);
+    fontSize = isNaN(fontSize) ? 13 : fontSize;
+    result += ('font-size: ' + style['fontSize'] + 'px; ');
+  }
 
   if ('fontWeight' in style)
     result += ('font-weight: ' + style['fontWeight'] + '; ');
@@ -1146,7 +1157,7 @@ anychart.core.ui.OptimizedText.prototype.getDivStyle = function(width, height) {
   if ('vAlign' in style)
     result += ('vertical-align: ' + style['vAlign'] + '; ');
 
-  if ('wordBreak' in style)
+  if ('wordBreak' in style && style['wordBreak'])
     result += ('word-break: ' + style['wordBreak'] + '; ');
 
   result += ('width: ' + width + 'px; height: ' + height + 'px; ');
