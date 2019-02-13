@@ -858,6 +858,9 @@ anychart.ganttModule.Column.prototype.buttonInvalidated_ = function(event) {
  * @param {anychart.treeDataModule.Tree.DataItem} item - .
  */
 anychart.ganttModule.Column.prototype.fixDeprecatedFormatting = function(context, item) {
+  /*
+    NOTE: must be removed. @deprecated since 8.2.0.
+   */
   var dataItemMethods = ['get', 'set', 'meta', 'del', 'getParent', 'addChild', 'addChildAt', 'getChildren', 'numChildren', 'getChildAt', 'remove', 'removeChild', 'removeChildAt', 'removeChildren', 'indexOfChild'];
   goog.array.forEach(dataItemMethods, function(methodName) {
     var wrappedMethod = item['__wrapped' + methodName];

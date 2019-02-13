@@ -93,8 +93,8 @@ anychart.core.ui.LabelsSettings = function() {
     ['letterSpacing', 0, anychart.Signal.BOUNDS_CHANGED, 0, this.resetFlatSettings],
     ['textDirection', 0, 0], //TODO (A.Kudryavtsev): Not supported for a while.
     ['textIndent', 0, anychart.Signal.BOUNDS_CHANGED, 0, this.resetFlatSettings],
-    ['textOverflow', 0, anychart.Signal.BOUNDS_CHANGED, 0, this.resetFlatSettings],
-    ['useHtml', 0, 0], //TODO (A.Kudryavtsev): Not supported for a while.
+    ['textOverflow', 0, anychart.Signal.NEEDS_REDRAW, 0, this.resetFlatSettings], //Doesn't affect bounds.
+    ['useHtml', 0, anychart.Signal.BOUNDS_CHANGED, 0, this.resetFlatSettings],
     ['wordBreak', 0, anychart.Signal.BOUNDS_CHANGED, 0, this.resetFlatSettings],
     ['wordWrap', 0, anychart.Signal.BOUNDS_CHANGED, 0, this.resetFlatSettings],
     ['fontColor', 0, anychart.Signal.NEEDS_REDRAW, 0, this.resetFlatSettings], //Doesn't affect bounds.
@@ -404,7 +404,12 @@ anychart.core.ui.LabelsSettings.prototype.getText = function(context) {
  * @return {boolean} - If text needs bounds calculation to be placed correctly.
  */
 anychart.core.ui.LabelsSettings.prototype.needsBoundsCalculation = function() {
-  return (this.considerHAlign() || this.considerWordWrap() || this.considerTextOverflow() || this.considerWordBreak());
+  return (
+      this.considerHAlign() ||
+      this.considerWordWrap() ||
+      this.considerWordBreak() ||
+      this.considerUseHtml()
+  );
 };
 
 
@@ -421,6 +426,7 @@ anychart.core.ui.LabelsSettings.prototype.considerHAlign = function() {
 
 /**
  * Checks whether texts needs consider hAlign for positioning purposes.
+ * TODO (A.Kudryavtsev): Looks like we don't need it.
  * @return {boolean}
  */
 anychart.core.ui.LabelsSettings.prototype.considerVAlign = function() {
@@ -460,6 +466,16 @@ anychart.core.ui.LabelsSettings.prototype.considerTextOverflow = function() {
   var conf = this.flatten();
   var widthIsSet = goog.isDefAndNotNull(conf['width']);
   return widthIsSet && conf['textOverflow'];
+};
+
+
+/**
+ * Checks whether texts needs to calculate its bounds because of useHtml option value.
+ * @return {boolean}
+ */
+anychart.core.ui.LabelsSettings.prototype.considerUseHtml = function() {
+  var conf = this.flatten();
+  return conf['useHtml'];
 };
 
 

@@ -1,6 +1,7 @@
 goog.provide('anychart.core.ui.OptimizedText');
 
 //region -- Requirements.
+goog.require('acgraph.vector.IHtmlText');
 goog.require('anychart.math.Rect');
 
 goog.require('goog.string');
@@ -22,6 +23,7 @@ goog.require('goog.string');
  *    6) Set the position and parentBounds with putAt().
  *    7) Call finalizeComplexity().
  * @constructor
+ * @implements {acgraph.vector.IHtmlText}
  */
 anychart.core.ui.OptimizedText = function() {
 
@@ -80,6 +82,14 @@ anychart.core.ui.OptimizedText = function() {
 
 
   /**
+   * For HTML text case. The texts that will be rendered in the end.
+   * @type {Array.<Array.<anychart.core.ui.OptimizedText>>}
+   * @private
+   */
+  this.htnlTextsToRender_ = [];
+
+
+  /**
    * Actually is an array of lines splitted by \n.
    * In this case each line is an array of anychart.core.ui.OptimizedText that we deal with.
    * @type {Array.<Array.<anychart.core.ui.OptimizedText>>}
@@ -114,6 +124,14 @@ anychart.core.ui.OptimizedText = function() {
    * @private
    */
   this.wordBreakBreakAll_ = false;
+
+
+  /**
+   * Flag whether the text is in 'useHtml' mode.
+   * @type {boolean}
+   * @private
+   */
+  this.useHtml_ = false;
 
 
   /**
@@ -159,30 +177,19 @@ anychart.core.ui.OptimizedText = function() {
    */
   this.fadeGradientId_ = null;
 
+  /**
+   * Current set of optimized texts.
+   * Used to build this.multilineTexts_ correctly.
+   * @type {Array.<anychart.core.ui.OptimizedText>}
+   * @private
+   */
+  this.recentHtmlLine_ = [];
+
 };
 
 
 //endregion
 //region -- Simplified API.
-/**
- * Text value getter/setter.
- * @param {string=} opt_value - Text value to set.
- * @return {string|anychart.core.ui.OptimizedText}
- */
-anychart.core.ui.OptimizedText.prototype.text = function(opt_value) {
-  if (goog.isDef(opt_value)) {
-    var value = goog.string.normalizeSpaces(opt_value);
-    value = goog.string.canonicalizeNewlines(value);
-    if (this.text_ != value) {
-      this.consistency.text = true;
-      this.text_ = value;
-    }
-    return this;
-  }
-  return this.text_;
-};
-
-
 /**
  * Gets width by bounds.
  * If bounds are not calculated, returns 0 without developer notification.
@@ -236,7 +243,8 @@ anychart.core.ui.OptimizedText.prototype.style = function(opt_value) {
       this.style_ = st;
 
       if (opt_value['fontSize']) {
-        var fontSize = opt_value['fontSize'];
+        var fontSize = parseFloat(opt_value['fontSize']);
+        fontSize = isNaN(fontSize) ? 13 : fontSize;
         this.calculatedLineHeight = fontSize < 24 ? fontSize + 3 : Math.round(fontSize * 1.2);
         this.baseline = Math.round(this.calculatedLineHeight * 0.8);
       }
@@ -265,6 +273,66 @@ anychart.core.ui.OptimizedText.prototype.compareObject = function(oldObj, newObj
       diff[key] = true;
   }
   return diff;
+};
+
+
+//endregion
+//region -- acgraph.vector.IHtmlText implementation.
+/**
+ * @inheritDoc
+ */
+anychart.core.ui.OptimizedText.prototype.addSegment = function(text, opt_style, opt_break) {
+  /*
+    Here we setup the text with a mixture of default style and parsed style.
+    Also it drops 'useHtml' value from style extended clone because text,
+    came from HTMLParser is constant by style and doesn't need an additional
+    HTML parsing.
+   */
+  var t = this.setupSubText(text, void 0, opt_style, true);
+
+  /*
+    But the text can still be complex and \n must be ignored.
+   */
+  t.prepareNotHtmlComplexity_(true);
+
+  this.recentHtmlLine_.push(t);
+
+};
+
+
+/**
+ * @inheritDoc
+ */
+anychart.core.ui.OptimizedText.prototype.addBreak = function() {
+  if (this.recentHtmlLine_.length) {
+    this.multilineTexts_.push(this.recentHtmlLine_);
+    this.recentHtmlLine_ = [];
+  }
+};
+
+
+/**
+ * @inheritDoc
+ */
+anychart.core.ui.OptimizedText.prototype.finalizeTextLine = function() {
+  this.addBreak();
+};
+
+
+/**
+ * @inheritDoc
+ */
+anychart.core.ui.OptimizedText.prototype.text = function(opt_value) {
+  if (goog.isDef(opt_value)) {
+    var value = goog.string.normalizeSpaces(opt_value);
+    value = goog.string.canonicalizeNewlines(value);
+    if (this.text_ != value) {
+      this.consistency.text = true;
+      this.text_ = value;
+    }
+    return this;
+  }
+  return this.text_;
 };
 
 
@@ -354,72 +422,143 @@ anychart.core.ui.OptimizedText.prototype.disposeTextsToRender_ = function(opt_ha
 anychart.core.ui.OptimizedText.prototype.prepareComplexity = function() {
   if (!this.consistency.complexity) {
     this.consistency.complexity = true;
-    var lines = this.text_.split(/\n/g); // splitting 'sentence1 \n sentence2' to ['sentence1', 'sentence2'].
+    if (this.style_['useHtml'])
+      this.prepareHtmlComplexity_();
+    else
+      this.prepareNotHtmlComplexity_();
+  }
+};
 
-    var i, j, line, textsInLine;
-    var width = this.style_['width'];
-    var height = this.style_['height'];
-    var wordBreak = this.style_['wordBreak'];
-    var wordWrap = this.style_['wordWrap'];
-    if (wordBreak && goog.isDefAndNotNull(width)) {
-      if (wordBreak == anychart.enums.WordBreak.BREAK_ALL) {
-        this.wordBreakBreakAll_ = true;
-        //TODO (A.Kudryavtsev): Performance super fail.
-        if (!this.multilineTexts_.length) {
-          for (i = 0; i < lines.length; i++) {
-            line = lines[i];
-            textsInLine = [];
-            var cut = '';
-            for (j = 0; j < line.length; j++) {
-              cut += line[j];
-              textsInLine.push(this.setupSubText(cut));
-            }
 
-            this.multilineTexts_.push(textsInLine);
-          }
-        }
-      } else {
-        this.wordBreakKeepAll_ = true;
-        if (!this.multilineTexts_.length) {
-          this.w_wText_ = this.setupSubText('W W', this.w_wText_); //w_wText_ can be undefined here.
-          this.wText_ = this.setupSubText('W', this.wText_); //wText_ can be undefined here.
+/**
+ * Prepares 'useHtml' complexity. Depends on this.style_['useHtml'] option value.
+ * @private
+ */
+anychart.core.ui.OptimizedText.prototype.prepareHtmlComplexity_ = function() {
+  this.useHtml_ = true;
 
-          for (i = 0; i < lines.length; i++) {
-            line = lines[i];
-            var splitted = line.split(' '); //TODO (A.Kudryavtsev): Can we replace this with splitting by regex to avoid the next passage?
-            var toAdd = '';
-
-            textsInLine = [];
-            for (j = 0; j < splitted.length; j++) {
-              toAdd += splitted[j];
-              textsInLine.push(this.setupSubText(toAdd));
-              toAdd += ((j == splitted.length - 1) ? '' : ' ');
-            }
-
-            this.multilineTexts_.push(textsInLine);
-          }
-        }
-
-      }
-      //TODO (A.Kudryavtsev): Check if we need this.
-      this.disposeTextsToRender_(true);
-    } else if (goog.isDefAndNotNull(wordWrap)) {
-      //TODO (A.Kudryavtsev): Future implementation.
-    } else if (lines.length > 1) {
-      for (i = 0; i < lines.length; i++) {
-        this.multilineOnly_ = true;
-        line = lines[i];
-        if (this.textsToRender_[i]) {
-          this.setupSubText(line, this.textsToRender_[i]);
-        } else {
-          this.textsToRender_.push(this.setupSubText(line));
-        }
-      }
-      for (j = i; j < this.textsToRender_.length; j++) {
-        this.textsToRender_[j].dispose();
-      }
-      this.textsToRender_.length = lines.length;
+  var wordBreak = this.style_['wordBreak'];
+  if (wordBreak) {
+    if (wordBreak == anychart.enums.WordBreak.BREAK_ALL) {
+      this.wordBreakBreakAll_ = true;
+    } else {
+      this.wordBreakKeepAll_ = true;
     }
+  }
+
+  acgraph.utils.HTMLParser.getInstance().parseText(this);
+
+  if (!this.wordBreakBreakAll_ && !this.wordBreakKeepAll_ && this.multilineTexts_.length > 1) {
+    this.multilineOnly_ = true;
+  }
+};
+
+
+/**
+ * TODO (A.Kudryavtsev): Descr.
+ * @param {Array.<string>} lines - Lines to prepare.
+ * @private
+ */
+anychart.core.ui.OptimizedText.prototype.prepareNotHtmlWordBreakBreakAll_ = function(lines) {
+  var line, textsInLine;
+
+  this.wordBreakBreakAll_ = true;
+  //TODO (A.Kudryavtsev): Performance super fail.
+  if (!this.multilineTexts_.length) {
+    for (var i = 0; i < lines.length; i++) {
+      line = lines[i];
+      textsInLine = [];
+      var cut = '';
+      for (var j = 0; j < line.length; j++) {
+        cut += line[j];
+        textsInLine.push(this.setupSubText(cut));
+      }
+
+      this.multilineTexts_.push(textsInLine);
+    }
+  }
+};
+
+
+/**
+ * TODO (A.Kudryavtsev): Descr.
+ * @param {Array.<string>} lines - Lines to prepare.
+ * @private
+ */
+anychart.core.ui.OptimizedText.prototype.prepareNotHtmlWordBreakKeepAll_ = function(lines) {
+  var line, textsInLine;
+  this.wordBreakKeepAll_ = true;
+  if (!this.multilineTexts_.length) {
+    this.w_wText_ = this.setupSubText('W W', this.w_wText_); //w_wText_ can be undefined here.
+    this.wText_ = this.setupSubText('W', this.wText_); //wText_ can be undefined here.
+
+    for (var i = 0; i < lines.length; i++) {
+      line = lines[i];
+      var splitted = line.split(' '); //TODO (A.Kudryavtsev): Can we replace this with splitting by regex to avoid the next passage?
+      var toAdd = '';
+
+      textsInLine = [];
+      for (var j = 0; j < splitted.length; j++) {
+        toAdd += splitted[j];
+        textsInLine.push(this.setupSubText(toAdd));
+        toAdd += ((j == splitted.length - 1) ? '' : ' ');
+      }
+
+      this.multilineTexts_.push(textsInLine);
+    }
+  }
+};
+
+
+/**
+ * TODO (A.Kudryavtsev): Descr.
+ * @param {Array.<string>} lines - Lines to prepare.
+ * @private
+ */
+anychart.core.ui.OptimizedText.prototype.prepareNotHtmlMultilineOnly_ = function(lines) {
+  this.multilineOnly_ = true;
+  for (var i = 0; i < lines.length; i++) {
+    var line = lines[i];
+    if (this.textsToRender_[i]) {
+      this.setupSubText(line, this.textsToRender_[i]);
+    } else {
+      this.textsToRender_.push(this.setupSubText(line));
+    }
+  }
+  for (var j = i; j < this.textsToRender_.length; j++) {
+    this.textsToRender_[j].dispose();
+  }
+  this.textsToRender_.length = lines.length;
+};
+
+
+/**
+ * Prepares not 'useHtml' complexity. Depends on this.style_['useHtml'] option value.
+ * @param {boolean=} opt_ignoreSlashN - Whether to skip splitting text line by \n.
+ * @private
+ */
+anychart.core.ui.OptimizedText.prototype.prepareNotHtmlComplexity_ = function(opt_ignoreSlashN) {
+  var lines = opt_ignoreSlashN ?
+      [this.text_] :
+      this.text_.split(/\n/g); // splitting 'sentence1 \n sentence2' to ['sentence1', 'sentence2'].
+
+  var width = this.style_['width'];
+  var height = this.style_['height'];
+  var wordBreak = this.style_['wordBreak'];
+  var wordWrap = this.style_['wordWrap'];
+
+  if (wordBreak && goog.isDefAndNotNull(width)) {
+    if (wordBreak == anychart.enums.WordBreak.BREAK_ALL) {
+      this.prepareNotHtmlWordBreakBreakAll_(lines);
+    } else {
+      this.prepareNotHtmlWordBreakKeepAll_(lines);
+    }
+    //TODO (A.Kudryavtsev): Check if we need this.
+    this.disposeTextsToRender_(true);
+  } else if (goog.isDefAndNotNull(wordWrap)) {
+    //TODO (A.Kudryavtsev): Future implementation.
+  } else if (lines.length > 1) {
+    this.prepareNotHtmlMultilineOnly_(lines);
   }
 };
 
@@ -472,15 +611,51 @@ anychart.core.ui.OptimizedText.prototype.finalizeComplexity = function() {
  * General idea: subText must never be complex!
  * @param {string} textValue - .
  * @param {anychart.core.ui.OptimizedText=} opt_text - .
+ * @param {Object=} opt_style - Custom style to set.
+ * @param {boolean=} opt_dropUseHtml - Whether to remove useHtml value from cloned style.
  * @return {anychart.core.ui.OptimizedText} - Itself.
  */
-anychart.core.ui.OptimizedText.prototype.setupSubText = function(textValue, opt_text) {
+anychart.core.ui.OptimizedText.prototype.setupSubText = function(textValue, opt_text, opt_style, opt_dropUseHtml) {
   var text = opt_text || new anychart.core.ui.OptimizedText();
   // text.setClassName(this.cssClass_);
-  text.style(this.style_);
+
+  //Makes an extended copy.
+  var st = anychart.utils.recursiveExtend(this.style_, opt_style || {});
+
+  if (opt_dropUseHtml)
+    st['useHtml'] = false;
+
+  text.style(st);
   text.text(textValue);
   text.applySettings();
   return text;
+};
+
+
+/**
+ *
+ * @param {Array.<anychart.core.ui.OptimizedText>} line - Line of texts to find matching width.
+ * @param {number} width - Width to find.
+ * @return {?anychart.core.ui.OptimizedText} - Found text or null if nothing's found.
+ * @private
+ */
+anychart.core.ui.OptimizedText.prototype.findByWidth_ = function(line, width) {
+  var index = goog.array.binarySearch(line, width, this.widthComparator_);
+  index = index >= 0 ? index : ~index;
+  return line[index] || null;
+};
+
+
+/**
+ * @param {number} width - Width to find.
+ * @param {anychart.core.ui.OptimizedText} text - Text with bounds defined.
+ * @return {number}
+ * @private
+ */
+anychart.core.ui.OptimizedText.prototype.widthComparator_ = function(width, text) {
+  if (anychart.DEBUG_MEASUREMENTS && (!text.bounds || !text.bounds.width))
+    anychart.core.reporting.callLog('warn', 'Bounds are not set or width is zero. Please debug it.');
+  return width - text.bounds.width;
 };
 
 
@@ -524,13 +699,13 @@ anychart.core.ui.OptimizedText.prototype.removeFadeGradient = function() {
 anychart.core.ui.OptimizedText.prototype.setupFadeGradient = function(bounds, opt_hAlign) {
   if (this.stage) {
     var dom = this.getDomElement();
-    if (this.style_['textOverflow'] && goog.isDefAndNotNull(this.style_['width']) && this.bounds && this.bounds.width) {
+    if (this.style_['textOverflow']) {
       this.removeFadeGradient();
       var defs = this.stage.getDefs();
-      var fadeGradientKeys = anychart.utils.getFadeGradientKeys(bounds.width / this.bounds.width,
+      var fadeGradientKeys = anychart.utils.getFadeGradientKeys(1,
           this.style_['fontOpacity'], this.style_['fontColor'] || 'black', void 0, opt_hAlign);
 
-      this.fadeGradient_ = defs.getLinearGradient(fadeGradientKeys);
+      this.fadeGradient_ = defs.getLinearGradient(fadeGradientKeys, void 0, void 0, bounds);
       var pathPrefix = 'url(' + acgraph.getReference() + '#';
       this.fadeGradientId_ = this.renderer.renderLinearGradient(this.fadeGradient_, this.stage.getDefs(), bounds);
       dom.setAttribute('fill', pathPrefix + this.fadeGradientId_ + ')');
@@ -549,7 +724,7 @@ anychart.core.ui.OptimizedText.prototype.setupFadeGradient = function(bounds, op
  */
 anychart.core.ui.OptimizedText.prototype.renderTo = function(element, opt_stage) {
   var i, line;
-  if (this.wordBreakKeepAll_ || this.wordBreakBreakAll_) {
+  if (this.wordBreakKeepAll_ || this.wordBreakBreakAll_ || this.useHtml_) {
     this.container = element;
     if (this.wText_)
       this.wText_.renderTo(element);
@@ -599,7 +774,7 @@ anychart.core.ui.OptimizedText.prototype.hasContainer = function() {
     But the order of usage must be organized that way
     to make these conditions work.
    */
-  if (this.wordBreakBreakAll_) {
+  if (this.wordBreakBreakAll_ || this.useHtml_) {
     return !!(this.multilineTexts_[0] && this.multilineTexts_[0][0] && this.multilineTexts_[0][0].container);
   } else if (this.wordBreakKeepAll_) {
     return !!this.wText_.container;
@@ -619,7 +794,9 @@ anychart.core.ui.OptimizedText.prototype.putAt = function(bounds, opt_stage) {
   if (goog.isDef(opt_stage))
     this.stage = opt_stage;
 
-  if (this.wordBreakBreakAll_) {
+  if (this.useHtml_) { //Check this first because html-text can also be 'break-all', etc.
+    this.putHtml_(bounds);
+  } else if (this.wordBreakBreakAll_) {
     this.putWordBreakKeepAll_(bounds);
   } else if (this.wordBreakKeepAll_) {
     this.putWordBreakKeepAll_(bounds, true);
@@ -646,6 +823,7 @@ anychart.core.ui.OptimizedText.prototype.putAt = function(bounds, opt_stage) {
  * Puts texts in correct order in WordBeak-KeepAll mode.
  * @param {anychart.math.Rect} bounds - .
  * @param {boolean=} opt_considerSpace - Whether to consider space.
+ * @return {number} - TODO (A.Kudryavtsev): Describe.
  * @private
  */
 anychart.core.ui.OptimizedText.prototype.putWordBreakKeepAll_ = function(bounds, opt_considerSpace) {
@@ -656,6 +834,8 @@ anychart.core.ui.OptimizedText.prototype.putWordBreakKeepAll_ = function(bounds,
   this.bounds.height = 0;
   var spaceWidth = opt_considerSpace ? this.spaceWidth : 0;
   var text, b, newText;
+  var lastBounds, boundsToSet;
+
   //Going through the lines splitted by \n.
   for (var i = 0; i < this.multilineTexts_.length; i++) {
     var line = this.multilineTexts_[i];
@@ -684,7 +864,7 @@ anychart.core.ui.OptimizedText.prototype.putWordBreakKeepAll_ = function(bounds,
         newText.style(this.style_);
 
         currWidth = textToPush.width();
-        var boundsToSet = new anychart.math.Rect(b.left, b.top, currWidth - prevWidth, b.height);
+        boundsToSet = new anychart.math.Rect(b.left, b.top, currWidth - prevWidth, b.height);
         currWidth += +spaceWidth;
         prevWidth = currWidth;
 
@@ -712,7 +892,7 @@ anychart.core.ui.OptimizedText.prototype.putWordBreakKeepAll_ = function(bounds,
     if (lastLine && line.length >= 1 && lastLine != textToPush) {
       cut = goog.string.remove(lastLine.text_, textToRemove);
       b = lastLine.bounds;
-      var lastBounds = new anychart.math.Rect(b.left, b.top, b.width - currWidth, b.height);
+      lastBounds = new anychart.math.Rect(b.left, b.top, b.width - currWidth, b.height);
       this.bounds.width = Math.max(this.bounds.width, lastBounds.width);
       this.bounds.height += lastBounds.height;
       newText = new anychart.core.ui.OptimizedText();
@@ -724,6 +904,7 @@ anychart.core.ui.OptimizedText.prototype.putWordBreakKeepAll_ = function(bounds,
     }
   }
   this.putMultiline_(bounds);
+  return lastBounds ? lastBounds.width : boundsToSet ? boundsToSet.width : 0;
 };
 
 
@@ -801,6 +982,127 @@ anychart.core.ui.OptimizedText.prototype.putMultiline_ = function(bounds) {
       }
       break;
   }
+};
+
+
+/**
+ * TODO (A.Kudryavtsev): Describe.
+ * @param {anychart.math.Rect} bounds - .
+ * @private
+ */
+anychart.core.ui.OptimizedText.prototype.putHtml_ = function(bounds) {
+  //width will be NaN if bounds are not set.
+  var width = anychart.utils.normalizeSize(this.style_['width'], bounds.width);
+  this.disposeTextsToRender_(true);
+  this.consistency.complexity = true;
+
+  var wordBreak = this.style_['wordBreak'];
+  var wordWrap = this.style_['wordWrap'];
+
+  if (this.wordBreakBreakAll_) {
+    this.putHtmlWordBreakBreakAll_(bounds);
+  } else if (this.wordBreakBreakAll_) {
+    //TODO (A.Kudryavtsev): Impl.
+  } else if (this.multilineOnly_) {
+    this.putHtmlMultilineOnly_(bounds);
+  } else {
+    //TODO (A.Kudryavtsev):
+  }
+
+  // for (var i = 0; i < this.multilineTexts_.length; i++) {
+  //   var line = this.multilineTexts_[i];
+  //   var maxHeightOfLine = 0, j, t;
+  //
+  //   for (j = 0; j < line.length; j++) {
+  //     t = line[j];
+  //     /*
+  //       Note that useHtml assumes that bounds are always calculated.
+  //       That's why we can ask t.bounds.height directly, not t.height().
+  //      */
+  //     maxHeightOfLine = Math.max(t.bounds.height); //TODO (A.Kudryavtsev): probably we should ask for baseline, not bounds.height.
+  //   }
+  //
+  //   for (j = 0; j < line.length; j++) {
+  //     t = line[j];
+  //     console.log(i, j, t.text_);
+  //
+  //   }
+  //
+  // }
+
+};
+
+
+/**
+ * Puts html texts in correct order in WordBeak-KeepAll mode.
+ * @param {anychart.math.Rect} bounds - .
+ * @param {boolean=} opt_considerSpace - Whether to consider space.
+ * @private
+ */
+anychart.core.ui.OptimizedText.prototype.putHtmlWordBreakBreakAll_ = function(bounds, opt_considerSpace) {
+  /*
+    Pretty difficult to understand. The explanation.
+    this.multilineTexts_ contains lines of texts split by <br>.
+
+    Each line is the text with its own style.
+    Since wordBreakBreakAll_ is set as true, each of these texts can be complex,
+    that's why it is also contains its own multilineTexts_.
+    To put it correctly, we use the third cycle.
+   */
+  for (var i = 0; i < this.multilineTexts_.length; i++) {
+    /*
+      Cycle by source lines split by <br> like
+        [<text1><text2>] <br>
+        [<text3>]
+    */
+    var line = this.multilineTexts_[i]; //line is [<text1><text2>]
+    var j, k, l;
+
+    for (j = 0; j < line.length; j++) {
+      /*
+        Cycle by line segments like
+          <text1>
+          <text2>
+       */
+      var maxHeightOfLine = 0;
+      var segment = line[j]; //segment here is <text1>
+      var subLines = segment.multilineTexts_;
+      for (k = 0; k < subLines.length; k++) {
+        /*
+          Cycle by each line of subLines like
+          [
+            [<t><te><tex><text><text1>]
+          ]
+         */
+        var subLine = subLines[k];
+        for (l = 0; l < subLine.length; l++) {
+          /*
+            subline is line of texts like
+              [<t><te><tex><text><text1>]
+           */
+          var subText = subLine[l]; //is a text <tex>
+
+          /*
+            Note that useHtml assumes that bounds are always calculated.
+            That's why we can ask t.bounds.height directly, not t.height().
+          */
+          maxHeightOfLine = Math.max(subText.bounds.height); //TODO (A.Kudryavtsev): probably we should ask for baseline, not bounds.height.
+        }
+      }
+      // console.log(maxHeightOfLine, segment.text_);
+
+    }
+  }
+};
+
+
+/**
+ * Puts html texts in correct order in multiline-only mode.
+ * @param {anychart.math.Rect} bounds - .
+ * @private
+ */
+anychart.core.ui.OptimizedText.prototype.putHtmlMultilineOnly_ = function(bounds) {
+  //TODO (A.Kudryavtsev): Implement.
 };
 
 
@@ -1053,7 +1355,22 @@ anychart.core.ui.OptimizedText.prototype.prepareBounds = function() {
   var i, j, text, line;
 
   this.bounds = new anychart.math.Rect(0, 0, 0, 0);
-  if (this.wordBreakBreakAll_) {
+  if (this.useHtml_) {
+    //TODO (A.Kudryavtsev): Describe these 4 cycles.
+    for (i = 0; i < this.multilineTexts_.length; i++) {
+      line = this.multilineTexts_[i];
+      for (j = 0; j < line.length; j++) {
+        var subText = line[j];
+        var subLines = subText.multilineTexts_;
+        for (var k = 0; k < subLines.length; k++) {
+          var subLine = subLines[k];
+          for (var l = 0; l < subLine.length; l++) {
+            subLine[l].prepareBounds();
+          }
+        }
+      }
+    }
+  } else if (this.wordBreakBreakAll_) {
     for (i = 0; i < this.multilineTexts_.length; i++) {
       line = this.multilineTexts_[i];
       for (j = 0; j < line.length; j++) {
@@ -1111,7 +1428,7 @@ anychart.core.ui.OptimizedText.prototype.prepareBounds = function() {
  * Working with anychart.core.ui.LabelsSettings, here are a lot of cases
  * when text bounds calculation is not necessary (just @see prepareBounds() method).
  * Calling this method is NOT A GUARANTEE of you'll get the bounds anytime you wish.
- * Event the call of prepareBounds() is not a guarantee of getting required
+ * Even the call of prepareBounds() is not a guarantee of getting required
  * bounds because it may calculate bounds for correct complex text features.
  *
  * Sometimes bounds are calculated only after the text is rendered for optimization
