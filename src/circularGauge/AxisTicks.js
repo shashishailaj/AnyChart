@@ -55,7 +55,7 @@ anychart.circularGaugeModule.AxisTicks = function() {
 
   /**
    * In this class ticks are markers. Its control by MarkersFactory.
-   * @type {!anychart.core.ui.MarkersFactory}
+   * @type {anychart.core.ui.MarkersFactory}
    * @private
    */
   this.ticks_ = new anychart.core.ui.MarkersFactory();
@@ -299,9 +299,9 @@ anychart.circularGaugeModule.AxisTicks.prototype.startDrawing = function() {
   if (!goog.isFunction(this.stroke_))
     this.ticks_.setOption('stroke', this.stroke_);
   if (!goog.isFunction(this.fill_))
-    this.ticks_.fill(this.fill_);
+    this.ticks_.setOption('fill', this.fill_);
   this.ticks_.setOption('size', this.pixLength_ / 2);
-  this.ticks_.type(this.type_);
+  this.ticks_.setOption('type', this.type_);
 
   if (!this.hatchFillElement_ && !anychart.utils.isNone(this.hatchFill_)) {
     this.hatchFillElement_ = new anychart.core.ui.MarkersFactory();
@@ -318,10 +318,10 @@ anychart.circularGaugeModule.AxisTicks.prototype.startDrawing = function() {
   if (this.hatchFillElement_) {
     this.hatchFillElement_.clear();
     this.hatchFillElement_.disablePointerEvents(true);
-    this.hatchFillElement_.size(this.pixLength_ / 2);
-    this.hatchFillElement_.type(this.type_);
-    this.hatchFillElement_.fill(this.hatchFill_);
-    this.hatchFillElement_.stroke(null);
+    this.hatchFillElement_.setOption('size', this.pixLength_ / 2);
+    this.hatchFillElement_.setOption('type', this.type_);
+    this.hatchFillElement_.setOption('fill', this.hatchFill_);
+    this.hatchFillElement_.setOption('stroke', null);
   }
 };
 
@@ -463,6 +463,14 @@ anychart.circularGaugeModule.AxisTicks.prototype.setupByJSON = function(config, 
   this.fill(config['fill']);
   this.hatchFill(config['hatchFill']);
   this.position(config['position']);
+};
+
+
+/** @inheritDoc */
+anychart.circularGaugeModule.AxisTicks.prototype.disposeInternal = function() {
+  goog.dispose(this.ticks_);
+  this.ticks_ = null;
+  anychart.circularGaugeModule.AxisTicks.base(this, 'disposeInternal');
 };
 
 
