@@ -50,6 +50,11 @@ anychart.graphModule.Chart = function(opt_data) {
   this.groupsInstances = {};
   this.shapes = {};
 
+
+  /**
+   * Layer for edge's labels
+   * */
+  this.edgesLabelsLayer = this.edges().getLabelsLayer();
   anychart.core.settings.createDescriptorsMeta(this.descriptorsMeta, []);
   this.data(opt_data);
 };
@@ -68,7 +73,9 @@ goog.inherits(anychart.graphModule.Chart, anychart.core.Chart);
  *    y:number
  *  },
  *  domElement: anychart.vector.Path,
- *  connectedEdges: Array.<string>
+ *  textElement: anychart.core.ui.OptimizedText,
+ *  connectedEdges: Array.<string>,
+ *  value: string
  * }}
  * */
 anychart.graphModule.Chart.Node;
@@ -81,7 +88,15 @@ anychart.graphModule.Chart.Node;
  *  from: string,
  *  to: string,
  *  text: string,
+ *  labelsSettings: {
+ *    position: {
+ *      x: number,
+ *      y: number
+ *    },
+ *    rotation: number
+ *  }
  *  domElement: anychart.vector.Path,
+ *  textElement: anychart.core.ui.OptimizedText,
  * }}
  * */
 anychart.graphModule.Chart.Edge;
@@ -259,6 +274,7 @@ anychart.graphModule.Chart.prototype.handleMouseOverAndMove = function(event) {
 anychart.graphModule.Chart.prototype.updateEdgesConnectedToNode = function(node) {
   for (var i = 0, length = node.connectedEdges.length; i < length; i++) {
     var edge = this.edges_[node.connectedEdges[i]];
+    this.edges().calculateLabelPositionForEdge(edge);
     var from = this.nodes_[edge.from].position;
     var to = this.nodes_[edge.to].position;
     var path = edge.domElement;
@@ -290,6 +306,7 @@ anychart.graphModule.Chart.prototype.handleMouseDown = function(event) {
   if (tag && tag.type == anychart.graphModule.Chart.Element.NODE) {
     var domElement = new goog.fx.Dragger(domTarget['domElement']());
     domElement.listen(goog.fx.Dragger.EventType.DRAG, function(e) {
+      this.edges().getLabelsLayer().parent(null);
       var x = e.clientX;
       var y = e.clientY;
       var node = this.nodes_[tag.nodeId];
@@ -297,8 +314,10 @@ anychart.graphModule.Chart.prototype.handleMouseDown = function(event) {
       node.position.y = y;
       this.updateNodeDOMElementPosition(node);
       this.updateEdgesConnectedToNode(node);
+
     }, false, this);
     domElement.listen(goog.fx.Dragger.EventType.END, function(e) {
+      this.edges().getLabelsLayer().parent(this.rootLayer);
       domElement.dispose();
     }, false, this);
     domElement.startDrag(event['getOriginalEvent']());
@@ -377,7 +396,11 @@ anychart.graphModule.Chart.prototype.proceedEdge_ = function(edgeRow, i) {
     id: edgeId,
     text: text,
     from: from,
-    to: to
+    to: to,
+    labelsSettings: {
+      position: {},
+      rotation: 0
+    }
   };
   if (!this.nodes_[from]) {
     this.nodes_[from] = {};
@@ -516,6 +539,22 @@ anychart.graphModule.Chart.prototype.layout = function(opt_value) {
     return this;
   }
   return this.layout_;
+};
+
+
+/**
+ * @return {Object.<string, anychart.graphModule.Chart.Edge>}
+ * */
+anychart.graphModule.Chart.prototype.getEdgesMap = function() {
+  return this.edges_;
+};
+
+
+/**
+ * @return {Object.<string, anychart.graphModule.Chart.Node>}
+ * */
+anychart.graphModule.Chart.prototype.getNodesMap = function() {
+  return this.nodes_;
 };
 
 
@@ -662,12 +701,13 @@ anychart.graphModule.Chart.prototype.getShape = function(type) {
   return this.shapes[type][this.shapes[type].length - 1];
 };
 
+
 /**
  * Label position provider
  * */
 anychart.graphModule.Chart.prototype.labelPositionProvider = function(node) {
 
-}
+};
 
 
 /**
@@ -749,6 +789,21 @@ anychart.graphModule.Chart.prototype.drawContent = function(bounds) {
   this.setCoordinatesForNodes(coords);
   this.drawEdges();
   this.drawNodes();
+  for (var edge in this.edges_) {
+    this.edges().calculateLabelPositionForEdge(this.edges_[edge]);
+    this.rootLayer.circle(this.edges_[edge].labelsSettings.position.x, this.edges_[edge].labelsSettings.position.y, 1);
+  }
+  this.edges().provideMeasurements();
+  this.edges().applyLabelsStyle();
+  this.edges().drawLabels();
+  this.edges().getLabelsLayer().parent(this.rootLayer);
+
+  this.nodes().provideMeasurements();
+  this.nodes().applyLabelsStyle();
+  this.nodes().drawLabels();
+  this.nodes().getLabelsLayer().parent(this.rootLayer);
+
+  // anychart.measuriator.measure();
 };
 
 

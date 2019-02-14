@@ -4,10 +4,10 @@ goog.require('anychart.core.Base');
 goog.require('anychart.core.StateSettings');
 
 
-
 /**
  * @constructor
  * @param {anychart.graphModule.Chart} chart
+ * @implements {anychart.reflow.IMeasurementsTargetProvider}
  * @extends {anychart.core.Base}
  * */
 anychart.graphModule.elements.Node = function(chart) {
@@ -21,6 +21,20 @@ anychart.graphModule.elements.Node = function(chart) {
   //  * */
   // this.domElements = [];
 
+  /**
+   * Array of text elements.
+   * @type {Array.<anychart.core.ui.OptimizedText>}
+   * @private
+   * */
+  this.texts_ = [];
+
+  /**
+   * Layer for labels.
+   * @type {acgraph.vector.UnmanagedLayer}
+   * @private
+   * */
+  this.labelsLayerEl_;
+
   var normalDescriptorsMeta = {};
   anychart.core.settings.createDescriptorsMeta(normalDescriptorsMeta, [
     ['fill', 0, anychart.Signal.NEEDS_REDRAW_APPEARANCE],
@@ -31,10 +45,6 @@ anychart.graphModule.elements.Node = function(chart) {
   ]);
 
   this.normal_ = new anychart.core.StateSettings(this, normalDescriptorsMeta, anychart.PointState.NORMAL);
-  this.normal_.setOption(anychart.core.StateSettings.LABELS_FACTORY_CONSTRUCTOR, anychart.core.StateSettings.DEFAULT_LABELS_CONSTRUCTOR_NO_THEME);
-  this.normal_.setOption(anychart.core.StateSettings.LABELS_AFTER_INIT_CALLBACK, function(factory) {
-    factory.listenSignals(this.labelsInvalidated_, this);
-  });
 
   var descriptorsMeta = {};
   anychart.core.settings.createDescriptorsMeta(descriptorsMeta, [
@@ -45,17 +55,12 @@ anychart.graphModule.elements.Node = function(chart) {
     ['labels', 0, 0]
   ]);
   this.hovered_ = new anychart.core.StateSettings(this, descriptorsMeta, anychart.PointState.HOVER);
-  this.hovered_.setOption(anychart.core.StateSettings.LABELS_FACTORY_CONSTRUCTOR, anychart.core.StateSettings.DEFAULT_LABELS_CONSTRUCTOR_NO_THEME);
-
   this.selected_ = new anychart.core.StateSettings(this, descriptorsMeta, anychart.PointState.SELECT);
-  this.selected_.setOption(anychart.core.StateSettings.LABELS_FACTORY_CONSTRUCTOR, anychart.core.StateSettings.DEFAULT_LABELS_CONSTRUCTOR_NO_THEME);
 
-  function markAllConsistent(factory) {
-    factory.markConsistent(anychart.ConsistencyState.ALL);
-  }
+  this.normal_.setOption(anychart.core.StateSettings.LABELS_FACTORY_CONSTRUCTOR, anychart.core.StateSettings.OPTIMIZED_LABELS_CONSTRUCTOR);
+  this.hovered_.setOption(anychart.core.StateSettings.LABELS_FACTORY_CONSTRUCTOR, anychart.core.StateSettings.OPTIMIZED_LABELS_CONSTRUCTOR);
+  this.selected_.setOption(anychart.core.StateSettings.LABELS_FACTORY_CONSTRUCTOR, anychart.core.StateSettings.OPTIMIZED_LABELS_CONSTRUCTOR);
 
-  this.hovered_.setOption(anychart.core.StateSettings.LABELS_AFTER_INIT_CALLBACK, markAllConsistent);
-  this.selected_.setOption(anychart.core.StateSettings.LABELS_AFTER_INIT_CALLBACK, markAllConsistent);
 };
 goog.inherits(anychart.graphModule.elements.Node, anychart.core.Base);
 anychart.core.settings.populateAliases(anychart.graphModule.elements.Node, ['fill', 'stroke', 'labels'], 'normal');
@@ -113,17 +118,151 @@ anychart.graphModule.elements.Node.prototype.selected = function(opt_value) {
 };
 
 
-anychart.graphModule.elements.Node.prototype.moveTo = function(x, y) {
-  if (this.nodeId) {
-    this.chart_.nodes_[this.nodeId].position = {
-      x: x,
-      y: y
-    };
-    //todo Update dom only for current node
+/**
+ * Getter for labels layer.
+ * @return {acgraph.vector.UnmanagedLayer}
+ */
+anychart.graphModule.elements.Node.prototype.getLabelsLayer = function() {
+  if (!this.labelsLayer_) {
+    this.labelsLayerEl_ = acgraph.getRenderer().createLayerElement();
+    this.labelsLayer_ = acgraph.unmanagedLayer(this.labelsLayerEl_);
+  }
+  return this.labelsLayer_;
+};
+
+
+/**
+ * @inheritDoc
+ */
+anychart.graphModule.elements.Node.prototype.provideMeasurements = function() {
+  if (!this.texts_.length) {
+    var nodes = this.chart_.getNodesMap();
+    for (var node in nodes) {
+      var text = new anychart.core.ui.OptimizedText();
+      // text.setClassName(this.labels().cssClass);
+      this.texts_.push(text);
+    }
+  }
+  return this.texts_;
+};
+
+
+/**
+ * Fills text with style and text value.
+ * @param {anychart.core.ui.OptimizedText} text - Text to setup.
+ * @param {number} state Current state of element.
+ * @param {anychart.graphModule.Chart.Node=} opt_node
+ * @param {boolean=} opt_labelsAreOverridden - If labels settings are overridden.
+ * @private
+ */
+anychart.graphModule.elements.Node.prototype.setupText_ = function(text, state, opt_node, opt_labelsAreOverridden) {
+  var labels;
+
+  if (opt_node) {
+    if (opt_labelsAreOverridden) {
+      // var index = /** @type {number} */ (opt_node.meta('index'));
+      labels = this.overriddenLabels_[index];
+    } else {
+      var state = anychart.utils.pointStateToName(state);
+      labels = this[state]().labels();
+    }
+
+    var provider = this.createFormatProvider(opt_node);
+    var textVal = labels.getText(provider);
+    text.text(textVal);
+    opt_node.textElement = text;
+  }
+  // console.log(labels.flatten());
+  text.style(labels.flatten());
+  text.prepareComplexity();
+  text.applySettings();
+};
+
+
+/**
+ * Applies style to labels.
+ * @param {boolean=} opt_needsToDropOldBounds - Whether to drop old bounds and reset complexity.
+ */
+anychart.graphModule.elements.Node.prototype.applyLabelsStyle = function(opt_needsToDropOldBounds) {
+  // var labelsAreOverridden = this.hasLabelsOverrider();
+  var i = 0;
+  var nodes = this.chart_.getNodesMap();
+  for (var node in nodes) {
+    var text = this.texts_[i];
+    i++;
+    // var overriddenSettings;
+    // if (labelsAreOverridden) {
+    //   overriddenSettings = this.overriddenLabels_[i];
+    //   if (!overriddenSettings) {
+    //     overriddenSettings = new anychart.core.ui.LabelsSettings();
+    //     overriddenSettings.dropThemes(true);
+    //     overriddenSettings.parent(/** @type {anychart.core.ui.LabelsSettings} */ (this.labels()));
+    //     this.overriddenLabels_[i] = overriddenSettings;
+    //   }
+    //   this.labelsOverrider_(overriddenSettings, item);
+    // }
+    // if (opt_needsToDropOldBounds) {
+    //   text.resetComplexity();
+    //   text.dropBounds();
+    // }
+    this.setupText_(text, anychart.SettingsState.NORMAL, nodes[node], false);
   }
 };
 
 
+/**
+ *
+ * */
+anychart.graphModule.elements.Node.prototype.drawLabels = function() {
+  var layer = this.getLabelsLayer();
+  var nodes = this.chart_.getNodesMap();
+  var i = 0;
+  for (var node in nodes) {
+    var textElement = this.texts_[i];
+    if (this.labels()['enabled']()) {
+      // var r = new anychart.math.Rect(this.pixelBoundsCache_.left, totalTop, this.pixelBoundsCache_.width, height);
+      var cellBounds = anychart.math.rect(0, 0, 0, 0);
+
+      textElement.renderTo(this.labelsLayerEl_);
+      textElement.putAt(cellBounds, this.chart_.container().getStage());
+
+      textElement.finalizeComplexity();
+      // this.labelsTexts_.push(/** @type {string} */ (textElement.text()));
+    } else {
+      textElement.renderTo(null);
+    }
+    i++;
+  }
+  // this.dispatchSignal(anychart.Signal.MEASURE_COLLECT | anychart.Signal.MEASURE_BOUNDS);
+};
+
+
+/**
+ * Format provider for node.
+ * @param {anychart.graphModule.Chart.Node} node
+ * @return {anychart.format.Context}
+ * */
+anychart.graphModule.elements.Node.prototype.createFormatProvider = function(node) {
+  if (!this.formatProvider_) {
+    this.formatProvider_ = new anychart.format.Context();
+  }
+  var values = {};
+  values['id'] = {value: node.nodeId, type: anychart.enums.TokenType.STRING};
+  if (goog.isDef(node.value)) {
+    values['text'] = {value: node.value, type: anychart.enums.TokenType.STRING};
+  }
+  return /** @type {anychart.format.Context} */(this.formatProvider_.propagate(values));
+};
+
+
+/**
+ * Format provider for node.
+ * @param {anychart.graphModule.Chart.Node} node
+ * @param {anychart.StateSettings} state
+ * */
+anychart.graphModule.elements.Node.prototype.updateNode = function(node, state) {
+
+};
 /**
  * Get shape for node.
  * */
