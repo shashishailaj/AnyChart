@@ -588,10 +588,6 @@ anychart.core.ui.OptimizedText.prototype.finalizeComplexity = function() {
           this.container = null;
         }
       } else if (this.multilineOnly_) {
-        // if (this.domElement) {
-        //   goog.dom.removeNode(this.domElement);
-        //   this.container = null;
-        // }
         for (i = 0; i < this.textsToRender_.length; i++) {
           text = this.textsToRender_[i];
           text.applySettings();
