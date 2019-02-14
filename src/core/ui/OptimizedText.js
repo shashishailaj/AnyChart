@@ -1163,7 +1163,12 @@ anychart.core.ui.OptimizedText.prototype.getDivStyle = function(width, height) {
   if ('wordBreak' in style && style['wordBreak'])
     result += ('word-break: ' + style['wordBreak'] + '; ');
 
-  result += ('width: ' + width + 'px; height: ' + height + 'px; ' + 'max-width: ' + width + 'px;');
+  result += (
+      'width: ' + width + 'px; ' +
+      'height: ' + height + 'px; ' +
+      'max-width: ' + width + 'px; ' +
+      'max-height: ' + height + 'px;'
+  );
 
   return result;
 };
