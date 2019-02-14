@@ -1412,6 +1412,11 @@ anychart.core.ui.OptimizedText.prototype.dispose = function() {
     goog.dom.removeNode(this.domElement);
     this.domElement = null;
   }
+  if (this.foreignObject_) {
+    goog.dom.removeNode(this.foreignObject_);
+    this.foreignObject_ = null;
+    this.foreignDiv_ = null;
+  }
   this.container = null;
   this.stage = null;
   this.style({});
