@@ -96,7 +96,6 @@ anychart.ganttModule.Chart = function(opt_isResourcesChart) {
   this.verticalScrollBar_ = this.controller_.getScrollBar();
   this.verticalScrollBar_.zIndex(anychart.ganttModule.Chart.Z_INDEX_SCROLL);
   this.verticalScrollBar_.listenSignals(this.scrollInvalidated_, this);
-  this.registerDisposable(this.verticalScrollBar_);
 
   this.listenOnce(anychart.enums.EventType.CHART_DRAW, function() {
     this.dataGrid().initMouseFeatures();
@@ -398,7 +397,6 @@ anychart.ganttModule.Chart.prototype.getDataGrid_ = function() {
     this.dg_.setOption('backgroundFill', null);
     this.dg_.zIndex(anychart.ganttModule.Chart.Z_INDEX_DG_TL);
     this.dg_.setInteractivityHandler(this);
-    this.registerDisposable(this.dg_);
     var ths = this;
     this.dg_.listenSignals(function() {
       ths.controller_.run();
@@ -441,7 +439,6 @@ anychart.ganttModule.Chart.prototype.getTimeline = function() {
     this.tl_.setOption('backgroundFill', null);
     this.tl_.zIndex(anychart.ganttModule.Chart.Z_INDEX_DG_TL);
     this.tl_.setInteractivityHandler(this);
-    this.registerDisposable(this.tl_);
     var ths = this;
     this.tl_.listenSignals(function() {
       ths.controller_.run();
@@ -686,7 +683,6 @@ anychart.ganttModule.Chart.prototype.collapseTask = function(taskId) {
 anychart.ganttModule.Chart.prototype.splitter = function(opt_value) {
   if (!this.splitter_) {
     this.splitter_ = new anychart.ganttModule.Splitter();
-    this.registerDisposable(this.splitter_);
     this.splitter_.zIndex(anychart.ganttModule.Chart.Z_INDEX_SPLITTER);
 
     this.splitter_.listenSignals(function() {
@@ -708,7 +704,11 @@ anychart.ganttModule.Chart.prototype.splitter = function(opt_value) {
     this.splitter_.listen(anychart.enums.EventType.SPLITTER_CHANGE, function() {
       //This also stores current position for case if dg is being disabled.
       //Here we don't check if newPosition == oldPosition because it is handled by splitter.
-      ths.setOption('splitterPosition', Math.round(ths.splitter().position() * ths.getPixelBounds().width));
+      var padding = ths.padding();
+      var w = padding.tightenWidth(ths.getPixelBounds().width); //This fixes case when chart.padding() is not zero.
+      var pos = ths.splitter().position();
+      var result = Math.round(pos * w);
+      ths.setOption('splitterPosition', result);
       ths.invalidate(anychart.ConsistencyState.BOUNDS, anychart.Signal.NEEDS_REDRAW);
     });
 
@@ -1168,9 +1168,21 @@ anychart.ganttModule.Chart.prototype.setupByJSON = function(config, opt_default)
 /** @inheritDoc */
 anychart.ganttModule.Chart.prototype.disposeInternal = function() {
   this.controller_.unlistenSignals(this.controllerInvalidated_, this);
-  goog.disposeAll(this.palette_, this.controller_);
+  goog.disposeAll(
+      this.palette_,
+      this.controller_,
+      this.verticalScrollBar_,
+      this.dg_,
+      this.tl_,
+      this.splitter_,
+      this.edit_);
   this.palette_ = null;
   this.controller_ = null;
+  this.verticalScrollBar_ = null;
+  this.dg_ = null;
+  this.tl_ = null;
+  this.splitter_ = null;
+  this.edit_ = null;
   anychart.ganttModule.Chart.base(this, 'disposeInternal');
 };
 

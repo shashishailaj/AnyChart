@@ -245,7 +245,7 @@ anychart.colorScalesModule.ui.ColorRange.prototype.getAffectBoundsTickLength = f
     var position = /** @type {number} */(ticks.getOption('position'));
 
     if (position == anychart.enums.SidePosition.CENTER) {
-      result = Math.max((length - /**@type {number}*/(this.getOption('colorLineSize'))) / 2, 0);
+      result = Math.max((length - /** @type {number} */(this.getOption('colorLineSize'))) / 2, 0);
     } else {
       if (goog.isDef(opt_side)) {
         if (opt_side > 0) {
@@ -600,7 +600,7 @@ anychart.colorScalesModule.ui.ColorRange.prototype.getPixelBounds = function() {
 
 /** @inheritDoc */
 anychart.colorScalesModule.ui.ColorRange.prototype.getLength = function(parentLength) {
-  return anychart.utils.normalizeSize(/**@type {number}*/(this.getOption('length')), parentLength);
+  return anychart.utils.normalizeSize(/** @type {number|string} */(this.getOption('length')), parentLength);
 };
 
 
@@ -1025,9 +1025,9 @@ anychart.colorScalesModule.ui.ColorRange.prototype.handleMouseOut = function(eve
 
 /** @inheritDoc */
 anychart.colorScalesModule.ui.ColorRange.prototype.remove = function() {
-  anychart.colorScalesModule.ui.ColorRange.base(this, 'remove');
   var marker = this.getCreated('marker');
   if (marker) marker.remove();
+  anychart.colorScalesModule.ui.ColorRange.base(this, 'remove');
 };
 
 
@@ -1045,6 +1045,15 @@ anychart.colorScalesModule.ui.ColorRange.prototype.setupByJSON = function(config
   anychart.colorScalesModule.ui.ColorRange.base(this, 'setupByJSON', config, opt_default);
   anychart.core.settings.deserialize(this, anychart.colorScalesModule.ui.ColorRange.PROPERTY_DESCRIPTORS, config, opt_default);
   this.marker(config['marker']);
+};
+
+
+/** @inheritDoc */
+anychart.colorScalesModule.ui.ColorRange.prototype.disposeInternal = function() {
+  goog.disposeAll(this.marker_, this.getTempScale_);
+  this.marker_ = null;
+  this.getTempScale_ = null;
+  anychart.colorScalesModule.ui.ColorRange.base(this, 'disposeInternal');
 };
 
 
