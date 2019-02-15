@@ -309,7 +309,7 @@ anychart.core.ui.OptimizedText.prototype.finalizeTextLine = function() {
    */
   this.text(this.accumulatedIEText_);
   this.accumulatedIEText_ = '';
-  this.prepareHotHtmlComplexity_();
+  this.prepareNotHtmlComplexity_();
 };
 
 
@@ -420,7 +420,7 @@ anychart.core.ui.OptimizedText.prototype.prepareComplexity = function() {
     if (this.style_['useHtml']) {
       this.prepareHtmlComplexity_();
     } else {
-      this.prepareHotHtmlComplexity_();
+      this.prepareNotHtmlComplexity_();
     }
   }
 };
@@ -450,10 +450,10 @@ anychart.core.ui.OptimizedText.prototype.prepareHtmlComplexity_ = function() {
  * Prepares not html complexity.
  * @private
  */
-anychart.core.ui.OptimizedText.prototype.prepareHotHtmlComplexity_ = function() {
+anychart.core.ui.OptimizedText.prototype.prepareNotHtmlComplexity_ = function() {
   this.useHtml_ = false;
 
-  var lines = this.text_.split(/\n/g); // splitting 'sentence1 \n sentence2' to ['sentence1', 'sentence2'].
+  var lines = this.text_.split(/\n/g); // splitting 'sentence1\nsentence2' to ['sentence1', 'sentence2'].
   var width = this.style_['width'];
   var height = this.style_['height'];
   var wordBreak = this.style_['wordBreak'];
@@ -476,7 +476,9 @@ anychart.core.ui.OptimizedText.prototype.prepareHotHtmlComplexity_ = function() 
 
 
 /**
- * TODO (A.Kudryavtsev): Descr.
+ * Prepares complexity for case if wordBreak is set to 'break-all'.
+ * Actually splits text 'text1' to ['t', 'te', 'tex', 'text', 'text1'].
+ * In fact, this algorithm for this mode is performance super fail.
  * @param {Array.<string>} lines - Lines to prepare.
  * @private
  */
@@ -484,7 +486,6 @@ anychart.core.ui.OptimizedText.prototype.prepareWordBreakBreakAll_ = function(li
   var line, textsInLine;
 
   this.wordBreakBreakAll_ = true;
-  //TODO (A.Kudryavtsev): Performance super fail.
   if (!this.multilineTexts_.length) {
     for (var i = 0; i < lines.length; i++) {
       line = lines[i];
@@ -502,7 +503,9 @@ anychart.core.ui.OptimizedText.prototype.prepareWordBreakBreakAll_ = function(li
 
 
 /**
- * TODO (A.Kudryavtsev): Descr.
+ * Prepares complexity for case if wordBreak is set to 'keep-all'.
+ * Actually splits sentence 'text1 text2 text3' to ['text1', 'text2', 'text3'].
+ * Also prepares the space-symbol wito be measured by measuring 'W' and 'W W' texts width.
  * @param {Array.<string>} lines - Lines to prepare.
  * @private
  */
@@ -532,7 +535,7 @@ anychart.core.ui.OptimizedText.prototype.prepareWordBreakKeepAll_ = function(lin
 
 
 /**
- * TODO (A.Kudryavtsev): Descr.
+ * Prepares simple multiline case.
  * @param {Array.<string>} lines - Lines to prepare.
  * @private
  */
@@ -1102,8 +1105,10 @@ anychart.core.ui.OptimizedText.prototype.getDomElement = function() {
 
 
 /**
- * TODO (A.Kudryavtsev): Desc.
- * @param {string} val
+ * Not implemented feature.
+ * General idea is in using css instead of updating text attributes.
+ * Waiting for implementation.
+ * @param {string} val - CSS Class name for text.
  */
 anychart.core.ui.OptimizedText.prototype.setClassName = function(val) {
   this.cssClass_ = val;
@@ -1135,7 +1140,7 @@ anychart.core.ui.OptimizedText.prototype.getDivStyle = function(width, height) {
   if ('fontSize' in style) {
     var fontSize = parseFloat(style['fontSize']);
     fontSize = isNaN(fontSize) ? 13 : fontSize;
-    result += ('font-size: ' + style['fontSize'] + 'px; ');
+    result += ('font-size: ' + fontSize + 'px; ');
   }
 
   if ('fontWeight' in style)
