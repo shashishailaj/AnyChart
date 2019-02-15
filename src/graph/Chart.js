@@ -4,6 +4,7 @@ goog.provide('anychart.graphModule.Chart');
 goog.require('anychart.core.Chart');
 goog.require('anychart.graphModule.elements.Edge');
 goog.require('anychart.graphModule.elements.Group');
+goog.require('anychart.graphModule.elements.Interactivity');
 goog.require('anychart.graphModule.elements.Layout');
 goog.require('anychart.graphModule.elements.Node');
 
@@ -28,7 +29,9 @@ anychart.graphModule.Chart = function(opt_data) {
     this.handleMouseOut,
     this.handleMouseClick,
     this.handleMouseOverAndMove,
-    null,
+    function(mouseEvent) {
+      // console.log(mouseEvent);
+    },
     this.handleMouseDown);
 
   this.connectors_ = [];
@@ -51,12 +54,22 @@ anychart.graphModule.Chart = function(opt_data) {
   this.shapes = {};
 
 
+  this.xDifference = 0;
+  this.yDifference = 0;
+  /**
+   * @type {anychart.graphModule.elements.Interactivity}
+   * @private
+   * */
+  this.interactivity_;
+
   /**
    * Layer for edge's labels
    * */
   this.edgesLabelsLayer = this.edges().getLabelsLayer();
   anychart.core.settings.createDescriptorsMeta(this.descriptorsMeta, []);
   this.data(opt_data);
+
+  this.mouseWheelHandler_;
 };
 goog.inherits(anychart.graphModule.Chart, anychart.core.Chart);
 
@@ -96,7 +109,7 @@ anychart.graphModule.Chart.Node;
  *    rotation: number
  *  }
  *  domElement: anychart.vector.Path,
- *  textElement: anychart.core.ui.OptimizedText,
+ *  textElement: anychart.core.ui.OptimizedText
  * }}
  * */
 anychart.graphModule.Chart.Edge;
@@ -273,14 +286,14 @@ anychart.graphModule.Chart.prototype.handleMouseOverAndMove = function(event) {
  * */
 anychart.graphModule.Chart.prototype.updateEdgesConnectedToNode = function(node) {
   for (var i = 0, length = node.connectedEdges.length; i < length; i++) {
-    var edge = this.edges_[node.connectedEdges[i]];
+    var edge = this.getEdgesMap()[node.connectedEdges[i]];
     this.edges().calculateLabelPositionForEdge(edge);
-    var from = this.nodes_[edge.from].position;
-    var to = this.nodes_[edge.to].position;
+    var from = this.getNodesMap()[edge.from].position;
+    var to = this.getNodesMap()[edge.to].position;
     var path = edge.domElement;
     path.clear();
     path.moveTo(from.x, from.y)
-        .lineTo(to.x, to.y);
+      .lineTo(to.x, to.y);
   }
 };
 
@@ -303,25 +316,95 @@ anychart.graphModule.Chart.prototype.updateNodeDOMElementPosition = function(nod
 anychart.graphModule.Chart.prototype.handleMouseDown = function(event) {
   var domTarget = event['domTarget'];
   var tag = domTarget.tag;
-  if (tag && tag.type == anychart.graphModule.Chart.Element.NODE) {
-    var domElement = new goog.fx.Dragger(domTarget['domElement']());
-    domElement.listen(goog.fx.Dragger.EventType.DRAG, function(e) {
-      this.edges().getLabelsLayer().parent(null);
-      var x = e.clientX;
-      var y = e.clientY;
+  if (this.interactivity().getOption('enabled')) {
+    if (tag && tag.type == anychart.graphModule.Chart.Element.NODE && this.interactivity().getOption('node')) {
       var node = this.nodes_[tag.nodeId];
-      node.position.x = x; //Coordinates -> data?
-      node.position.y = y;
+      this.nodeDragInteractivity(node, domTarget, event);
+    } else if (!tag) {
+      this.layerDragInteractivity(domTarget, event);
+    }
+  }
+};
+
+anychart.graphModule.Chart.prototype.setNodePosition = function(node, dx, dy) {
+  node.position.x += dx; //Coordinates -> data?
+  node.position.y += dy;
+
+};
+
+anychart.graphModule.Chart.prototype.getXWithTranslate = function(x) {
+  return -this.xDifference + x;
+};
+
+anychart.graphModule.Chart.prototype.getYWithTranslate = function(y) {
+  return -this.yDifference + y;
+};
+
+
+/**
+ *
+ * */
+anychart.graphModule.Chart.prototype.nodeDragInteractivity = function(node, domTarget, event) {
+  var domElement = new goog.fx.Dragger(domTarget['domElement']());
+
+  var startX, startY;
+  domElement.listen(goog.fx.Dragger.EventType.START, function(e) {
+    startX = this.getXWithTranslate(event.clientX);
+    startY = this.getYWithTranslate(event.clientY);
+  }, false, this);
+  domElement.listen(goog.fx.Dragger.EventType.DRAG, function(e) {
+    this.edges().getLabelsLayer().parent(null);
+    var x = this.getXWithTranslate(e.clientX);
+    var y = this.getYWithTranslate(e.clientY);
+
+    var dx = x - startX;
+    var dy = y - startY;
+    startX = x;
+    startY = y;
+    this.setNodePosition(node, dx, dy);
+    this.updateNodeDOMElementPosition(node);
+    this.updateEdgesConnectedToNode(node);
+
+  }, false, this);
+  domElement.listen(goog.fx.Dragger.EventType.END, /** @this {anychart.graphModule.Chart}*/ function(e) {
+    if (this.interactivity().getOption('magnetize')) {
+      this.nodes().stickNode(node);
       this.updateNodeDOMElementPosition(node);
       this.updateEdgesConnectedToNode(node);
+    }
+    this.edges().getLabelsLayer().parent(this.rootLayer);
+    domElement.dispose();
+  }, false, this);
+  domElement.startDrag(event['getOriginalEvent']());
+};
 
-    }, false, this);
-    domElement.listen(goog.fx.Dragger.EventType.END, function(e) {
-      this.edges().getLabelsLayer().parent(this.rootLayer);
-      domElement.dispose();
-    }, false, this);
-    domElement.startDrag(event['getOriginalEvent']());
-  }
+
+/**
+ *
+ * */
+anychart.graphModule.Chart.prototype.layerDragInteractivity = function(domTarget, event) {
+  var domElement = new goog.fx.Dragger(domTarget['domElement']());
+  var startX = 0, startY = 0;
+  domElement.listen(goog.fx.Dragger.EventType.START, function(e) {
+    startX = event.clientX;
+    startY = event.clientY;
+  }, false, this);
+  domElement.listen(goog.fx.Dragger.EventType.DRAG, function(e) {
+    var x = e.clientX;
+    var y = e.clientY;
+    var dx = x - startX;
+    var dy = y - startY;
+    startX = x;
+    startY = y;
+    this.xDifference += dx;
+    this.yDifference += dy;
+
+    this.rootLayer.translate(dx, dy);
+  }, false, this);
+  domElement.listen(goog.fx.Dragger.EventType.END, /** @this {anychart.graphModule.Chart}*/ function(e) {
+    domElement.dispose();
+  }, false, this);
+  domElement.startDrag(event['getOriginalEvent']());
 };
 
 
@@ -575,6 +658,22 @@ anychart.graphModule.Chart.prototype.edges = function(opt_value) {
 
 
 /**
+ * @param {Object=} opt_value
+ * @return {(anychart.graphModule.Chart|anychart.graphModule.elements.Interactivity)}
+ * */
+anychart.graphModule.Chart.prototype.interactivity = function(opt_value) {
+  if (!this.interactivity_) {
+    this.interactivity_ = new anychart.graphModule.elements.Interactivity();
+    this.setupCreated('interactivity', this.interactivity_);
+  }
+  if (opt_value) {
+    return this;
+  }
+  return this.interactivity_;
+};
+
+
+/**
  * @param {anychart.graphModule.Chart.Element} type
  * @param {string} id
  * @return {boolean}
@@ -766,7 +865,7 @@ anychart.graphModule.Chart.prototype.drawEdges = function() {
 
 
     path.moveTo(from.position.x, from.position.y)
-        .lineTo(to.position.x, to.position.y);
+      .lineTo(to.position.x, to.position.y);
 
   }
   path.zIndex(anychart.graphModule.Chart.Z_INDEX - 1);
@@ -783,7 +882,14 @@ anychart.graphModule.Chart.prototype.drawContent = function(bounds) {
     // console.log(this.rootLayer);
     this.rootLayer.zIndex(anychart.graphModule.Chart.Z_INDEX);
   }
-
+  // if(!this.mouseWheelHandler_){
+  //   // console.log(this.container().getStage());
+  //   this.mouseWheelHandler_ = new acgraph.events.MouseWheelHandler(window.document.querySelector('#id_1'));
+  //   // console.log(goog.events.WheelEvent.EventType.WHEEL);
+  //   this.mouseWheelHandler_.listen(goog.events.MouseWheelHandler.EventType.MOUSEWHEEL, function(e) {
+  //     // console.log('wheel');
+  //   });
+  // }
   this.rootLayer.removeChildren();
   var coords = this.layout().getCoordinatesForCurrentLayout();
   this.setCoordinatesForNodes(coords);
@@ -840,6 +946,7 @@ anychart.graphModule.Chart.prototype.disposeInternal = function() {
   proto['edges'] = proto.edges;
   proto['layout'] = proto.layout;
   proto['groups'] = proto.groups;
+  proto['interactivity'] = proto.interactivity;
 })();
 
 

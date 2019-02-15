@@ -35,6 +35,12 @@ anychart.graphModule.elements.Node = function(chart) {
    * */
   this.labelsLayerEl_;
 
+  /**
+   * Gap for magnetize.
+   * @private
+   * @const
+   * */
+  this.magnetizeGap_ = 10;
   var normalDescriptorsMeta = {};
   anychart.core.settings.createDescriptorsMeta(normalDescriptorsMeta, [
     ['fill', 0, anychart.Signal.NEEDS_REDRAW_APPEARANCE],
@@ -254,6 +260,30 @@ anychart.graphModule.elements.Node.prototype.createFormatProvider = function(nod
   return /** @type {anychart.format.Context} */(this.formatProvider_.propagate(values));
 };
 
+/**
+ * Stick node to sibling
+ * */
+anychart.graphModule.elements.Node.prototype.stickNode = function(node) {
+  var closestX = -Infinity,
+      closestY = -Infinity;
+  for (var i = 0; i < node.connectedEdges.length; i++) {
+    var edges = this.chart_.getEdgesMap();
+    var nodes = this.chart_.getNodesMap();
+    var from = nodes[edges[node.connectedEdges[i]].from];
+    var to = nodes[edges[node.connectedEdges[i]].to];
+
+    var siblingNode = from == node ? to : from;
+
+    var gap = this.magnetizeGap_;
+    if (node.position.x > (siblingNode.position.x - gap) && node.position.x < (siblingNode.position.x + gap)) {
+      node.position.x = siblingNode.position.x;
+    }
+
+    if (node.position.y > (siblingNode.position.y - gap) && node.position.y < (siblingNode.position.y + gap)) {
+      node.position.y = siblingNode.position.y;
+    }
+  }
+};
 
 /**
  * Format provider for node.

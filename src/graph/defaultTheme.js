@@ -7,7 +7,7 @@ goog.mixin(goog.global['anychart']['themes']['defaultTheme'], {
       'normal': {
         'fill': {
           'opacity': 0.4,
-          'color': '#ccc',
+          'color': '#ccc'
         },
         'stroke': {
           'thickness': 2,
@@ -40,11 +40,19 @@ goog.mixin(goog.global['anychart']['themes']['defaultTheme'], {
           'top': 0,
           'right': 4,
           'bottom': 0
-        }
+        },
+        'anchor': anychart.enums.Anchor.CENTER_BOTTOM
       }
     },
     'layout': {
       'type': 'explicit'
+    },
+    'interactivity': {
+      'enabled': true,
+      'zoomOnMouseWheel': true,
+      'scrollOnMouseWheel': true,
+      'node': true,
+      'magnetize': true
     }
   }
 });
