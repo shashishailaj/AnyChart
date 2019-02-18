@@ -236,8 +236,7 @@ anychart.graphModule.elements.Edge.prototype.drawLabels = function() {
       var cellBounds = anychart.math.rect(edges[edge].labelsSettings.position.x, edges[edge].labelsSettings.position.y, 0, 0);
 
       textElement.renderTo(this.labelsLayerEl_);
-      textElement.putAt(cellBounds, this.chart_.container().getStage());
-
+      textElement.putAt(cellBounds);
       textElement.finalizeComplexity();
       // this.labelsTexts_.push(/** @type {string} */ (textElement.text()));
     } else {

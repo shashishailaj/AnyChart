@@ -162,6 +162,9 @@ anychart.graphModule.elements.Node.prototype.provideMeasurements = function() {
  * @private
  */
 anychart.graphModule.elements.Node.prototype.setupText_ = function(text, state, opt_node, opt_labelsAreOverridden) {
+  /**
+   * @type {anychart.core.ui.LabelsSettings}
+   * */
   var labels;
 
   if (opt_node) {
@@ -230,7 +233,8 @@ anychart.graphModule.elements.Node.prototype.drawLabels = function() {
       var cellBounds = anychart.math.rect(0, 0, 0, 0);
 
       textElement.renderTo(this.labelsLayerEl_);
-      textElement.putAt(cellBounds, this.chart_.container().getStage());
+      textElement.putAt(cellBounds);
+
 
       textElement.finalizeComplexity();
       // this.labelsTexts_.push(/** @type {string} */ (textElement.text()));
@@ -293,12 +297,6 @@ anychart.graphModule.elements.Node.prototype.stickNode = function(node) {
 anychart.graphModule.elements.Node.prototype.updateNode = function(node, state) {
 
 };
-/**
- * Get shape for node.
- * */
-anychart.graphModule.elements.Node.prototype.getShape = function() {
-
-};
 
 
 /**
@@ -309,11 +307,19 @@ anychart.graphModule.elements.Node.prototype.getFill = function() {
 };
 
 
-/**
- * Get shape for node.
- * */
-anychart.graphModule.elements.Node.prototype.getShape = function() {
 
+/**
+ * Returns type for node.
+ * @param {anychart.graphModule.Chart.Node} node
+ * */
+anychart.graphModule.elements.Node.prototype.getShapeType = function(node, state) {
+  state = anychart.utils.pointStateToName(state);
+  var dataOption = this.chart_.getDataOption('nodes', node.dataRow, 'shape');
+  if (dataOption) {
+    return anychart.enums.normalizeMarkerType(dataOption);
+  } else {
+    return this[state]().getOption('type')
+  }
 };
 
 

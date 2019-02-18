@@ -34,7 +34,13 @@ anychart.graphModule.Chart = function(opt_data) {
     },
     this.handleMouseDown);
 
-  this.connectors_ = [];
+
+  /**
+   * @type {Array.<acgraph.vector.Path>}
+   * @private
+   * @const
+   * */
+  this.pathes_ = [];
 
   /**
    * @type {Object.<string, anychart.graphModule.Chart.Node>}
@@ -251,12 +257,11 @@ anychart.graphModule.Chart.prototype.dataInvalidated_ = function(event) {
  * @param {anychart.core.MouseEvent} event - Event object.
  */
 anychart.graphModule.Chart.prototype.handleMouseClick = function(event) {
-  // if (event['button'] != acgraph.events.BrowserEvent.MouseButton.LEFT) return;
-  // var tag = /**@type {anychart.graphModule.Chart.DOMdata}*/(event['domTarget'].tag);
-  // if (tag && tag.node) {
-  //   this.showAll();
-  //   this.drillTo(tag.node);
-  // }
+  if (event['button'] != acgraph.events.BrowserEvent.MouseButton.LEFT) return;
+  var tag = /**@type {anychart.graphModule.Chart.DOMdata}*/(event['domTarget'].tag);
+  if (tag && tag.type == anychart.graphModule.Chart.Element.NODE) {
+
+  }
 };
 
 
@@ -316,6 +321,7 @@ anychart.graphModule.Chart.prototype.updateNodeDOMElementPosition = function(nod
 anychart.graphModule.Chart.prototype.handleMouseDown = function(event) {
   var domTarget = event['domTarget'];
   var tag = domTarget.tag;
+
   if (this.interactivity().getOption('enabled')) {
     if (tag && tag.type == anychart.graphModule.Chart.Element.NODE && this.interactivity().getOption('node')) {
       var node = this.nodes_[tag.nodeId];
@@ -346,12 +352,13 @@ anychart.graphModule.Chart.prototype.getYWithTranslate = function(y) {
  * */
 anychart.graphModule.Chart.prototype.nodeDragInteractivity = function(node, domTarget, event) {
   var domElement = new goog.fx.Dragger(domTarget['domElement']());
-
   var startX, startY;
+
   domElement.listen(goog.fx.Dragger.EventType.START, function(e) {
     startX = this.getXWithTranslate(event.clientX);
     startY = this.getYWithTranslate(event.clientY);
   }, false, this);
+
   domElement.listen(goog.fx.Dragger.EventType.DRAG, function(e) {
     this.edges().getLabelsLayer().parent(null);
     var x = this.getXWithTranslate(e.clientX);
@@ -366,16 +373,22 @@ anychart.graphModule.Chart.prototype.nodeDragInteractivity = function(node, domT
     this.updateEdgesConnectedToNode(node);
 
   }, false, this);
+
   domElement.listen(goog.fx.Dragger.EventType.END, /** @this {anychart.graphModule.Chart}*/ function(e) {
     if (this.interactivity().getOption('magnetize')) {
       this.nodes().stickNode(node);
       this.updateNodeDOMElementPosition(node);
       this.updateEdgesConnectedToNode(node);
     }
+
     this.edges().getLabelsLayer().parent(this.rootLayer);
+
+    // e.preventDefault();
     domElement.dispose();
   }, false, this);
+  event.stopPropagation();
   domElement.startDrag(event['getOriginalEvent']());
+
 };
 
 
@@ -759,17 +772,7 @@ anychart.graphModule.Chart.prototype.getElementInstance = function(type, element
  *
  * */
 anychart.graphModule.Chart.prototype.resolveSettingsForNode = function(node, setting, state) {
-  switch (state) {
-    case anychart.SettingsState.HOVERED:
-      state = 'selected';
-      break;
-    case anychart.SettingsState.SELECTED:
-      state = 'selected';
-      break;
-    default:
-      state = 'normal';
-      break;
-  }
+  state = anychart.utils.pointStateToName(state);
 
   var defaultNodeSetting = this.nodes()[state]()[setting]();//
   var defaultGroupSetting = this.groups()[state]()[setting]();
@@ -790,16 +793,20 @@ anychart.graphModule.Chart.prototype.resolveSettingsForNode = function(node, set
 
 
 /**
+ * @param {anychart.graphModule.Chart.Node} node
  * @return {function(!acgraph.vector.Path, number, number, number, number=):!acgraph.vector.Path} Marker drawer.
  * */
-anychart.graphModule.Chart.prototype.getShape = function(type) {
-  if (!this.shapes[type]) {
-    this.shapes[type] = [];
-  }
-  this.shapes[type].push(anychart.utils.getMarkerDrawer('star').call(this, this.rootLayer, 0, 0));
-  return this.shapes[type][this.shapes[type].length - 1];
+anychart.graphModule.Chart.prototype.getShape = function(node, state) {
+  var type = this.nodes().getShapeType(node, 0);
+  return anychart.utils.getMarkerDrawer(type);
 };
 
+anychart.graphModule.Chart.prototype.getDataOption = function(objectType, row, option) {
+  var nodes = this.data()[objectType];
+  var dataRow = nodes.getRow(row);
+  var option = dataRow[option];
+  return option;
+};
 
 /**
  * Label position provider
@@ -818,10 +825,11 @@ anychart.graphModule.Chart.prototype.drawNode = function(node) {
   var stroke = this.resolveSettingsForNode(node, 'stroke', 0);//enum here
   var size = this.resolveSettingsForNode(node, 'size', 0);//enum here
 
-  var x = node.position.x - size / 2;
-  var y = node.position.y - size / 2;
+  var x = node.position.x ;//- size / 2;
+  var y = node.position.y ;//- size / 2;
 
-  var domElement = this.rootLayer.rect(x, y, size, size);//this.getShape(shape);
+  var domElement = this.getShape(node)(this.rootLayer.path(), x, y, size/2);//this.rootLayer.rect(x, y, size, size);
+
   domElement.fill(fill);
   domElement.stroke(stroke);
   domElement.tag = {};
@@ -897,7 +905,7 @@ anychart.graphModule.Chart.prototype.drawContent = function(bounds) {
   this.drawNodes();
   for (var edge in this.edges_) {
     this.edges().calculateLabelPositionForEdge(this.edges_[edge]);
-    this.rootLayer.circle(this.edges_[edge].labelsSettings.position.x, this.edges_[edge].labelsSettings.position.y, 1);
+    // this.rootLayer.circle(this.edges_[edge].labelsSettings.position.x, this.edges_[edge].labelsSettings.position.y, 1);
   }
   this.edges().provideMeasurements();
   this.edges().applyLabelsStyle();

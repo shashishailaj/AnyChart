@@ -41,7 +41,7 @@ goog.mixin(goog.global['anychart']['themes']['defaultTheme'], {
           'right': 4,
           'bottom': 0
         },
-        'anchor': anychart.enums.Anchor.CENTER_BOTTOM
+        'textAnchor': 'middle'
       }
     },
     'layout': {
