@@ -140,6 +140,38 @@ anychart.core.settings.createTextPropertiesDescriptors = function() {
 
 
 /**
+ * Text props.
+ * @type {Array.<string>}
+ */
+anychart.core.settings.TEXT_PROPS = [
+  'minFontSize',
+  'maxFontSize',
+  'adjustFontSize',
+  'fontSize',
+  'fontFamily',
+  'fontColor',
+  'fontOpacity',
+  'fontDecoration',
+  'fontStyle',
+  'fontVariant',
+  'fontWeight',
+  'letterSpacing',
+  'textDirection',
+  'lineHeight',
+  'textIndent',
+  'vAlign',
+  'hAlign',
+  'wordWrap',
+  'wordBreak',
+  'textOverflow',
+  'selectable',
+  'disablePointerEvents',
+  'useHtml',
+  'format' //TODO (A.Kudryavtsev): Do we need to declare it here?
+];
+
+
+/**
  * Creates text properties descriptors.
  * @return {!Array.<Array>} - Descriptors template map.
  */
@@ -832,6 +864,8 @@ anychart.core.settings.startAngleNormalizer = function(val) {
 anychart.core.settings.descriptors = (function() {
   var map = {};
 
+  map.ENABLED = [anychart.enums.PropertyHandlerType.SINGLE_ARG, 'enabled', anychart.core.settings.booleanNormalizer];
+
   map.FILL = [anychart.enums.PropertyHandlerType.MULTI_ARG, 'fill', anychart.core.settings.fillNormalizer];
   map.FILL_FUNCTION = [anychart.enums.PropertyHandlerType.MULTI_ARG, 'fill', anychart.core.settings.fillOrFunctionNormalizer];
   map.FILL_FUNCTION_SIMPLE = [anychart.enums.PropertyHandlerType.SINGLE_ARG, 'fill', anychart.core.settings.fillOrFunctionSimpleNormalizer];
@@ -923,6 +957,11 @@ anychart.core.settings.descriptors = (function() {
   map.OFFSET_Y = [anychart.enums.PropertyHandlerType.SINGLE_ARG, 'offsetX', anychart.core.settings.numberNormalizer];
   map.POSITION_FORMATTER = [anychart.enums.PropertyHandlerType.SINGLE_ARG, 'positionFormatter', anychart.core.settings.functionNormalizer];
   map.ROTATION = [anychart.enums.PropertyHandlerType.SINGLE_ARG, 'rotation', anychart.core.settings.numberOrNullNormalizer];
+
+  //axes
+  map.DRAW_FIRST_LABEL = [anychart.enums.PropertyHandlerType.SINGLE_ARG, 'drawFirstLabel', anychart.core.settings.booleanNormalizer];
+  map.DRAW_LAST_LABEL = [anychart.enums.PropertyHandlerType.SINGLE_ARG, 'drawLastLabel', anychart.core.settings.booleanNormalizer];
+
   return map;
 })();
 

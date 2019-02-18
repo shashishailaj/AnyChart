@@ -918,8 +918,8 @@ anychart.utils.applyPixelShift = function(value, thickness, opt_invert) {
  * @return {!anychart.math.Rect}
  */
 anychart.utils.applyPixelShiftToRect = function(rect, thickness) {
-  var right = rect.getRight();
-  var bottom = rect.getBottom();
+  var right = rect.left + rect.width;
+  var bottom = rect.top + rect.height;
   rect.left = anychart.utils.applyPixelShift(rect.left, thickness);
   rect.top = anychart.utils.applyPixelShift(rect.top, thickness);
   rect.width = anychart.utils.applyPixelShift(right, thickness) - rect.left;
@@ -1051,6 +1051,46 @@ anychart.utils.recursiveClone = function(obj) {
     }
   } else {
     return obj;
+  }
+
+  return res;
+};
+
+
+/**
+ * Does a recursive clone of an object considering object to extend.
+ * NOTE: ignores closure_uid generated to object with goog.getUid().
+ *
+ * @param {T} obj Object to clone.
+ * @param {T=} opt_extendObj - Object to provide extend info.
+ * @return {T} Clone of the input object merged with opt_extendObj.
+ * @template T
+ */
+anychart.utils.recursiveExtend = function(obj, opt_extendObj) {
+  var res, ext;
+  var type = goog.typeOf(obj);
+  if (type == 'array') {
+    ext = (goog.typeOf(opt_extendObj) == 'array') ? opt_extendObj : [];
+    res = [];
+    var len = Math.max(obj.length, ext.length);
+    for (var i = 0; i < len; i++) {
+      res[i] = anychart.utils.recursiveExtend(obj[i], ext[i]);
+    }
+  } else if (type == 'object') {
+    ext = (goog.typeOf(opt_extendObj) == 'object') ? opt_extendObj : {};
+    res = {};
+    var key;
+    for (key in obj) {
+      if (obj.hasOwnProperty(key) && !(goog.string.startsWith(key, 'closure_uid')))
+        res[key] = anychart.utils.recursiveExtend(obj[key], ext[key]);
+    }
+    for (key in ext) {
+      if (ext.hasOwnProperty(key) && !(key in res) && !(goog.string.startsWith(key, 'closure_uid')))
+        //This case is possible when opt_extendObj has the field, but obj has not.
+        res[key] = anychart.utils.recursiveClone(ext[key]);
+    }
+  } else {
+    return goog.isDef(opt_extendObj) ? opt_extendObj : obj;
   }
 
   return res;

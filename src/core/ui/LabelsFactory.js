@@ -1139,7 +1139,9 @@ anychart.core.ui.LabelsFactory.prototype.disposeInternal = function() {
       this.measureCustomLabel_,
       this.layer_,
       this.background_,
-      this.padding_);
+      this.padding_,
+      this.measureCustomLabel_,
+      this.measureTextElement_);
 
   this.labels_ = null;
   this.freeToUseLabelsPool_ = null;
@@ -1147,6 +1149,8 @@ anychart.core.ui.LabelsFactory.prototype.disposeInternal = function() {
   this.layer_ = null;
   this.background_ = null;
   this.padding_ = null;
+  this.measureCustomLabel_ = null;
+  this.measureTextElement_ = null;
 
   anychart.core.ui.LabelsFactory.base(this, 'disposeInternal');
 };
@@ -1158,12 +1162,13 @@ anychart.core.ui.LabelsFactory.prototype.serialize = function() {
   if (!goog.isDef(json['enabled'])) delete json['enabled'];
 
   var val;
-  if (this.hasOwnOption('background')) {
+  if (this.hasOwnOption('background') && !goog.object.isEmpty(this.ownSettings['background'])) {
     val = this.background().serialize();
     if (!goog.object.isEmpty(val))
       json['background'] = val;
   }
-  if (this.hasOwnOption('padding')) {
+
+  if (this.hasOwnOption('padding') && !goog.object.isEmpty(this.ownSettings['padding'])) {
     val = this.padding().serialize();
     if (!goog.object.isEmpty(val))
       json['padding'] = val;
@@ -2590,6 +2595,7 @@ anychart.core.ui.LabelsFactory.Label.prototype.draw = function() {
       padding = mergedSettings['padding'];
     } else if (goog.isObject(mergedSettings['padding']) || goog.isNumber(mergedSettings['padding']) || goog.isString(mergedSettings['padding'])) {
       padding = new anychart.core.utils.Padding();
+      this.registerDisposable(padding);
       padding.setup(mergedSettings['padding']);
     }
 
@@ -2886,12 +2892,15 @@ anychart.core.ui.LabelsFactory.Label.prototype.disposeInternal = function() {
       this.padding_,
       this.backgroundElement_,
       this.textElement,
-      this.layer_);
+      this.layer_,
+      this.fontSizeMeasureElement_);
 
   this.backgroundElement_ = null;
   this.textElement = null;
   this.background_ = null;
   this.padding_ = null;
+  this.layer_ = null;
+  this.fontSizeMeasureElement_ = null;
 
   anychart.core.ui.LabelsFactory.Label.base(this, 'disposeInternal');
 };
