@@ -7,6 +7,7 @@ goog.require('anychart.core.IChart');
 goog.require('anychart.core.IPlot');
 goog.require('anychart.core.StateSettings');
 goog.require('anychart.core.settings');
+goog.require('anychart.timelineModule.Axis');
 goog.require('anychart.timelineModule.series.Event');
 goog.require('anychart.timelineModule.series.Range');
 
@@ -25,9 +26,17 @@ anychart.timelineModule.Chart = function() {
   anychart.timelineModule.Chart.base(this, 'constructor');
   this.addThemes('timeline');
 
-  this.scale_ = null;
+  /**
+   * @type {anychart.ganttModule.Scale}
+   * @private
+   */
+  this.scale_ = new anychart.ganttModule.Scale();
 
-  this.axis_ = null;
+  /**
+   * @type {anychart.timelineModule.Axis}
+   * @private
+   */
+  this.axis_ = new anychart.timelineModule.Axis();
 };
 goog.inherits(anychart.timelineModule.Chart, anychart.core.ChartWithSeries);
 
@@ -56,6 +65,36 @@ anychart.timelineModule.Chart.prototype.SUPPORTED_SIGNALS = anychart.core.Separa
 //endregion
 //region -- Chart Infrastructure Overrides.
 //TODO (A.Kudryavtsev): TBA
+/**
+ *
+ * @param {Object=} opt_value
+ * @return {anychart.timelineModule.Chart|anychart.timelineModule.Axis}
+ */
+anychart.timelineModule.Chart.prototype.axis = function(opt_value) {
+  if (goog.isDef(opt_value)) {
+    this.axis_.setup(opt_value);
+    return this;
+  }
+
+  return this.axis_;
+};
+
+
+/**
+ *
+ * @param {Object=} opt_value
+ * @return {anychart.timelineModule.Chart|anychart.ganttModule.Scale}
+ */
+anychart.timelineModule.Chart.prototype.scale = function(opt_value) {
+  if (goog.isDef(opt_value)) {
+    this.scale_.setup(opt_value);
+    return this;
+  }
+
+  return this.scale_;
+};
+
+
 /** @inheritDoc */
 anychart.timelineModule.Chart.prototype.createSeriesInstance = function(type, config) {
   if (type == anychart.enums.TimelineSeriesType.EVENT) {
