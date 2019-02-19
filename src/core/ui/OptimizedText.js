@@ -1051,7 +1051,6 @@ anychart.core.ui.OptimizedText.prototype.applySettings = function() {
         dom.removeAttribute('pointer-events');
       }
 
-      debugger
       if ('textAnchor' in style) {
         dom.setAttribute('text-anchor', style['textAnchor']);
       } else {

@@ -174,9 +174,12 @@ anychart.graphModule.elements.Edge.prototype.calculateLabelPositionForEdge = fun
   var x = minX + ((maxX - minX) / 2);
   var y = ((x - minX) / (maxX - minX)) * (maxY - minY) + minY;
 
+
   edge.labelsSettings.position.x = x;
   edge.labelsSettings.position.y = y;
 };
+
+
 
 
 /**

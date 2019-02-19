@@ -154,6 +154,22 @@ anychart.graphModule.elements.Node.prototype.provideMeasurements = function() {
 
 
 /**
+ * Calculates middle position for label
+ * @param {anychart.graphModule.Chart.Node} node
+ * */
+anychart.graphModule.elements.Edge.prototype.updateEdgesConntectedToNode = function(node) {
+  var connectedEdges = node.connectedEdges;
+  var edges = this.chart_.getEdgesMap();
+
+  for (var i = 0, length = connectedEdges.length; i < length; i++) {
+    var edge = edges[connectedEdges[i]];
+    this.chart_.edges().calculateLabelPositionForEdge(edges[edge]);
+    this.chart_.rootLayer.circle(edge.labelsSettings.position.x, edge.labelsSettings.position.y);
+  }
+};
+
+
+/**
  * Fills text with style and text value.
  * @param {anychart.core.ui.OptimizedText} text - Text to setup.
  * @param {number} state Current state of element.
@@ -219,6 +235,58 @@ anychart.graphModule.elements.Node.prototype.applyLabelsStyle = function(opt_nee
 };
 
 
+//todo rename
+/**
+ * @param {anychart.graphModule.Chart.Node} node
+ * */
+anychart.graphModule.elements.Node.prototype.getLabelPosition = function(node) {
+  var x = node.position.x;
+  var y = node.position.y;
+
+  var height = node.textElement.getBounds().height / 2;
+
+  node.labelsSettings.position.x = x;
+  node.labelsSettings.position.y = y + height;
+
+  return node.labelsSettings.position;
+};
+
+
+/**
+ * */
+anychart.graphModule.elements.Node.prototype.setInitialLabelsPostion = function() {
+  var nodes = this.chart_.getNodesMap();
+  for (var node in nodes) {
+    node = nodes[node];
+    this.getLabelPosition(node);
+  }
+};
+
+
+/**
+ * */
+anychart.graphModule.elements.Node.prototype.updateNodeLabelsPosition = function() {
+  var nodes = this.chart_.getNodesMap();
+
+  for (var node in nodes) {
+    node = nodes[node];
+    this.updateNodeLabelPosition(node);
+  }
+};
+
+
+
+/**
+ * @param {anychart.graphModule.Chart.Node} node
+ * */
+anychart.graphModule.elements.Node.prototype.updateNodeLabelPosition = function(node) {
+  var domElement = node.textElement.getDomElement();
+  this.getLabelPosition(node);
+  var position = node.labelsSettings.position.x + ',' + node.labelsSettings.position.y;
+  domElement.setAttribute('transform', 'translate(' + position + ')');
+};
+
+
 /**
  *
  * */
@@ -227,10 +295,11 @@ anychart.graphModule.elements.Node.prototype.drawLabels = function() {
   var nodes = this.chart_.getNodesMap();
   var i = 0;
   for (var node in nodes) {
+    node = nodes[node];
     var textElement = this.texts_[i];
     if (this.labels()['enabled']()) {
       // var r = new anychart.math.Rect(this.pixelBoundsCache_.left, totalTop, this.pixelBoundsCache_.width, height);
-      var cellBounds = anychart.math.rect(0, 0, 0, 0);
+      var cellBounds = anychart.math.rect(node.labelsSettings.position.x, node.labelsSettings.position.y, 0, 0);
 
       textElement.renderTo(this.labelsLayerEl_);
       textElement.putAt(cellBounds);
@@ -268,7 +337,7 @@ anychart.graphModule.elements.Node.prototype.createFormatProvider = function(nod
  * Stick node to sibling
  * */
 anychart.graphModule.elements.Node.prototype.stickNode = function(node) {
-  var closestX = -Infinity,
+  var closestX = -Infinity, //todo
       closestY = -Infinity;
   for (var i = 0; i < node.connectedEdges.length; i++) {
     var edges = this.chart_.getEdgesMap();
@@ -311,14 +380,17 @@ anychart.graphModule.elements.Node.prototype.getFill = function() {
 /**
  * Returns type for node.
  * @param {anychart.graphModule.Chart.Node} node
+ * @param {anychart.SettingsState} state New state for node
+ * @return {anychart.enums.MarkerType}
  * */
 anychart.graphModule.elements.Node.prototype.getShapeType = function(node, state) {
   state = anychart.utils.pointStateToName(state);
+
   var dataOption = this.chart_.getDataOption('nodes', node.dataRow, 'shape');
   if (dataOption) {
     return anychart.enums.normalizeMarkerType(dataOption);
   } else {
-    return this[state]().getOption('type')
+    return this[state]().getOption('type');
   }
 };
 

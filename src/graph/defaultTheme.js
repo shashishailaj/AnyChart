@@ -14,14 +14,18 @@ goog.mixin(goog.global['anychart']['themes']['defaultTheme'], {
           'color': 'yellow'
         },
         'labels': {
-          'format': '{%id}'
+          'format': '{%id}',
+          'fontSize': 8,
+          'textAnchor': 'middle'
         },
         'size': 15,
-        'type': 'circle'
+        'type': 'square'
       },
       'hovered': {
         'fill': 'red',
-        'stroke': 'blue'
+        'stroke': 'blue',
+        'type': 'diamond',
+        'size': 20
       },
       'selected': {
         'fill': 'brown',
@@ -31,7 +35,8 @@ goog.mixin(goog.global['anychart']['themes']['defaultTheme'], {
     'edges': {
       'stroke': '#ccc',
       'labels': {
-        'format': '{%id}',
+        'enabled': false,
+        'format': 'from {%from} to {%to}',
         'fontSize': 6,
         'vAlign': 'middle',
         'height': '100%',
