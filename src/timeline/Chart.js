@@ -3,8 +3,11 @@ goog.provide('anychart.timelineModule.Chart');
 
 //region -- Requirements.
 goog.require('anychart.core.ChartWithSeries');
+goog.require('anychart.core.IChart');
+goog.require('anychart.core.IPlot');
 goog.require('anychart.core.StateSettings');
 goog.require('anychart.core.settings');
+goog.require('anychart.timelineModule.Series');
 
 
 
@@ -12,6 +15,8 @@ goog.require('anychart.core.settings');
 //region -- Constructor.
 /**
  *
+ * @implements {anychart.core.IPlot}
+ * @implements {anychart.core.IChart}
  * @constructor
  * @extends {anychart.core.ChartWithSeries}
  */
@@ -46,6 +51,29 @@ anychart.timelineModule.Chart.prototype.SUPPORTED_SIGNALS = anychart.core.Separa
 //endregion
 //region -- Chart Infrastructure Overrides.
 //TODO (A.Kudryavtsev): TBA
+/** @inheritDoc */
+anychart.timelineModule.Chart.prototype.createSeriesInstance = function(type, config) {
+  return new anychart.timelineModule.Series(this, this, type, config, true);
+};
+
+
+/** @inheritDoc */
+anychart.timelineModule.Chart.prototype.getYAxisByIndex = function(index) {
+  return null;
+};
+
+
+/** @inheritDoc */
+anychart.timelineModule.Chart.prototype.getXAxisByIndex = function(index) {
+  return null;
+};
+
+
+/** @inheritDoc */
+anychart.timelineModule.Chart.prototype.yScale = function() {
+  return null;
+};
+
 
 
 //endregion
