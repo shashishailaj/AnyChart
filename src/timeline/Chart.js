@@ -7,7 +7,8 @@ goog.require('anychart.core.IChart');
 goog.require('anychart.core.IPlot');
 goog.require('anychart.core.StateSettings');
 goog.require('anychart.core.settings');
-goog.require('anychart.timelineModule.Series');
+goog.require('anychart.timelineModule.series.Event');
+goog.require('anychart.timelineModule.series.Range');
 
 
 
@@ -23,6 +24,10 @@ goog.require('anychart.timelineModule.Series');
 anychart.timelineModule.Chart = function() {
   anychart.timelineModule.Chart.base(this, 'constructor');
   this.addThemes('timeline');
+
+  this.scale_ = null;
+
+  this.axis_ = null;
 };
 goog.inherits(anychart.timelineModule.Chart, anychart.core.ChartWithSeries);
 
@@ -53,7 +58,11 @@ anychart.timelineModule.Chart.prototype.SUPPORTED_SIGNALS = anychart.core.Separa
 //TODO (A.Kudryavtsev): TBA
 /** @inheritDoc */
 anychart.timelineModule.Chart.prototype.createSeriesInstance = function(type, config) {
-  return new anychart.timelineModule.Series(this, this, type, config, true);
+  if (type == anychart.enums.TimelineSeriesType.EVENT) {
+    return new anychart.timelineModule.series.Event(this, this, type, config, true);
+  } else {
+    return new anychart.timelineModule.series.Range(this, this, type, config, true);
+  }
 };
 
 

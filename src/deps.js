@@ -576,11 +576,13 @@ goog.addDependency('../../../../src/themes/morning.js', ['anychart.themes.mornin
 goog.addDependency('../../../../src/themes/pastel.js', ['anychart.themes.pastel'], [], {});
 goog.addDependency('../../../../src/themes/sea.js', ['anychart.themes.sea'], [], {});
 goog.addDependency('../../../../src/themes/wines.js', ['anychart.themes.wines'], [], {});
-goog.addDependency('../../../../src/timeline/Chart.js', ['anychart.timelineModule.Chart'], ['anychart.core.ChartWithSeries', 'anychart.core.IChart', 'anychart.core.IPlot', 'anychart.core.StateSettings', 'anychart.core.settings', 'anychart.timelineModule.Series'], {});
-goog.addDependency('../../../../src/timeline/Series.js', ['anychart.timelineModule.Series'], ['anychart.core.series.Cartesian', 'anychart.timelineModule.drawers.Event', 'anychart.timelineModule.drawers.Range'], {});
+goog.addDependency('../../../../src/timeline/Chart.js', ['anychart.timelineModule.Chart'], ['anychart.core.ChartWithSeries', 'anychart.core.IChart', 'anychart.core.IPlot', 'anychart.core.StateSettings', 'anychart.core.settings', 'anychart.timelineModule.series.Event', 'anychart.timelineModule.series.Range'], {});
+goog.addDependency('../../../../src/timeline/ConnectorSettings.js', ['anychart.timelineModule.ConnectorSettings'], ['anychart.core.Base', 'anychart.core.settings'], {});
 goog.addDependency('../../../../src/timeline/defaultTheme.js', ['anychart.timelineModule.defaultTheme'], [], {});
 goog.addDependency('../../../../src/timeline/drawers/Event.js', ['anychart.timelineModule.drawers.Event'], ['anychart.core.drawers', 'anychart.core.drawers.Base'], {});
 goog.addDependency('../../../../src/timeline/drawers/Range.js', ['anychart.timelineModule.drawers.Range'], ['anychart.core.drawers', 'anychart.core.drawers.Base'], {});
+goog.addDependency('../../../../src/timeline/series/Event.js', ['anychart.timelineModule.series.Event'], ['anychart.core.series.Cartesian', 'anychart.timelineModule.ConnectorSettings', 'anychart.timelineModule.drawers.Event', 'anychart.timelineModule.drawers.Range'], {});
+goog.addDependency('../../../../src/timeline/series/Range.js', ['anychart.timelineModule.series.Range'], ['anychart.core.series.Cartesian', 'anychart.timelineModule.drawers.Event', 'anychart.timelineModule.drawers.Range'], {});
 goog.addDependency('../../../../src/timeline/timeline.module.js', ['anychart.timelineModule.entry'], ['anychart.timelineModule.Chart'], {});
 goog.addDependency('../../../../src/treeChartBase/ArrayIterator.js', ['anychart.treeChartBase.ArrayIterator'], ['anychart.data.Iterator'], {});
 goog.addDependency('../../../../src/treeChartBase/Chart.js', ['anychart.treeChartBase.Chart'], ['anychart.core.SeparateChart', 'anychart.core.utils.IInteractiveSeries', 'anychart.data.Set', 'anychart.enums', 'anychart.treeChartBase.ArrayIterator', 'anychart.treeChartBase.Point', 'anychart.treeDataModule.Tree', 'anychart.treeDataModule.utils'], {});
