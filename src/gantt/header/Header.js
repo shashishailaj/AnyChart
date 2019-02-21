@@ -297,7 +297,7 @@ anychart.ganttModule.header.Header.prototype.getLevels = function() {
 
 /**
  * Internal method, used to propagate zooming settings to levels.
- * @param {Array.<anychart.ganttModule.Scale.LevelData>} configs - Levels configurations.
+ * @param {Array.<anychart.scales.GanttDateTime.LevelData>} configs - Levels configurations.
  * @return {anychart.ganttModule.header.Header}
  */
 anychart.ganttModule.header.Header.prototype.setLevels = function(configs) {

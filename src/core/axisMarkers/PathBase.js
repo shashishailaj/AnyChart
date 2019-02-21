@@ -26,14 +26,14 @@ anychart.core.axisMarkers.PathBase = function() {
 
   /**
    * Current scale.
-   * @type {anychart.scales.Base|anychart.ganttModule.Scale}
+   * @type {anychart.scales.Base|anychart.scales.GanttDateTime}
    * @private
    */
   this.scale_;
 
   /**
    * Auto scale.
-   * @type {anychart.scales.Base|anychart.ganttModule.Scale}
+   * @type {anychart.scales.Base|anychart.scales.GanttDateTime}
    * @private
    */
   this.autoScale_ = null;
@@ -186,8 +186,8 @@ anychart.core.axisMarkers.PathBase.prototype.layout = goog.abstractMethod;
 /**
  * Getter/setter for auto scale.
  * Works with instances of anychart.scales.Base only.
- * @param {(anychart.scales.Base|anychart.ganttModule.Scale|Object|anychart.enums.ScaleTypes)=} opt_value - Scale.
- * @return {anychart.scales.Base|anychart.ganttModule.Scale|!anychart.core.axisMarkers.PathBase} - Axis scale or
+ * @param {(anychart.scales.Base|anychart.scales.GanttDateTime|Object|anychart.enums.ScaleTypes)=} opt_value - Scale.
+ * @return {anychart.scales.Base|anychart.scales.GanttDateTime|!anychart.core.axisMarkers.PathBase} - Axis scale or
  * itself for method chaining.
  */
 anychart.core.axisMarkers.PathBase.prototype.autoScale = function(opt_value) {
@@ -199,7 +199,7 @@ anychart.core.axisMarkers.PathBase.prototype.autoScale = function(opt_value) {
         anychart.scales.Base.setupScale(/** @type {anychart.scales.Base} */(this.autoScale_), opt_value, null, anychart.scales.Base.ScaleTypes.ALL_DEFAULT, null, this.scaleInvalidated, this);
     if (val) {
       var dispatch = this.autoScale_ == val;
-      this.autoScale_ = /** @type {anychart.scales.Base|anychart.ganttModule.Scale} */(val);
+      this.autoScale_ = /** @type {anychart.scales.Base|anychart.scales.GanttDateTime} */(val);
       var scaleIsSet = this.scale_ || (this.axis_ && /** @type {?anychart.scales.Base} */ (this.axis_.scale()));
       if (scaleIsSet) {
         val.resumeSignalsDispatching(false);
@@ -219,8 +219,8 @@ anychart.core.axisMarkers.PathBase.prototype.autoScale = function(opt_value) {
 /**
  * Getter/setter for default scale.
  * Works with instances of anychart.scales.Base only.
- * @param {(anychart.scales.Base|anychart.ganttModule.Scale|Object|anychart.enums.ScaleTypes)=} opt_value - Scale.
- * @return {anychart.scales.Base|anychart.ganttModule.Scale|!anychart.core.axisMarkers.PathBase} - Axis scale or
+ * @param {(anychart.scales.Base|anychart.scales.GanttDateTime|Object|anychart.enums.ScaleTypes)=} opt_value - Scale.
+ * @return {anychart.scales.Base|anychart.scales.GanttDateTime|!anychart.core.axisMarkers.PathBase} - Axis scale or
  *  itself for method chaining.
  */
 anychart.core.axisMarkers.PathBase.prototype.scaleInternal = function(opt_value) {
@@ -235,7 +235,7 @@ anychart.core.axisMarkers.PathBase.prototype.scaleInternal = function(opt_value)
       var listenForGantt = (ganttScale && !this.scale_);
       if (!val)
         this.scale_.unlistenSignals(this.scaleInvalidated, this);
-      this.scale_ = /** @type {anychart.ganttModule.Scale|anychart.scales.Base} */(val);
+      this.scale_ = /** @type {anychart.scales.GanttDateTime|anychart.scales.Base} */(val);
       if (listenForGantt)
         this.scale_.listenSignals(this.scaleInvalidated, this);
       if (val && !ganttScale)
@@ -457,7 +457,7 @@ anychart.core.axisMarkers.PathBase.prototype.draw = function() {
  * @return {anychart.core.axisMarkers.PathBase} - Itself for method chaining.
  */
 anychart.core.axisMarkers.PathBase.prototype.drawLine = function() {
-  var scale = /** @type {anychart.scales.Base|anychart.ganttModule.Scale} */ (this.scale());
+  var scale = /** @type {anychart.scales.Base|anychart.scales.GanttDateTime} */ (this.scale());
 
   if (!scale) { //Here we can get null.
     anychart.core.reporting.error(anychart.enums.ErrorCode.SCALE_NOT_SET);
@@ -497,7 +497,7 @@ anychart.core.axisMarkers.PathBase.prototype.drawLine = function() {
  * @return {anychart.core.axisMarkers.PathBase} - Itself for method chaining.
  */
 anychart.core.axisMarkers.PathBase.prototype.drawRange = function() {
-  var scale = /** @type {anychart.scales.Base|anychart.ganttModule.Scale} */ (this.scale());
+  var scale = /** @type {anychart.scales.Base|anychart.scales.GanttDateTime} */ (this.scale());
 
   if (!scale) { //Here we can get null.
     anychart.core.reporting.error(anychart.enums.ErrorCode.SCALE_NOT_SET);

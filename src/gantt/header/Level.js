@@ -35,10 +35,10 @@ anychart.ganttModule.header.Level = function(header, index) {
    *  Instead, level gets TIMELINE_HEADER_LEVEL_TICKS state from
    *  header (see level.setupLevel()).
    *
-   * @type {anychart.ganttModule.Scale}
+   * @type {anychart.scales.GanttDateTime}
    * @private
    */
-  this.scale_ = /** @type {anychart.ganttModule.Scale} */ (this.header_.timeline.scale());
+  this.scale_ = /** @type {anychart.scales.GanttDateTime} */ (this.header_.timeline.scale());
 
   /**
    * Level index.
@@ -78,7 +78,7 @@ anychart.ganttModule.header.Level = function(header, index) {
 
   /**
    *
-   * @type {Array.<anychart.ganttModule.Scale.Tick>}
+   * @type {Array.<anychart.scales.GanttDateTime.Tick>}
    * @private
    */
   this.ticks_ = [];
@@ -340,7 +340,7 @@ anychart.ganttModule.header.Level.prototype.labelsInvalidated_ = function(e) {
 
 /**
  * Gets format provider for label.
- * @param {anychart.ganttModule.Scale.Tick} tick - tick.
+ * @param {anychart.scales.GanttDateTime.Tick} tick - tick.
  * @param {string} format Label format.
  * @return {anychart.core.BaseContext} Labels format provider.
  * @private
@@ -367,7 +367,7 @@ anychart.ganttModule.header.Level.prototype.getLabelsFormatProvider_ = function(
 //region -- Scale.
 /**
  * Level zooming setup.
- * @param {anychart.ganttModule.Scale.LevelData} config - Level config.
+ * @param {anychart.scales.GanttDateTime.LevelData} config - Level config.
  */
 anychart.ganttModule.header.Level.prototype.setupLevel = function(config) {
   if (this.unit != config['unit'] || this.count != config['count']) {

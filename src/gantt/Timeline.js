@@ -9,7 +9,7 @@ goog.require('anychart.core.IStandaloneBackend');
 goog.require('anychart.core.ui.LabelsFactory');
 goog.require('anychart.core.ui.MarkersFactory');
 goog.require('anychart.ganttModule.BaseGrid');
-goog.require('anychart.ganttModule.Scale');
+goog.require('anychart.scales.GanttDateTime');
 goog.require('anychart.ganttModule.ScrollBar');
 goog.require('anychart.ganttModule.axisMarkers.Line');
 goog.require('anychart.ganttModule.axisMarkers.Range');
@@ -286,10 +286,10 @@ anychart.ganttModule.TimeLine = function(opt_controller, opt_isResources) {
 
   /**
    * Date time scale.
-   * @type {anychart.ganttModule.Scale}
+   * @type {anychart.scales.GanttDateTime}
    * @private
    */
-  this.scale_ = new anychart.ganttModule.Scale();
+  this.scale_ = new anychart.scales.GanttDateTime();
   this.scale_.listenSignals(this.scaleInvalidated_, this);
 
   /**
@@ -1641,7 +1641,7 @@ anychart.ganttModule.TimeLine.prototype.editIntervalWidth = function(opt_value) 
 /**
  * Gets timeline scale.
  * @param {Object=} opt_value - Scale config.
- * @return {anychart.ganttModule.TimeLine|anychart.ganttModule.Scale}
+ * @return {anychart.ganttModule.TimeLine|anychart.scales.GanttDateTime}
  */
 anychart.ganttModule.TimeLine.prototype.scale = function(opt_value) {
   if (goog.isDef(opt_value)) {
@@ -1666,7 +1666,7 @@ anychart.ganttModule.TimeLine.prototype.scaleInvalidated_ = function(event) {
 
 /**
  * Gets timeline's gantt date time scale.
- * @return {anychart.ganttModule.Scale} - Scale.
+ * @return {anychart.scales.GanttDateTime} - Scale.
  */
 anychart.ganttModule.TimeLine.prototype.getScale = function() {
   return this.scale_;
@@ -4704,7 +4704,7 @@ anychart.ganttModule.TimeLine.prototype.drawArrow_ = function(left, top, orienta
 
 /**
  * Redraws vertical lines.
- * @param {Array.<anychart.ganttModule.Scale.Tick>} ticks - Ticks.
+ * @param {Array.<anychart.scales.GanttDateTime.Tick>} ticks - Ticks.
  * @private
  */
 anychart.ganttModule.TimeLine.prototype.drawLowTicks_ = function(ticks) {

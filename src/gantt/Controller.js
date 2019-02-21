@@ -2,7 +2,7 @@ goog.provide('anychart.ganttModule.Controller');
 
 goog.require('anychart.core.Base');
 goog.require('anychart.format');
-goog.require('anychart.ganttModule.Scale');
+goog.require('anychart.scales.GanttDateTime');
 goog.require('anychart.ganttModule.ScrollBar');
 goog.require('anychart.math.Rect');
 goog.require('anychart.treeDataModule.Tree');
@@ -1057,8 +1057,8 @@ anychart.ganttModule.Controller.prototype.run = function() {
     this.recalculate();
 
     if (!isNaN(this.minDate_) && this.minDate_ == this.maxDate_) {
-      this.minDate_ -= anychart.ganttModule.Scale.MILLISECONDS_IN_DAY;
-      this.maxDate_ += anychart.ganttModule.Scale.MILLISECONDS_IN_DAY;
+      this.minDate_ -= anychart.scales.GanttDateTime.MILLISECONDS_IN_DAY;
+      this.maxDate_ += anychart.scales.GanttDateTime.MILLISECONDS_IN_DAY;
     }
   }
 

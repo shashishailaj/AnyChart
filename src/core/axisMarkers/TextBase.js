@@ -35,7 +35,7 @@ anychart.core.axisMarkers.TextBase = function() {
 
   /**
    * Current scale.
-   * @type {anychart.scales.Base|anychart.ganttModule.Scale}
+   * @type {anychart.scales.Base|anychart.scales.GanttDateTime}
    * @private
    */
   this.scale_;
@@ -43,7 +43,7 @@ anychart.core.axisMarkers.TextBase = function() {
 
   /**
    * Auto scale.
-   * @type {anychart.scales.Base|anychart.ganttModule.Scale}
+   * @type {anychart.scales.Base|anychart.scales.GanttDateTime}
    * @private
    */
   this.autoScale_ = null;
@@ -209,8 +209,8 @@ anychart.core.axisMarkers.TextBase.prototype.getChart = function() {
 /**
  * Getter/setter for auto scale.
  * Works with instances of anychart.scales.Base only.
- * @param {(anychart.scales.Base|anychart.ganttModule.Scale|Object|anychart.enums.ScaleTypes)=} opt_value - Scale.
- * @return {anychart.scales.Base|anychart.ganttModule.Scale|!anychart.core.axisMarkers.TextBase} - Axis scale or
+ * @param {(anychart.scales.Base|anychart.scales.GanttDateTime|Object|anychart.enums.ScaleTypes)=} opt_value - Scale.
+ * @return {anychart.scales.Base|anychart.scales.GanttDateTime|!anychart.core.axisMarkers.TextBase} - Axis scale or
  * itself for method chaining.
  */
 anychart.core.axisMarkers.TextBase.prototype.autoScale = function(opt_value) {
@@ -222,7 +222,7 @@ anychart.core.axisMarkers.TextBase.prototype.autoScale = function(opt_value) {
         anychart.scales.Base.setupScale(/** @type {anychart.scales.Base} */(this.autoScale_), opt_value, null, anychart.scales.Base.ScaleTypes.ALL_DEFAULT, null, this.scaleInvalidated, this);
     if (val) {
       var dispatch = this.autoScale_ == val;
-      this.autoScale_ = /** @type {anychart.scales.Base|anychart.ganttModule.Scale} */(val);
+      this.autoScale_ = /** @type {anychart.scales.Base|anychart.scales.GanttDateTime} */(val);
       var scaleIsSet = this.scale_ || (this.axis_ && /** @type {?anychart.scales.Base} */ (this.axis_.scale()));
       if (scaleIsSet) {
         val.resumeSignalsDispatching(false);
@@ -242,8 +242,8 @@ anychart.core.axisMarkers.TextBase.prototype.autoScale = function(opt_value) {
 /**
  * Getter/setter for default scale.
  * Works with instances of anychart.scales.Base only.
- * @param {(anychart.scales.Base|anychart.ganttModule.Scale|Object|anychart.enums.ScaleTypes)=} opt_value - Scale.
- * @return {anychart.scales.Base|anychart.ganttModule.Scale|!anychart.core.axisMarkers.TextBase} - Axis scale or
+ * @param {(anychart.scales.Base|anychart.scales.GanttDateTime|Object|anychart.enums.ScaleTypes)=} opt_value - Scale.
+ * @return {anychart.scales.Base|anychart.scales.GanttDateTime|!anychart.core.axisMarkers.TextBase} - Axis scale or
  * itself for method chaining.
  */
 anychart.core.axisMarkers.TextBase.prototype.scaleInternal = function(opt_value) {
@@ -255,7 +255,7 @@ anychart.core.axisMarkers.TextBase.prototype.scaleInternal = function(opt_value)
         anychart.scales.Base.setupScale(/** @type {anychart.scales.Base} */(this.scale_), opt_value, null, anychart.scales.Base.ScaleTypes.ALL_DEFAULT, null, this.scaleInvalidated, this);
     if (val) {
       var dispatch = this.scale_ == val;
-      this.scale_ = /** @type {anychart.scales.Base|anychart.ganttModule.Scale} */(val);
+      this.scale_ = /** @type {anychart.scales.Base|anychart.scales.GanttDateTime} */(val);
       if (!ganttScale)
         val.resumeSignalsDispatching(dispatch);
       if (!dispatch)
