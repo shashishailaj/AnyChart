@@ -3,6 +3,10 @@ goog.provide('anychart.graphModule.defaultTheme');
 
 goog.mixin(goog.global['anychart']['themes']['defaultTheme'], {
   'graph': {
+
+    'labels': {
+    },
+
     'nodes': {
       'normal': {
         'fill': {
@@ -18,14 +22,18 @@ goog.mixin(goog.global['anychart']['themes']['defaultTheme'], {
           'fontSize': 8,
           'textAnchor': 'middle'
         },
-        'size': 15,
+        'size': 20,
         'type': 'square'
       },
       'hovered': {
         'fill': 'red',
         'stroke': 'blue',
-        'type': 'diamond',
-        'size': 20
+        'type': 'square',
+        'size': 200,
+        'labels': {
+          'fontColor':'red',
+          'fontSize':20
+        }
       },
       'selected': {
         'fill': 'brown',

@@ -41,6 +41,15 @@ anychart.graphModule.elements.Node = function(chart) {
    * @const
    * */
   this.magnetizeGap_ = 10;
+
+  /**
+   *
+   * */
+  this.labelsSettings_ = {};
+  this.labelsSettings_.normal = {};
+  this.labelsSettings_.hovered = {};
+  this.labelsSettings_.selected = {};
+
   var normalDescriptorsMeta = {};
   anychart.core.settings.createDescriptorsMeta(normalDescriptorsMeta, [
     ['fill', 0, anychart.Signal.NEEDS_REDRAW_APPEARANCE],
@@ -76,9 +85,16 @@ anychart.core.settings.populateAliases(anychart.graphModule.elements.Node, ['fil
  * SetupElements
  * */
 anychart.graphModule.elements.Node.prototype.setupElements = function() {
+  this.normal_.addThemes(this.themeSettings);
   this.setupCreated('normal', this.normal_);
   this.setupCreated('hovered', this.hovered_);
   this.setupCreated('selected', this.selected_);
+
+  var normalLabels = this.normal_.labels();
+
+  normalLabels.parent(this.chart_.labels());
+  this.hovered_.labels().parent(normalLabels);
+  this.selected_.labels().parent(normalLabels);
 };
 
 
@@ -153,6 +169,68 @@ anychart.graphModule.elements.Node.prototype.provideMeasurements = function() {
 };
 
 
+// anychart.graphModule.elements.Edge.prototype.resolveSettingsForEdge = function(edge){
+//
+// };
+
+
+/**
+ * @param {anychart.graphModule.Chart.Node} node
+ * */
+anychart.graphModule.elements.Node.prototype.resolveLabelSettingsForNode = function(node) {
+  var state = node.currentState,
+      mainLabelSettings,
+      specificLabelSetting,
+      id = node.nodeId;
+
+  if (state == 0) {
+    if (!this.labelsSettings_.normal[id])
+      this.labelsSettings_.normal[id] = this.normal_.labels();
+
+    mainLabelSettings = this.labelsSettings_.normal[id];
+    if (node.states.normal && node.states.normal.labels) {
+      specificLabelSetting = new anychart.core.ui.LabelsSettings();
+      specificLabelSetting.dropThemes();
+      specificLabelSetting.parent(mainLabelSettings);
+      specificLabelSetting.setup(node.states.normal.labels);
+      mainLabelSettings = specificLabelSetting;
+    }
+
+    this.labelsSettings_.normal[id] = mainLabelSettings;
+  } else if (state == 1) {
+    if (!this.labelsSettings_.hovered[id])
+      this.labelsSettings_.hovered[id] = this.hovered_.labels();
+
+    mainLabelSettings = this.labelsSettings_.hovered[id];
+    if (node.states.hovered && node.states.hovered.labels) {
+      specificLabelSetting = new anychart.core.ui.LabelsSettings();
+      specificLabelSetting.dropThemes();
+      specificLabelSetting.parent(mainLabelSettings);
+      specificLabelSetting.setup(node.states.hovered.labels);
+      mainLabelSettings = specificLabelSetting;
+    }
+
+    this.labelsSettings_.hovered[id] = mainLabelSettings;
+  } else if (state == 2) {
+    if (!this.labelsSettings_.selected[id])
+      this.labelsSettings_.selected[id] = this.normal_.labels();
+
+    mainLabelSettings = this.labelsSettings_.selected[id];
+    if (node.states.selected && node.states.selected.labels) {
+      specificLabelSetting = new anychart.core.ui.LabelsSettings();
+      specificLabelSetting.dropThemes();
+      specificLabelSetting.parent(mainLabelSettings);
+      specificLabelSetting.setup(node.states.normal.labels);
+      mainLabelSettings = specificLabelSetting;
+    }
+
+    this.labelsSettings_.normal[id] = mainLabelSettings;
+  }
+
+  return mainLabelSettings;
+};
+
+
 /**
  * Calculates middle position for label
  * @param {anychart.graphModule.Chart.Node} node
@@ -171,36 +249,30 @@ anychart.graphModule.elements.Edge.prototype.updateEdgesConntectedToNode = funct
 
 /**
  * Fills text with style and text value.
- * @param {anychart.core.ui.OptimizedText} text - Text to setup.
- * @param {number} state Current state of element.
- * @param {anychart.graphModule.Chart.Node=} opt_node
- * @param {boolean=} opt_labelsAreOverridden - If labels settings are overridden.
+ * @param {anychart.graphModule.Chart.Node} node
  * @private
  */
-anychart.graphModule.elements.Node.prototype.setupText_ = function(text, state, opt_node, opt_labelsAreOverridden) {
+anychart.graphModule.elements.Node.prototype.setupText_ = function(node) {
   /**
    * @type {anychart.core.ui.LabelsSettings}
    * */
-  var labels;
+  var labels = this.resolveLabelSettingsForNode(node);
+  text = node.textElement;
+  var provider = this.createFormatProvider(node);
+  var textVal = labels.getText(provider);
+  text.text(textVal);
 
-  if (opt_node) {
-    if (opt_labelsAreOverridden) {
-      // var index = /** @type {number} */ (opt_node.meta('index'));
-      labels = this.overriddenLabels_[index];
-    } else {
-      var state = anychart.utils.pointStateToName(state);
-      labels = this[state]().labels();
-    }
-
-    var provider = this.createFormatProvider(opt_node);
-    var textVal = labels.getText(provider);
-    text.text(textVal);
-    opt_node.textElement = text;
-  }
-  // console.log(labels.flatten());
   text.style(labels.flatten());
   text.prepareComplexity();
   text.applySettings();
+};
+
+
+/**
+ * @param {anychart.graphModule.Chart.Node} node
+ * */
+anychart.graphModule.elements.Node.prototype.applyLabelStyle = function(node) {
+  this.setupText_(node);
 };
 
 
@@ -213,24 +285,11 @@ anychart.graphModule.elements.Node.prototype.applyLabelsStyle = function(opt_nee
   var i = 0;
   var nodes = this.chart_.getNodesMap();
   for (var node in nodes) {
+    node = nodes[node];
     var text = this.texts_[i];
+    node.textElement = text;
+    this.applyLabelStyle(node);
     i++;
-    // var overriddenSettings;
-    // if (labelsAreOverridden) {
-    //   overriddenSettings = this.overriddenLabels_[i];
-    //   if (!overriddenSettings) {
-    //     overriddenSettings = new anychart.core.ui.LabelsSettings();
-    //     overriddenSettings.dropThemes(true);
-    //     overriddenSettings.parent(/** @type {anychart.core.ui.LabelsSettings} */ (this.labels()));
-    //     this.overriddenLabels_[i] = overriddenSettings;
-    //   }
-    //   this.labelsOverrider_(overriddenSettings, item);
-    // }
-    // if (opt_needsToDropOldBounds) {
-    //   text.resetComplexity();
-    //   text.dropBounds();
-    // }
-    this.setupText_(text, anychart.SettingsState.NORMAL, nodes[node], false);
   }
 };
 
@@ -243,10 +302,10 @@ anychart.graphModule.elements.Node.prototype.getLabelPosition = function(node) {
   var x = node.position.x;
   var y = node.position.y;
 
-  var height = node.textElement.getBounds().height / 2;
-
+  var nodeHeight = this.chart_.resolveSettingsForNode(node, 'size', node.currentState) / 2;
+  var textHeight = node.textElement.getBounds().height
   node.labelsSettings.position.x = x;
-  node.labelsSettings.position.y = y + height;
+  node.labelsSettings.position.y = y + nodeHeight + textHeight / 2;
 
   return node.labelsSettings.position;
 };
@@ -254,7 +313,7 @@ anychart.graphModule.elements.Node.prototype.getLabelPosition = function(node) {
 
 /**
  * */
-anychart.graphModule.elements.Node.prototype.setInitialLabelsPostion = function() {
+anychart.graphModule.elements.Node.prototype.setInitialLabelsPosition = function() {
   var nodes = this.chart_.getNodesMap();
   for (var node in nodes) {
     node = nodes[node];
@@ -275,7 +334,6 @@ anychart.graphModule.elements.Node.prototype.updateNodeLabelsPosition = function
 };
 
 
-
 /**
  * @param {anychart.graphModule.Chart.Node} node
  * */
@@ -288,31 +346,33 @@ anychart.graphModule.elements.Node.prototype.updateNodeLabelPosition = function(
 
 
 /**
+ * @param {anychart.graphModule.Chart.Node} node
+ * */
+anychart.graphModule.elements.Node.prototype.drawLabel = function(node) {
+  var textElement = node.textElement;
+  var labelSettings = this.resolveLabelSettingsForNode(node);
+  if (labelSettings.enabled()) {
+    var cellBounds = anychart.math.rect(node.labelsSettings.position.x, node.labelsSettings.position.y, 0, 0);
+    textElement.renderTo(this.labelsLayerEl_);
+    textElement.putAt(cellBounds);
+    textElement.finalizeComplexity();
+  } else {
+    textElement.renderTo(null);
+  }
+};
+
+
+/**
  *
  * */
 anychart.graphModule.elements.Node.prototype.drawLabels = function() {
   var layer = this.getLabelsLayer();
   var nodes = this.chart_.getNodesMap();
-  var i = 0;
+
   for (var node in nodes) {
     node = nodes[node];
-    var textElement = this.texts_[i];
-    if (this.labels()['enabled']()) {
-      // var r = new anychart.math.Rect(this.pixelBoundsCache_.left, totalTop, this.pixelBoundsCache_.width, height);
-      var cellBounds = anychart.math.rect(node.labelsSettings.position.x, node.labelsSettings.position.y, 0, 0);
-
-      textElement.renderTo(this.labelsLayerEl_);
-      textElement.putAt(cellBounds);
-
-
-      textElement.finalizeComplexity();
-      // this.labelsTexts_.push(/** @type {string} */ (textElement.text()));
-    } else {
-      textElement.renderTo(null);
-    }
-    i++;
+    this.drawLabel(node);
   }
-  // this.dispatchSignal(anychart.Signal.MEASURE_COLLECT | anychart.Signal.MEASURE_BOUNDS);
 };
 
 
@@ -338,7 +398,7 @@ anychart.graphModule.elements.Node.prototype.createFormatProvider = function(nod
  * */
 anychart.graphModule.elements.Node.prototype.stickNode = function(node) {
   var closestX = -Infinity, //todo
-      closestY = -Infinity;
+    closestY = -Infinity;
   for (var i = 0; i < node.connectedEdges.length; i++) {
     var edges = this.chart_.getEdgesMap();
     var nodes = this.chart_.getNodesMap();
@@ -374,7 +434,6 @@ anychart.graphModule.elements.Node.prototype.updateNode = function(node, state) 
 anychart.graphModule.elements.Node.prototype.getFill = function() {
 
 };
-
 
 
 /**
