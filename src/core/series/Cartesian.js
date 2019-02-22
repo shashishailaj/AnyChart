@@ -787,7 +787,7 @@ anychart.core.series.Cartesian.prototype.getDrawingData = function(data, dataPus
     for (i = 0, len = yValueNames.length; i < len; i++) {
       name = yValueNames[i];
       val = this.normalizeYValue(iterator.get(name));
-      missing = missing || yScale.isMissing(val);
+      missing = missing || ( yScale ? yScale.isMissing(val) : false);
       pointData[name] = val;
     }
     for (i = 0, len = additionalNames.length; i < len; i++) {

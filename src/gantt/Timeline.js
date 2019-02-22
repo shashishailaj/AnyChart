@@ -9,7 +9,6 @@ goog.require('anychart.core.IStandaloneBackend');
 goog.require('anychart.core.ui.LabelsFactory');
 goog.require('anychart.core.ui.MarkersFactory');
 goog.require('anychart.ganttModule.BaseGrid');
-goog.require('anychart.scales.GanttDateTime');
 goog.require('anychart.ganttModule.ScrollBar');
 goog.require('anychart.ganttModule.axisMarkers.Line');
 goog.require('anychart.ganttModule.axisMarkers.Range');
@@ -27,6 +26,7 @@ goog.require('anychart.ganttModule.elements.TasksElement');
 goog.require('anychart.ganttModule.elements.TimelineElement');
 goog.require('anychart.ganttModule.header.Header');
 goog.require('anychart.math.Rect');
+goog.require('anychart.scales.GanttDateTime');
 goog.require('goog.array');
 goog.require('goog.fx.Dragger');
 

@@ -7,6 +7,7 @@ goog.require('anychart.core.IChart');
 goog.require('anychart.core.IPlot');
 goog.require('anychart.core.StateSettings');
 goog.require('anychart.core.settings');
+goog.require('anychart.scales.GanttDateTime');
 goog.require('anychart.timelineModule.Axis');
 goog.require('anychart.timelineModule.series.Event');
 goog.require('anychart.timelineModule.series.Range');
@@ -27,16 +28,14 @@ anychart.timelineModule.Chart = function() {
   this.addThemes('timeline');
 
   /**
-   * @type {anychart.ganttModule.Scale}
+   * @type {anychart.scales.GanttDateTime}
    * @private
    */
-  this.scale_ = new anychart.ganttModule.Scale();
-
-  /**
-   * @type {anychart.timelineModule.Axis}
-   * @private
-   */
-  this.axis_ = new anychart.timelineModule.Axis();
+  this.scale_ = new anychart.scales.GanttDateTime();
+  this.setupCreated('scale', this.scale_);
+  this.scale_.checkWeights = function(opt_value) {
+    return false;
+  };
 };
 goog.inherits(anychart.timelineModule.Chart, anychart.core.ChartWithSeries);
 
@@ -48,7 +47,9 @@ goog.inherits(anychart.timelineModule.Chart, anychart.core.ChartWithSeries);
  * @type {number}
  */
 anychart.timelineModule.Chart.prototype.SUPPORTED_CONSISTENCY_STATES =
-    anychart.core.ChartWithSeries.prototype.SUPPORTED_CONSISTENCY_STATES; //TODO (A.Kudryavtsev): States TBA.
+    anychart.core.ChartWithSeries.prototype.SUPPORTED_CONSISTENCY_STATES |
+    anychart.ConsistencyState.AXES_CHART_AXES |
+    anychart.ConsistencyState.SCALE_CHART_SCALES;
 
 
 /**
@@ -64,13 +65,93 @@ anychart.timelineModule.Chart.prototype.SUPPORTED_SIGNALS = anychart.core.Separa
 
 //endregion
 //region -- Chart Infrastructure Overrides.
-//TODO (A.Kudryavtsev): TBA
+/** @inheritDoc */
+anychart.timelineModule.Chart.prototype.calculate = function() {
+  var dateMin = +Infinity;
+  var dateMax = -Infinity;
+  for (var i = 0; i < this.seriesList.length; i++) {
+    var series = this.seriesList[i];
+    var it = series.getResetIterator();
+    var seriesType = series.seriesType();
+    while(it.advance()) {
+      if (seriesType == anychart.enums.TimelineSeriesType.EVENT) {
+        var date = anychart.utils.normalizeTimestamp(it.get('x'));
+        dateMin = Math.min(dateMin, date);
+        dateMax = Math.max(dateMax, date);
+      } else if (seriesType == anychart.enums.TimelineSeriesType.RANGE) {
+        var start = anychart.utils.normalizeTimestamp(it.get('start'));
+        var end = anychart.utils.normalizeTimestamp(it.get('end'));
+        if (!isNaN(end)) {
+          dateMin = Math.min(dateMin, end);
+          dateMax = Math.max(dateMax, end);
+        }
+
+        dateMin = Math.min(dateMin, start);
+        dateMax = Math.max(dateMax, start);
+      }
+    }
+  }
+  this.dateMin = dateMin;
+  this.dateMax = dateMax;
+};
+
+
+/** @inheritDoc */
+anychart.timelineModule.Chart.prototype.drawContent = function(bounds) {
+  if (this.isConsistent())
+    return;
+
+  this.calculate();
+  this.scale().setRange(this.dateMin, this.dateMax);
+
+  if (this.hasInvalidationState(anychart.ConsistencyState.BOUNDS)) {
+    this.dataBounds = bounds.clone();
+    this.invalidate(anychart.ConsistencyState.AXES_CHART_AXES | anychart.ConsistencyState.SERIES_CHART_SERIES);
+    this.markConsistent(anychart.ConsistencyState.BOUNDS);
+  }
+
+  var axis = this.getCreated('axis');
+  if (this.hasInvalidationState(anychart.ConsistencyState.SCALE_CHART_SCALES)) {
+    if (axis) {
+      axis.scale(this.scale());
+    }
+    this.markConsistent(anychart.ConsistencyState.SCALE_CHART_SCALES);
+  }
+
+  if (this.hasInvalidationState(anychart.ConsistencyState.SERIES_CHART_SERIES)) {
+    for (var i = 0; i < this.seriesList.length; i++) {
+      var series = this.seriesList[i];
+      series.parentBounds(this.dataBounds);
+      series.container(this.rootElement);
+      series.draw();
+    }
+    this.markConsistent(anychart.ConsistencyState.SERIES_CHART_SERIES);
+  }
+
+  if (this.hasInvalidationState(anychart.ConsistencyState.AXES_CHART_AXES)) {
+    if (axis) {
+      axis.parentBounds(this.dataBounds);
+      axis.container(this.rootElement);
+      axis.draw();
+    }
+    this.markConsistent(anychart.ConsistencyState.AXES_CHART_AXES);
+  }
+
+  return;
+};
+
+
 /**
  *
  * @param {Object=} opt_value
  * @return {anychart.timelineModule.Chart|anychart.timelineModule.Axis}
  */
 anychart.timelineModule.Chart.prototype.axis = function(opt_value) {
+  if (!this.axis_) {
+    this.axis_ = new anychart.timelineModule.Axis();
+    this.setupCreated('axis', this.axis_);
+  }
+
   if (goog.isDef(opt_value)) {
     this.axis_.setup(opt_value);
     return this;
@@ -80,14 +161,21 @@ anychart.timelineModule.Chart.prototype.axis = function(opt_value) {
 };
 
 
+/** @inheritDoc */
+anychart.timelineModule.Chart.prototype.xScale = function() {
+  return this.scale();
+};
+
+
 /**
  *
  * @param {Object=} opt_value
- * @return {anychart.timelineModule.Chart|anychart.ganttModule.Scale}
+ * @return {anychart.timelineModule.Chart|anychart.scales.GanttDateTime}
  */
 anychart.timelineModule.Chart.prototype.scale = function(opt_value) {
   if (goog.isDef(opt_value)) {
     this.scale_.setup(opt_value);
+
     return this;
   }
 
@@ -122,6 +210,11 @@ anychart.timelineModule.Chart.prototype.yScale = function() {
   return null;
 };
 
+
+/** @inheritDoc */
+anychart.timelineModule.Chart.prototype.isVertical = function(opt_value) {
+  return false;
+};
 
 
 //endregion

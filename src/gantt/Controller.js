@@ -2,9 +2,9 @@ goog.provide('anychart.ganttModule.Controller');
 
 goog.require('anychart.core.Base');
 goog.require('anychart.format');
-goog.require('anychart.scales.GanttDateTime');
 goog.require('anychart.ganttModule.ScrollBar');
 goog.require('anychart.math.Rect');
+goog.require('anychart.scales.GanttDateTime');
 goog.require('anychart.treeDataModule.Tree');
 
 goog.require('goog.array');
