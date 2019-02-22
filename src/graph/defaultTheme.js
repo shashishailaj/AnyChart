@@ -4,9 +4,26 @@ goog.provide('anychart.graphModule.defaultTheme');
 goog.mixin(goog.global['anychart']['themes']['defaultTheme'], {
   'graph': {
 
-    'labels': {
-    },
+    'labels': {},
 
+    'tooltip': {
+      'displayMode': 'single',
+      'positionMode': 'float',
+      'title': {
+        'enabled': true
+      },
+      'separator': {'enabled': true},
+      /**
+       * @this {*}
+       * @return {*}
+       */
+      'titleFormat': '',
+      /**
+       * @this {*}
+       * @return {*}
+       */
+      'format': '{%id}'
+    },
     'nodes': {
       'normal': {
         'fill': {
@@ -29,10 +46,11 @@ goog.mixin(goog.global['anychart']['themes']['defaultTheme'], {
         'fill': 'red',
         'stroke': 'blue',
         'type': 'square',
-        'size': 200,
+        'size': 20,
         'labels': {
-          'fontColor':'red',
-          'fontSize':20
+          'enabled': false,
+          'fontColor': 'red',
+          'fontSize': 20
         }
       },
       'selected': {

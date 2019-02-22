@@ -31,11 +31,14 @@ goog.require('goog.cssom');
  * Try to flatten settings before multiple labelsSettings.getOption(...) usage.
  * Getting value from flat object is faster than the getOption() resolving.
  *
+ *
+ * @param {boolean=} opt_skipDefaultThemes
+ *
  * @constructor
  * @implements {anychart.core.settings.IResolvable}
  * @extends {anychart.core.Base}
  */
-anychart.core.ui.LabelsSettings = function() {
+anychart.core.ui.LabelsSettings = function(opt_skipDefaultThemes) {
   anychart.core.ui.LabelsSettings.base(this, 'constructor');
 
   /**
@@ -129,7 +132,9 @@ anychart.core.ui.LabelsSettings = function() {
     ['textAnchor', 0, anychart.Signal.NEEDS_REDRAW, 0, this.resetFlatSettings]
   ]);
 
-  this.addThemes('defaultSimpleLabelsSettings');
+  if (!opt_skipDefaultThemes) {
+    this.addThemes('defaultSimpleLabelsSettings');
+  }
 };
 goog.inherits(anychart.core.ui.LabelsSettings, anychart.core.Base);
 
