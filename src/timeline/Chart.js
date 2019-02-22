@@ -136,8 +136,6 @@ anychart.timelineModule.Chart.prototype.drawContent = function(bounds) {
     }
     this.markConsistent(anychart.ConsistencyState.AXES_CHART_AXES);
   }
-
-  return;
 };
 
 

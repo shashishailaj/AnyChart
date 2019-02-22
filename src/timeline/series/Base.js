@@ -71,6 +71,12 @@ anychart.timelineModule.series.Base.prototype.makeTimelineMeta = function(rowInf
 
 
 /** @inheritDoc */
+anychart.timelineModule.series.Base.prototype.planIsStacked = function() {
+  return false;
+};
+
+
+/** @inheritDoc */
 anychart.timelineModule.series.Base.prototype.prepareMetaMakers = function(yNames, yColumns) {
   this.metaMakers.push(this.makeTimelineMeta);
 };
