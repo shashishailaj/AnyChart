@@ -120,11 +120,23 @@ anychart.timelineModule.Axis.prototype.drawAxis = function() {
   var stroke = this.getOption('stroke');
   var fill = this.getOption('fill');
 
+  var thickness = anychart.utils.extractThickness(stroke);
+
+  var left = bounds.left;
+  var right = bounds.getRight();
+  var top = center - halfHeight;
+  var bottom = center + halfHeight;
+
+  left = anychart.utils.applyPixelShift(left, thickness);
+  right = anychart.utils.applyPixelShift(right, thickness);
+  top = anychart.utils.applyPixelShift(top, thickness);
+  bottom = anychart.utils.applyPixelShift(bottom, thickness);
+
   this.line_.clear();
-  this.line_.moveTo(bounds.left, center - halfHeight).
-      lineTo(bounds.getRight(), center - halfHeight).
-      lineTo(bounds.getRight(), center + halfHeight).
-      lineTo(bounds.left, center + halfHeight).close();
+  this.line_.moveTo(left, top).
+      lineTo(right, top).
+      lineTo(right, bottom).
+      lineTo(left, bottom).close();
   this.line_.stroke(stroke);
   this.line_.fill(fill);
 };
