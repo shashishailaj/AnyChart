@@ -147,6 +147,7 @@ anychart.timelineModule.Chart.prototype.drawContent = function(bounds) {
 anychart.timelineModule.Chart.prototype.axis = function(opt_value) {
   if (!this.axis_) {
     this.axis_ = new anychart.timelineModule.Axis();
+    this.axis_.listenSignals(this.onAxisSignal_, this);
     this.setupCreated('axis', this.axis_);
   }
 
@@ -162,6 +163,15 @@ anychart.timelineModule.Chart.prototype.axis = function(opt_value) {
 /** @inheritDoc */
 anychart.timelineModule.Chart.prototype.xScale = function() {
   return this.scale();
+};
+
+
+/**
+ *
+ * @private
+ */
+anychart.timelineModule.Chart.prototype.onAxisSignal_ = function() {
+  this.invalidate(anychart.ConsistencyState.AXES_CHART_AXES, anychart.Signal.NEEDS_REDRAW);
 };
 
 
