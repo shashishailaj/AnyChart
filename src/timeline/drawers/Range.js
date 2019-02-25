@@ -27,7 +27,7 @@ anychart.timelineModule.drawers.Range.prototype.type = anychart.enums.SeriesDraw
 
 
 anychart.timelineModule.drawers.Range.prototype.flags = (
-    // anychart.core.drawers.Capabilities.NEEDS_ZERO |
+    anychart.core.drawers.Capabilities.NEEDS_ZERO |
     // anychart.core.drawers.Capabilities.NEEDS_SIZE_SCALE |
     // anychart.core.drawers.Capabilities.USES_CONTAINER_AS_ROOT |
     // anychart.core.drawers.Capabilities.USES_STROKE_AS_FILL |
@@ -43,7 +43,7 @@ anychart.timelineModule.drawers.Range.prototype.flags = (
     // anychart.core.drawers.Capabilities.IS_MARKER_BASED |
     // anychart.core.drawers.Capabilities.IS_OHLC_BASED |
     // anychart.core.drawers.Capabilities.IS_LINE_BASED |
-    anychart.core.drawers.Capabilities.IS_RANGE_BASED |
+    // anychart.core.drawers.Capabilities.IS_RANGE_BASED |
     // anychart.core.drawers.Capabilities.SUPPORTS_STEP_DIRECTION |
     // anychart.core.drawers.Capabilities.SUPPORTS_DISTRIBUTION |
     0);
@@ -71,4 +71,9 @@ anychart.timelineModule.drawers.Range.prototype.drawSubsequentPoint = function(p
  * @param {acgraph.vector.Path} path
  */
 anychart.timelineModule.drawers.Range.prototype.drawPointShape = function(point, path) {
+  var height = 40;
+  var startX = /** @type {number}*/(point.meta('startX'));
+  var endX = /** @type {number} */(point.meta('endX'));
+  var zero = /** @type {number} */(point.meta('zero'));
+  path.moveTo(startX, zero).lineTo(startX, zero - height).lineTo(endX, zero - height).lineTo(endX, zero).close();
 };

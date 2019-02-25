@@ -40,7 +40,7 @@ anychart.timelineModule.series.Base.prototype.startDrawing = function(opt_crispE
  * Calculate drawing plan.
  */
 anychart.timelineModule.series.Base.prototype.calculate = function() {
-  var drawingPlan = this.getScatterDrawingPlan(true, true);
+  var drawingPlan = this.getScatterDrawingPlan(false, true);
 };
 
 
@@ -64,8 +64,20 @@ anychart.timelineModule.series.Base.prototype.isPointVisible = function(point) {
  * @param xRatio
  */
 anychart.timelineModule.series.Base.prototype.makeTimelineMeta = function(rowInfo, yNames, yColumns, pointMissing, xRatio) {
-  rowInfo.meta('length', anychart.utils.normalizeSize(/** @type {string|number} */(this.getOption('length')), this.parentBounds().height));
-  rowInfo.meta('x', this.parentBounds().left + this.parentBounds().width * xRatio);
+  if (this.drawer.type == anychart.enums.SeriesDrawerTypes.RANGE) {
+    var startX = this.parentBounds().left + this.parentBounds().width * rowInfo.meta('startXRatio');
+    var endXRatio = rowInfo.meta('endXRatio');
+    var endX;
+    if (!goog.isNumber(endXRatio) || isNaN(endXRatio)) {
+      endXRatio = 1;
+    }
+    endX = this.parentBounds().left + this.parentBounds().width * endXRatio;
+    rowInfo.meta('startX', startX);
+    rowInfo.meta('endX', endX);
+  } else {
+    rowInfo.meta('length', anychart.utils.normalizeSize(/** @type {string|number} */(this.getOption('length')), this.parentBounds().height));
+    rowInfo.meta('x', this.parentBounds().left + this.parentBounds().width * xRatio);
+  }
   rowInfo.meta('zero', this.parentBounds().top + this.parentBounds().height / 2);
 };
 
@@ -84,21 +96,94 @@ anychart.timelineModule.series.Base.prototype.prepareMetaMakers = function(yName
 
 /** @inheritDoc */
 anychart.timelineModule.series.Base.prototype.makePointMeta = function(rowInfo, yNames, yColumns) {
-  var pointMissing = this.considerMetaEmpty() ?
-    0 :
-    (Number(rowInfo.meta('missing')) || 0) & ~anychart.core.series.PointAbsenceReason.OUT_OF_RANGE;
-  if (!this.isPointVisible(rowInfo))
-    pointMissing |= anychart.core.series.PointAbsenceReason.OUT_OF_RANGE;
-  var xRatio = this.getXScale().transform(
-    rowInfo.getX());
-  // we write it here, because meta makers can rewrite this field (in radar/polar, for ex.)
-  rowInfo.meta('xRatio', xRatio);
-  if (pointMissing) {
-    this.makeMissing(rowInfo, yNames, xRatio);
+  if (this.drawer.type == anychart.enums.SeriesDrawerTypes.RANGE) {
+    var startXRatio = this.getXScale().transform(rowInfo.get('start'));
+    var endXRatio = this.getXScale().transform(rowInfo.get('end'));
+    rowInfo.meta('startXRatio', startXRatio);
+    rowInfo.meta('endXRatio', endXRatio);
   } else {
-    for (var i = 0; i < this.metaMakers.length; i++) {
-      pointMissing = this.metaMakers[i].call(this, rowInfo, yNames, yColumns, pointMissing, xRatio);
-    }
+    var xRatio = this.getXScale().transform(rowInfo.getX());
+    rowInfo.meta('xRatio', xRatio);
   }
-  rowInfo.meta('missing', pointMissing);
+  for (var i = 0; i < this.metaMakers.length; i++) {
+    this.metaMakers[i].call(this, rowInfo, yNames, yColumns, 0, xRatio);
+  }
+};
+
+
+/** @inheritDoc */
+anychart.timelineModule.series.Base.prototype.getDrawingData = function(data, dataPusher, xNormalizer, xMissingChecker) {
+  var dataSource = /** @type {anychart.data.IView} */(this.data());
+  var iterator = dataSource.getIterator();
+  var hasXErrors = false;
+  var hasYErrors = false;
+
+  var nonMissingCount = 0;
+  while (iterator.advance()) {
+    if (this.drawer.type == anychart.enums.SeriesDrawerTypes.RANGE) {
+      var start = xNormalizer(iterator.get('start'));
+      var end = xNormalizer(iterator.get('end'));
+      var pointData = {};
+      var meta = {};
+      pointData['start'] = start;
+      pointData['end'] = end;
+      meta['rawIndex'] = iterator.getIndex();
+    } else {
+      var xValue = xNormalizer(iterator.get('x'));
+      var pointData = {};
+      var meta = {};
+      pointData['x'] = xValue;
+      meta['rawIndex'] = iterator.getIndex();
+    }
+    var point = {
+      data: pointData,
+      meta: meta
+    };
+    dataPusher(data, point);
+  }
+  this.invalidate(anychart.ConsistencyState.SERIES_DATA);
+  this.drawingPlan = {
+    data: data,
+    series: this,
+    nonMissingCount: nonMissingCount,
+    hasPointLabels: this.supportsLabels() &&
+        (
+            dataSource.checkFieldExist('normal') ||
+            dataSource.checkFieldExist('hovered') ||
+            dataSource.checkFieldExist('selected') ||
+            dataSource.checkFieldExist('label') ||
+            dataSource.checkFieldExist('hoverLabel') ||
+            dataSource.checkFieldExist('selectLabel') ||
+            dataSource.checkFieldExist('minLabel') ||
+            dataSource.checkFieldExist('hoverMinLabel') ||
+            dataSource.checkFieldExist('selectMinLabel') ||
+            dataSource.checkFieldExist('maxLabel') ||
+            dataSource.checkFieldExist('hoverMaxLabel') ||
+            dataSource.checkFieldExist('selectMaxLabel')
+        ),
+    hasPointMarkers: this.supportsMarkers() &&
+        (
+            dataSource.checkFieldExist('normal') ||
+            dataSource.checkFieldExist('hovered') ||
+            dataSource.checkFieldExist('selected') ||
+            dataSource.checkFieldExist('marker') ||
+            dataSource.checkFieldExist('hoverMarker') ||
+            dataSource.checkFieldExist('selectMarker')
+        ),
+    hasPointOutliers: this.supportsOutliers() &&
+        (
+            dataSource.checkFieldExist('outliers') ||
+            dataSource.checkFieldExist('normal') ||
+            dataSource.checkFieldExist('hovered') ||
+            dataSource.checkFieldExist('selected') ||
+            dataSource.checkFieldExist('outlierMarker') ||
+            dataSource.checkFieldExist('hoverOutlierMarker') ||
+            dataSource.checkFieldExist('selectOutlierMarker')
+        ),
+    hasPointXErrors: hasXErrors,
+    hasPointYErrors: hasYErrors,
+    hasPointErrors: hasXErrors || hasYErrors
+  };
+
+  return this.drawingPlan;
 };
