@@ -648,9 +648,7 @@ anychart.timelineModule.Chart.prototype.seriesConfig = (function() {
     drawerType: anychart.enums.SeriesDrawerTypes.RANGE,
     shapeManagerType: anychart.enums.ShapeManagerTypes.PER_POINT,
     shapesConfig: [
-      anychart.core.shapeManagers.pathStrokeConfig,
-      anychart.core.shapeManagers.pathFillConfig,
-      anychart.core.shapeManagers.pathHatchConfig
+      anychart.core.shapeManagers.pathFillStrokeConfig
     ],
     secondaryShapesConfig: null,
     postProcessor: null,

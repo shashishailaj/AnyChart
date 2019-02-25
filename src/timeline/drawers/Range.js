@@ -38,8 +38,8 @@ anychart.timelineModule.drawers.Range.prototype.flags = (
     // anychart.core.drawers.Capabilities.SUPPORTS_COMPARISON |
     // anychart.core.drawers.Capabilities.SUPPORTS_ERROR |
     // anychart.core.drawers.Capabilities.SUPPORTS_OUTLIERS |
-    // anychart.core.drawers.Capabilities.IS_DISCRETE_BASED |
-    // anychart.core.drawers.Capabilities.IS_WIDTH_BASED |
+    anychart.core.drawers.Capabilities.IS_DISCRETE_BASED |
+    anychart.core.drawers.Capabilities.IS_WIDTH_BASED |
     // anychart.core.drawers.Capabilities.IS_3D_BASED |
     // anychart.core.drawers.Capabilities.IS_VERTICAL |
     // anychart.core.drawers.Capabilities.IS_MARKER_BASED |
@@ -59,11 +59,11 @@ anychart.timelineModule.drawers.Range.prototype.drawSubsequentPoint = function(p
   var names = this.getShapeNames(value, this.prevValue);
 
   var shapeNames = {};
-  shapeNames[names.stroke] = true;
+  shapeNames[names.path] = true;
   point.meta('names', names);
   var shapes = /** @type {Object.<acgraph.vector.Path>} */(shapesManager.getShapesGroup(state, shapeNames));
 
-  this.drawPointShape(point, shapes[names.stroke]);
+  this.drawPointShape(point, shapes[names.path]);
 };
 
 
