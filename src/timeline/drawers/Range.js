@@ -23,9 +23,11 @@ anychart.core.drawers.AvailableDrawers[anychart.enums.SeriesDrawerTypes.RANGE] =
 
 
 //endregion
+/** @inheritDoc */
 anychart.timelineModule.drawers.Range.prototype.type = anychart.enums.SeriesDrawerTypes.RANGE;
 
 
+/** @inheritDoc */
 anychart.timelineModule.drawers.Range.prototype.flags = (
     anychart.core.drawers.Capabilities.NEEDS_ZERO |
     // anychart.core.drawers.Capabilities.NEEDS_SIZE_SCALE |
@@ -75,5 +77,10 @@ anychart.timelineModule.drawers.Range.prototype.drawPointShape = function(point,
   var startX = /** @type {number}*/(point.meta('startX'));
   var endX = /** @type {number} */(point.meta('endX'));
   var zero = /** @type {number} */(point.meta('zero'));
+
+  var thickness = anychart.utils.extractThickness(path.stroke());
+  startX = anychart.utils.applyPixelShift(startX, thickness);
+  endX = anychart.utils.applyPixelShift(endX, thickness);
+
   path.moveTo(startX, zero).lineTo(startX, zero - height).lineTo(endX, zero - height).lineTo(endX, zero).close();
 };

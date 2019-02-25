@@ -50,6 +50,7 @@ anychart.timelineModule.drawers.Event.prototype.flags = (
     // anychart.core.drawers.Capabilities.SUPPORTS_DISTRIBUTION |
     0);
 
+
 /** @inheritDoc */
 anychart.timelineModule.drawers.Event.prototype.drawSubsequentPoint = function(point, state) {
   var shapesManager = this.shapesManager;
