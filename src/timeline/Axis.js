@@ -76,7 +76,7 @@ anychart.timelineModule.Axis.prototype.SUPPORTED_CONSISTENCY_STATES =
 /**
  *
  * @param {Object=} opt_value
- * @return {*}
+ * @return {anychart.scales.GanttDateTime|anychart.timelineModule.Axis}
  */
 anychart.timelineModule.Axis.prototype.scale = function(opt_value) {
   if (goog.isDef(opt_value)) {
@@ -120,7 +120,7 @@ anychart.timelineModule.Axis.prototype.draw = function() {
 
   if (this.hasInvalidationState(anychart.ConsistencyState.BOUNDS)) {
     this.calculateZero();
-    this.invalidate(anychart.ConsistencyState.APPEARANCE, anychart.ConsistencyState.AXIS_TICKS);
+    this.invalidate(anychart.ConsistencyState.APPEARANCE | anychart.ConsistencyState.AXIS_TICKS);
     this.markConsistent(anychart.ConsistencyState.BOUNDS);
   }
 
@@ -160,7 +160,7 @@ anychart.timelineModule.Axis.prototype.calculateZero = function() {
  * Test draw ticks.
  */
 anychart.timelineModule.Axis.prototype.drawTicks = function() {
-  var ticksArray = this.scale().getSimpleTicks('year', 1);
+  var ticksArray = this.scale().getSimpleTicks(anychart.enums.Interval.YEAR, 1);
   if (!this.ticksPath_) {
     this.ticksPath_ = this.rootElement.path();
   }
@@ -197,8 +197,8 @@ anychart.timelineModule.Axis.prototype.drawAxis = function() {
 
   var halfHeight = this.height_ / 2;
 
-  var stroke = this.getOption('stroke');
-  var fill = this.getOption('fill');
+  var stroke = /** @type {acgraph.vector.Stroke} */(this.getOption('stroke'));
+  var fill = /** @type {acgraph.vector.Fill} */(this.getOption('fill'));
 
   var thickness = anychart.utils.extractThickness(stroke);
 

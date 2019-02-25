@@ -10,7 +10,10 @@ goog.mixin(goog.global['anychart']['themes']['defaultTheme'], {
     },
     'defaultSeriesSettings': {
       'event': {
-        'length': '10%'
+        'connector': {'length': '10%'},
+        'normal': {
+          'markers': {'enabled': true}
+        }
       },
       'range': {
         'height': '10%'

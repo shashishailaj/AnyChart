@@ -236,7 +236,7 @@ anychart.timelineModule.Chart.prototype.seriesConfig = (function() {
   var capabilities = (anychart.core.series.Capabilities.ALLOW_INTERACTIVITY |
       anychart.core.series.Capabilities.ALLOW_POINT_SETTINGS |
       // anychart.core.series.Capabilities.ALLOW_ERROR |
-      anychart.core.series.Capabilities.SUPPORTS_MARKERS |
+      // anychart.core.series.Capabilities.SUPPORTS_MARKERS |
       anychart.core.series.Capabilities.SUPPORTS_LABELS | 0);
 
 
@@ -639,7 +639,7 @@ anychart.timelineModule.Chart.prototype.seriesConfig = (function() {
     ],
     secondaryShapesConfig: null,
     postProcessor: null,
-    capabilities: capabilities,
+    capabilities: capabilities | anychart.core.series.Capabilities.SUPPORTS_MARKERS,
     anchoredPositionTop: 'auto',
     anchoredPositionBottom: 'zero'
   };

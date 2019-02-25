@@ -2,6 +2,7 @@ goog.provide('anychart.timelineModule.series.Base');
 goog.require('anychart.core.series.Cartesian');
 
 
+
 /**
  * @param {!anychart.core.IChart} chart
  * @param {!anychart.core.IPlot} plot
@@ -75,7 +76,7 @@ anychart.timelineModule.series.Base.prototype.makeTimelineMeta = function(rowInf
     rowInfo.meta('startX', startX);
     rowInfo.meta('endX', endX);
   } else {
-    rowInfo.meta('length', anychart.utils.normalizeSize(/** @type {string|number} */(this.getOption('length')), this.parentBounds().height));
+    rowInfo.meta('length', anychart.utils.normalizeSize(/** @type {string|number} */(this.connector().getOption('length')), this.parentBounds().height));
     rowInfo.meta('x', this.parentBounds().left + this.parentBounds().width * xRatio);
   }
   rowInfo.meta('zero', this.parentBounds().top + this.parentBounds().height / 2);

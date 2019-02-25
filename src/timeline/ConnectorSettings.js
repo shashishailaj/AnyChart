@@ -3,6 +3,8 @@ goog.provide('anychart.timelineModule.ConnectorSettings');
 goog.require('anychart.core.Base');
 goog.require('anychart.core.settings');
 
+
+
 /**
  *
  * @constructor
@@ -19,6 +21,10 @@ anychart.timelineModule.ConnectorSettings = function() {
 goog.inherits(anychart.timelineModule.ConnectorSettings, anychart.core.Base);
 
 
+/**
+ * Connector settings property descriptors.
+ * @type {!Object<string, anychart.core.settings.PropertyDescriptor>}
+ */
 anychart.timelineModule.ConnectorSettings.PROPERTY_DESCRIPTORS = (function() {
   /** @type {!Object.<string, anychart.core.settings.PropertyDescriptor>} */
   var map = {};

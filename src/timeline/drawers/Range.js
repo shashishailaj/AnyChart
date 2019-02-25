@@ -78,7 +78,7 @@ anychart.timelineModule.drawers.Range.prototype.drawPointShape = function(point,
   var endX = /** @type {number} */(point.meta('endX'));
   var zero = /** @type {number} */(point.meta('zero'));
 
-  var thickness = anychart.utils.extractThickness(path.stroke());
+  var thickness = anychart.utils.extractThickness(/** @type {acgraph.vector.Stroke}*/(path.stroke()));
   startX = anychart.utils.applyPixelShift(startX, thickness);
   endX = anychart.utils.applyPixelShift(endX, thickness);
 
