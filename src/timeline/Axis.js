@@ -12,7 +12,28 @@ goog.require('anychart.core.VisualBase');
 anychart.timelineModule.Axis = function() {
   anychart.timelineModule.Axis.base(this, 'constructor');
 
+  /**
+   * Axis box height.
+   * @type {number}
+   * @private
+   */
   this.height_ = 10;
+
+  /**
+   * Pixel coordinates of zero line.
+   * Axis is drawn around this zero line.
+   * @type {number}
+   * @private
+   */
+  this.zero_ = 0;
+
+  /**
+   * Array of text elements for testing purpose.
+   * @type {Array.<acgraph.vector.Text>}
+   */
+  this.testLabelsArray = [];
+
+
   anychart.core.settings.createDescriptorsMeta(this.descriptorsMeta, [
     ['stroke', anychart.ConsistencyState.APPEARANCE, anychart.Signal.NEEDS_REDRAW],
     ['fill', anychart.ConsistencyState.APPEARANCE, anychart.Signal.NEEDS_REDRAW]
@@ -97,14 +118,73 @@ anychart.timelineModule.Axis.prototype.draw = function() {
     this.markConsistent(anychart.ConsistencyState.Z_INDEX);
   }
 
-  if (this.hasInvalidationState(anychart.ConsistencyState.APPEARANCE) || this.hasInvalidationState(anychart.ConsistencyState.BOUNDS)) {
+  if (this.hasInvalidationState(anychart.ConsistencyState.BOUNDS)) {
+    this.calculateZero();
+    this.invalidate(anychart.ConsistencyState.APPEARANCE, anychart.ConsistencyState.AXIS_TICKS);
+    this.markConsistent(anychart.ConsistencyState.BOUNDS);
+  }
+
+  if (this.hasInvalidationState(anychart.ConsistencyState.APPEARANCE)) {
     this.drawAxis();
     this.markConsistent(anychart.ConsistencyState.APPEARANCE);
   }
 
-  this.markConsistent(anychart.ConsistencyState.ALL);
+  if (this.hasInvalidationState(anychart.ConsistencyState.AXIS_TICKS)) {
+    this.drawTicks();
+    this.markConsistent(anychart.ConsistencyState.AXIS_TICKS);
+  }
 
+  if (this.hasInvalidationState(anychart.ConsistencyState.AXIS_TITLE)) {
+
+    this.markConsistent(anychart.ConsistencyState.AXIS_TITLE);
+  }
+
+  if (this.hasInvalidationState(anychart.ConsistencyState.AXIS_LABELS)) {
+
+    this.markConsistent(anychart.ConsistencyState.AXIS_LABELS);
+  }
   return this;
+};
+
+
+/**
+ * Calculate zero line position.
+ */
+anychart.timelineModule.Axis.prototype.calculateZero = function() {
+  var bounds = this.parentBounds();
+  this.zero_ = bounds.top + bounds.height / 2;
+};
+
+
+/**
+ * Test draw ticks.
+ */
+anychart.timelineModule.Axis.prototype.drawTicks = function() {
+  var ticksArray = this.scale().getSimpleTicks('year', 1);
+  if (!this.ticksPath_) {
+    this.ticksPath_ = this.rootElement.path();
+  }
+
+  this.ticksPath_.clear();
+  this.ticksPath_.stroke('red');
+  var bounds = this.parentBounds();
+  for (var i = 0; i < ticksArray.length; i++) {
+    var label = this.testLabelsArray[i];
+    if (!label) {
+      label = this.rootElement.text();
+      this.testLabelsArray[i] = label;
+    }
+    var tick = ticksArray[i];
+    var d = new Date(tick);
+    var tickRatio = this.scale_.transform(tick);
+    var tickX = bounds.left + bounds.width * tickRatio;
+
+    this.ticksPath_.moveTo(tickX, this.zero_).lineTo(tickX, this.zero_ + this.height_ / 2);
+    label.text(d.getFullYear().toString());
+    label.x(tickX);
+    label.y(this.zero_ - this.height_ / 2);
+    label.selectable(false);
+  }
 };
 
 
@@ -113,7 +193,7 @@ anychart.timelineModule.Axis.prototype.draw = function() {
  */
 anychart.timelineModule.Axis.prototype.drawAxis = function() {
   var bounds = this.parentBounds();
-  var center = bounds.top + bounds.height / 2;
+  var center = this.zero_;
 
   var halfHeight = this.height_ / 2;
 
