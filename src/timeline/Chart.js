@@ -8,6 +8,7 @@ goog.require('anychart.core.IPlot');
 goog.require('anychart.core.StateSettings');
 goog.require('anychart.core.settings');
 goog.require('anychart.scales.GanttDateTime');
+goog.require('anychart.scales.Linear');
 goog.require('anychart.timelineModule.Axis');
 goog.require('anychart.timelineModule.series.Event');
 goog.require('anychart.timelineModule.series.Range');
@@ -31,8 +32,10 @@ anychart.timelineModule.Chart = function() {
    * @type {anychart.scales.GanttDateTime}
    * @private
    */
-  this.scale_ = new anychart.scales.GanttDateTime();
-  this.setupCreated('scale', this.scale_);
+  this.xScale_ = new anychart.scales.GanttDateTime();
+
+  this.yScale_ = new anychart.scales.Linear();
+  this.setupCreated('scale', this.xScale_);
 
   /**
    * Whether scale range should be auto calculated.
@@ -112,6 +115,8 @@ anychart.timelineModule.Chart.prototype.drawContent = function(bounds) {
 
   if (this.hasInvalidationState(anychart.ConsistencyState.BOUNDS)) {
     this.dataBounds = bounds.clone();
+    this.yScale_.minimum(this.dataBounds.getBottom());
+    this.yScale_.maximum(this.dataBounds.top);
     this.invalidate(anychart.ConsistencyState.AXES_CHART_AXES | anychart.ConsistencyState.SERIES_CHART_SERIES);
     this.markConsistent(anychart.ConsistencyState.BOUNDS);
   }
@@ -189,12 +194,11 @@ anychart.timelineModule.Chart.prototype.onAxisSignal_ = function() {
  */
 anychart.timelineModule.Chart.prototype.scale = function(opt_value) {
   if (goog.isDef(opt_value)) {
-    this.scale_.setup(opt_value);
-
+    this.xScale_.setup(opt_value);
     return this;
   }
 
-  return this.scale_;
+  return this.xScale_;
 };
 
 
@@ -739,6 +743,11 @@ anychart.timelineModule.Chart.prototype.disposeInternal = function() {
 (function() {
   var proto = anychart.timelineModule.Chart.prototype;
   // proto['method'] = proto.method;
+  proto['axis'] = proto.axis;
+  proto['scale'] = proto.scale;
+  proto['fit'] = proto.fit;
+  proto['zoomTo'] = proto.zoomTo;
+  proto['getSeriesAt'] = proto.getSeriesAt;
 })();
 //exports
 

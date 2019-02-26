@@ -1,6 +1,8 @@
 goog.provide('anychart.timelineModule.Axis');
 
 goog.require('anychart.core.VisualBase');
+goog.require('anychart.math.Rect');
+goog.require('anychart.timelineModule.AxisTicks');
 
 
 
@@ -134,6 +136,13 @@ anychart.timelineModule.Axis.prototype.draw = function() {
 
   if (this.hasInvalidationState(anychart.ConsistencyState.BOUNDS)) {
     this.calculateZero();
+    var bounds = this.parentBounds();
+    var x = bounds.left;
+    var y = this.zero_ - this.height_ / 2;
+    var width = bounds.width;
+    var height = this.height_;
+    this.axisBounds_ = new anychart.math.Rect(x, y, width, height);
+
     this.invalidate(anychart.ConsistencyState.APPEARANCE | anychart.ConsistencyState.AXIS_TICKS);
     this.markConsistent(anychart.ConsistencyState.BOUNDS);
   }
@@ -144,6 +153,23 @@ anychart.timelineModule.Axis.prototype.draw = function() {
   }
 
   if (this.hasInvalidationState(anychart.ConsistencyState.AXIS_TICKS)) {
+    var axisTicks = this.getCreated('ticks');
+    if (axisTicks) {
+      axisTicks.container(this.rootElement);
+      axisTicks.draw();
+      var ticksArray = [];
+      for (var interval in anychart.enums.Interval) {
+        ticksArray = this.scale().getSimpleTicks(anychart.enums.Interval[interval], 1);
+        if (ticksArray.length >= 3) break;
+      }
+
+      for (var i = 0; i < ticksArray.length; i++) {
+        var tickRatio = this.scale().transform(ticksArray[i]);
+        if (tickRatio <= 1 && tickRatio >= 0)
+          axisTicks.drawTick(tickRatio, this.axisBounds_);
+      }
+    }
+
     this.drawTicks();
     this.markConsistent(anychart.ConsistencyState.AXIS_TICKS);
   }
@@ -157,6 +183,12 @@ anychart.timelineModule.Axis.prototype.draw = function() {
 
     this.markConsistent(anychart.ConsistencyState.AXIS_LABELS);
   }
+
+  if (this.hasInvalidationState(anychart.ConsistencyState.CONTAINER)) {
+    this.rootElement.parent(this.container());
+    this.markConsistent(anychart.ConsistencyState.CONTAINER);
+  }
+
   return this;
 };
 
@@ -174,13 +206,13 @@ anychart.timelineModule.Axis.prototype.calculateZero = function() {
  * Test draw ticks.
  */
 anychart.timelineModule.Axis.prototype.drawTicks = function() {
-  var ticksArray = this.scale().getSimpleTicks(anychart.enums.Interval.YEAR, 1);
-  if (!this.ticksPath_) {
-    this.ticksPath_ = this.rootElement.path();
+  // var ticksArray = this.scale().getSimpleTicks(anychart.enums.Interval.YEAR, 1);
+  var ticksArray = [];
+  for (var interval in anychart.enums.Interval) {
+    ticksArray = this.scale().getSimpleTicks(anychart.enums.Interval[interval], 1);
+    if (ticksArray.length >= 3) break;
   }
 
-  this.ticksPath_.clear();
-  this.ticksPath_.stroke('red');
   var bounds = this.parentBounds();
   for (var i = 0; i < ticksArray.length; i++) {
     var label = this.testLabelsArray[i];
@@ -194,8 +226,7 @@ anychart.timelineModule.Axis.prototype.drawTicks = function() {
     var tickRatio = this.scale_.transform(tick);
     var tickX = bounds.left + bounds.width * tickRatio;
 
-    this.ticksPath_.moveTo(tickX, this.zero_).lineTo(tickX, this.zero_ + this.height_ / 2);
-    label.text(d.getFullYear().toString());
+    label.text(d.toLocaleDateString('en-US'));
     label.x(tickX);
     label.y(this.zero_ - this.height_ / 2);
     label.selectable(false);
@@ -262,6 +293,7 @@ anychart.timelineModule.Axis.prototype.checkDrawingNeeded = function() {
           anychart.ConsistencyState.AXIS_LABELS
       );
     }
+    this.markConsistent(anychart.ConsistencyState.ENABLED);
     return false;
   }
   this.markConsistent(anychart.ConsistencyState.ENABLED);
@@ -274,4 +306,34 @@ anychart.timelineModule.Axis.prototype.remove = function() {
   if (this.rootElement) {
     this.rootElement.parent(null);
   }
+};
+
+
+/**
+ *
+ * @param {Object=} opt_config
+ * @return {anychart.timelineModule.AxisTicks|anychart.timelineModule.Axis}
+ */
+anychart.timelineModule.Axis.prototype.ticks = function(opt_config) {
+  if (!this.ticks_) {
+    this.ticks_ = new anychart.timelineModule.AxisTicks();
+    this.setupCreated('ticks', this.ticks_);
+    this.ticks_.listenSignals(this.onTicksSignal_, this);
+  }
+
+  if (goog.isDef(opt_config)) {
+    this.ticks_.setup(opt_config);
+    return this;
+  }
+
+  return this.ticks_;
+};
+
+
+/**
+ * Axis tick signals handler.
+ * @private
+ */
+anychart.timelineModule.Axis.prototype.onTicksSignal_ = function() {
+  this.invalidate(anychart.ConsistencyState.AXIS_TICKS, anychart.Signal.NEEDS_REDRAW);
 };
