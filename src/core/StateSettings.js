@@ -408,7 +408,12 @@ anychart.core.StateSettings.prototype.PROPERTY_DESCRIPTORS = (function() {
     // pie tasks
     descriptors.EXPLODE,
     // button content
-    descriptors.CONTENT
+    descriptors.CONTENT,
+
+    descriptors.WIDTH_NUMBER,
+    descriptors.HEIGHT_NUMBER,
+
+    descriptors.SHAPE
   ]);
 
   return map;

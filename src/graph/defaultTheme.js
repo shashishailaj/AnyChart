@@ -25,6 +25,9 @@ goog.mixin(goog.global['anychart']['themes']['defaultTheme'], {
       'format': '{%id}'
     },
     'nodes': {
+      'width': 15,
+      'height': 15,
+      'shape': 'rectangle',
       'normal': {
         'fill': {
           'opacity': 0.4,
@@ -39,18 +42,18 @@ goog.mixin(goog.global['anychart']['themes']['defaultTheme'], {
           'fontSize': 8,
           'textAnchor': 'middle'
         },
-        'size': 20,
-        'type': 'square'
+        'shape': 'rect'
       },
       'hovered': {
         'fill': 'red',
         'stroke': 'blue',
-        'type': 'square',
-        'size': 20,
+        'shape': 'rec',
+        'width': 15,
+        'height': 15,
         'labels': {
-          'enabled': false,
+          'enabled': true,
           'fontColor': 'red',
-          'fontSize': 20
+          'fontSize': 24
         }
       },
       'selected': {

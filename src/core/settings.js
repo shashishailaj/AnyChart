@@ -962,6 +962,9 @@ anychart.core.settings.descriptors = (function() {
   map.DRAW_FIRST_LABEL = [anychart.enums.PropertyHandlerType.SINGLE_ARG, 'drawFirstLabel', anychart.core.settings.booleanNormalizer];
   map.DRAW_LAST_LABEL = [anychart.enums.PropertyHandlerType.SINGLE_ARG, 'drawLastLabel', anychart.core.settings.booleanNormalizer];
 
+  map.WIDTH_NUMBER = [anychart.enums.PropertyHandlerType.SINGLE_ARG, 'width', anychart.core.settings.numberNormalizer];
+  map.HEIGHT_NUMBER = [anychart.enums.PropertyHandlerType.SINGLE_ARG, 'height', anychart.core.settings.numberNormalizer];
+  map.SHAPE = [anychart.enums.PropertyHandlerType.SINGLE_ARG, 'shape', anychart.core.settings.stringNormalizer];
   return map;
 })();
 

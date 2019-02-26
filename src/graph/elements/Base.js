@@ -16,7 +16,7 @@ anychart.graphModule.elements.Base = function(chart) {
   this.chart_ = chart;
 
   /**
-   *
+   * @private
    * */
   this.labelsSettings_ = {};
   this.labelsSettings_.normal = {};
@@ -27,9 +27,10 @@ anychart.graphModule.elements.Base = function(chart) {
   anychart.core.settings.createDescriptorsMeta(normalDescriptorsMeta, [
     ['fill', 0, anychart.Signal.NEEDS_REDRAW_APPEARANCE],
     ['stroke', 0, anychart.Signal.NEEDS_REDRAW_APPEARANCE],
-    ['size', 0, anychart.Signal.NEEDS_REDRAW_APPEARANCE], //todo
-    ['type', 0, anychart.Signal.NEEDS_REDRAW_APPEARANCE], //todo
-    ['labels', 0, 0]
+    ['shape', 0, anychart.Signal.NEEDS_REDRAW_APPEARANCE], //todo
+    ['labels', 0, anychart.Signal.NEEDS_REDRAW_LABELS],
+    ['width', 0, anychart.Signal.NEEDS_REDRAW_APPEARANCE],
+    ['height', 0, anychart.Signal.NEEDS_REDRAW_APPEARANCE]
   ]);
 
   this.normal_ = new anychart.core.StateSettings(this, normalDescriptorsMeta, anychart.PointState.NORMAL);
@@ -38,9 +39,10 @@ anychart.graphModule.elements.Base = function(chart) {
   anychart.core.settings.createDescriptorsMeta(descriptorsMeta, [
     ['fill', 0, anychart.Signal.NEEDS_REDRAW_APPEARANCE],
     ['stroke', 0, anychart.Signal.NEEDS_REDRAW_APPEARANCE],
-    ['size', 0, anychart.Signal.NEEDS_REDRAW_APPEARANCE], //todo
-    ['type', 0, anychart.Signal.NEEDS_REDRAW_APPEARANCE], //todo
-    ['labels', 0, 0]
+    ['shape', 0, anychart.Signal.NEEDS_REDRAW_APPEARANCE], //todo
+    ['labels', 0, anychart.Signal.NEEDS_REDRAW_LABELS],
+    ['width', 0, anychart.Signal.NEEDS_REDRAW_APPEARANCE],
+    ['height', 0, anychart.Signal.NEEDS_REDRAW_APPEARANCE]
   ]);
   this.hovered_ = new anychart.core.StateSettings(this, descriptorsMeta, anychart.PointState.HOVER);
   this.selected_ = new anychart.core.StateSettings(this, descriptorsMeta, anychart.PointState.SELECT);
@@ -49,9 +51,13 @@ anychart.graphModule.elements.Base = function(chart) {
   this.hovered_.setOption(anychart.core.StateSettings.LABELS_FACTORY_CONSTRUCTOR, anychart.core.StateSettings.OPTIMIZED_LABELS_CONSTRUCTOR_NO_THEME);
   this.selected_.setOption(anychart.core.StateSettings.LABELS_FACTORY_CONSTRUCTOR, anychart.core.StateSettings.OPTIMIZED_LABELS_CONSTRUCTOR_NO_THEME);
 
+  this.normal_.setOption(anychart.core.StateSettings.LABELS_AFTER_INIT_CALLBACK, anychart.core.StateSettings.DEFAULT_LABELS_AFTER_INIT_CALLBACK);
+  this.hovered_.setOption(anychart.core.StateSettings.LABELS_AFTER_INIT_CALLBACK, anychart.core.StateSettings.DEFAULT_LABELS_AFTER_INIT_CALLBACK);
+  this.selected_.setOption(anychart.core.StateSettings.LABELS_AFTER_INIT_CALLBACK, anychart.core.StateSettings.DEFAULT_LABELS_AFTER_INIT_CALLBACK);
+
 };
 goog.inherits(anychart.graphModule.elements.Base, anychart.core.Base);
-anychart.core.settings.populateAliases(anychart.graphModule.elements.Base, ['fill', 'stroke', 'labels', 'type', 'size'], 'normal');
+anychart.core.settings.populateAliases(anychart.graphModule.elements.Base, ['fill', 'stroke', 'labels', 'shape', 'height', 'width'], 'normal');
 
 //region StateSettings
 /**
@@ -113,6 +119,12 @@ anychart.graphModule.elements.Base.prototype.selected = function(opt_value) {
   return this.selected_;
 };
 //endregion
+
+
+anychart.graphModule.elements.Base.prototype.SUPPORTED_SIGNALS =
+  anychart.Signal.MEASURE_COLLECT | //Signal for Measuriator to collect labels to measure.
+  anychart.Signal.MEASURE_BOUNDS | //Signal for Measuriator to measure the bounds of collected labels.
+  anychart.Signal.NEEDS_REDRAW_LABELS; //Signal for DG to change the labels placement.
 
 
 /**
@@ -205,6 +217,10 @@ anychart.graphModule.elements.Base.prototype.resolveLabelSettingsForNode = funct
 
   return mainLabelSettings;
 };
+
+
+anychart.graphModule.elements.Base.prototype.labelsInvalidated_ = goog.nullFunction;
+
 
 (function() {
   var proto = anychart.graphModule.elements.Base.prototype;

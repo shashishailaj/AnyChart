@@ -274,19 +274,24 @@ anychart.graphModule.elements.Edge.prototype.drawLabels = function() {
 
     var labelSettings = this.resolveLabelSettingsForNode(edges[edge]);
     if (labelSettings.enabled()) {
-      // var r = new anychart.math.Rect(this.pixelBoundsCache_.left, totalTop, this.pixelBoundsCache_.width, height);
       var cellBounds = anychart.math.rect(edges[edge].labelsSettings.position.x, edges[edge].labelsSettings.position.y, 0, 0);
 
       textElement.renderTo(this.labelsLayerEl_);
       textElement.putAt(cellBounds);
       textElement.finalizeComplexity();
-      // this.labelsTexts_.push(/** @type {string} */ (textElement.text()));
     } else {
       textElement.renderTo(null);
     }
     i++;
   }
-  // this.dispatchSignal(anychart.Signal.MEASURE_COLLECT | anychart.Signal.MEASURE_BOUNDS);
+};
+
+
+/**
+ * Get shape for node.
+ * */
+anychart.graphModule.elements.Edge.prototype.labelsInvalidated_ = function(event) {
+  console.log('labels Edge' , event);
 };
 
 
