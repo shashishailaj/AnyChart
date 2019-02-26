@@ -81,12 +81,26 @@ anychart.timelineModule.Axis.prototype.SUPPORTED_CONSISTENCY_STATES =
 anychart.timelineModule.Axis.prototype.scale = function(opt_value) {
   if (goog.isDef(opt_value)) {
     if (opt_value != this.scale_) {
+      if (this.scale_) {
+        this.scale_.unlistenSignals(this.onScaleSignal_, this);
+      }
       this.scale_ = opt_value;
+      this.scale_.listenSignals(this.onScaleSignal_, this);
+
     }
     return this;
   }
 
   return this.scale_;
+};
+
+
+/**
+ * Scale signals listener.
+ * @private
+ */
+anychart.timelineModule.Axis.prototype.onScaleSignal_ = function() {
+  this.invalidate(anychart.ConsistencyState.AXIS_TICKS, anychart.Signal.NEEDS_REDRAW);
 };
 
 
@@ -174,6 +188,7 @@ anychart.timelineModule.Axis.prototype.drawTicks = function() {
       label = this.rootElement.text();
       this.testLabelsArray[i] = label;
     }
+    label.parent(this.rootElement);
     var tick = ticksArray[i];
     var d = new Date(tick);
     var tickRatio = this.scale_.transform(tick);
@@ -184,6 +199,10 @@ anychart.timelineModule.Axis.prototype.drawTicks = function() {
     label.x(tickX);
     label.y(this.zero_ - this.height_ / 2);
     label.selectable(false);
+  }
+
+  for (var i = ticksArray.length; i < this.testLabelsArray.length; i++) {
+    this.testLabelsArray[i].remove();
   }
 };
 
@@ -247,4 +266,12 @@ anychart.timelineModule.Axis.prototype.checkDrawingNeeded = function() {
   }
   this.markConsistent(anychart.ConsistencyState.ENABLED);
   return true;
+};
+
+
+/** @inheritDoc */
+anychart.timelineModule.Axis.prototype.remove = function() {
+  if (this.rootElement) {
+    this.rootElement.parent(null);
+  }
 };

@@ -1060,6 +1060,16 @@ anychart.scales.GanttDateTime.prototype.ratioForceScroll = function(ratio) {
 };
 
 
+/**
+ * Quick hack to make anychart.core.drawers.Base work with gantt scale.
+ * @param {*=} opt_value
+ * @return {boolean}
+ */
+anychart.scales.GanttDateTime.prototype.checkWeights = function(opt_value) {
+  return false;
+};
+
+
 /** @inheritDoc */
 anychart.scales.GanttDateTime.prototype.serialize = function() {
   var json = anychart.scales.GanttDateTime.base(this, 'serialize');

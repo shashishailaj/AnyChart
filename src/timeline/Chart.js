@@ -33,9 +33,14 @@ anychart.timelineModule.Chart = function() {
    */
   this.scale_ = new anychart.scales.GanttDateTime();
   this.setupCreated('scale', this.scale_);
-  this.scale_.checkWeights = function(opt_value) {
-    return false;
-  };
+
+  /**
+   * Whether scale range should be auto calculated.
+   * When it is - it covers all dates in series.
+   * @type {boolean}
+   * @private
+   */
+  this.autoRange_ = true;
 };
 goog.inherits(anychart.timelineModule.Chart, anychart.core.ChartWithSeries);
 
@@ -102,7 +107,8 @@ anychart.timelineModule.Chart.prototype.drawContent = function(bounds) {
     return;
 
   this.calculate();
-  this.scale().setRange(this.dateMin, this.dateMax);
+  if (this.autoRange_)
+    this.scale().setRange(this.dateMin, this.dateMax);
 
   if (this.hasInvalidationState(anychart.ConsistencyState.BOUNDS)) {
     this.dataBounds = bounds.clone();
@@ -115,6 +121,7 @@ anychart.timelineModule.Chart.prototype.drawContent = function(bounds) {
     if (axis) {
       axis.scale(this.scale());
     }
+    this.invalidate(anychart.ConsistencyState.SERIES_CHART_SERIES | anychart.ConsistencyState.AXES_CHART_AXES);
     this.markConsistent(anychart.ConsistencyState.SCALE_CHART_SCALES);
   }
 
@@ -222,6 +229,31 @@ anychart.timelineModule.Chart.prototype.yScale = function() {
 /** @inheritDoc */
 anychart.timelineModule.Chart.prototype.isVertical = function(opt_value) {
   return false;
+};
+
+
+/**
+ *
+ * @param {string|number} startDate
+ * @param {string|number} endDate
+ * @return {anychart.timelineModule.Chart}
+ */
+anychart.timelineModule.Chart.prototype.zoomTo = function(startDate, endDate) {
+  this.autoRange_ = false;
+  startDate = anychart.utils.normalizeTimestamp(startDate);
+  endDate = anychart.utils.normalizeTimestamp(endDate);
+  this.scale().zoomTo(startDate, endDate);
+  this.invalidate(anychart.ConsistencyState.SCALE_CHART_SCALES, anychart.Signal.NEEDS_REDRAW);
+  return this;
+};
+
+
+/**
+ * Reset zoom/scroll manipulations.
+ */
+anychart.timelineModule.Chart.prototype.fit = function() {
+  this.autoRange_ = true;
+  this.invalidate(anychart.ConsistencyState.SCALE_CHART_SCALES, anychart.Signal.NEEDS_REDRAW);
 };
 
 
