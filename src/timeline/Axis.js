@@ -221,11 +221,8 @@ anychart.timelineModule.Axis.prototype.draw = function() {
     if (axisTicks) {
       axisTicks.container(this.rootElement);
       axisTicks.draw();
-      var ticksArray = [];
-      for (var interval in anychart.enums.Interval) {
-        ticksArray = this.scale().getSimpleTicks(anychart.enums.Interval[interval], 1);
-        if (ticksArray.length >= 3) break;
-      }
+
+      var ticksArray = this.getTicks();
 
       for (var i = 0; i < ticksArray.length; i++) {
         var tickRatio = this.scale().transform(ticksArray[i]);
@@ -254,6 +251,20 @@ anychart.timelineModule.Axis.prototype.draw = function() {
   }
 
   return this;
+};
+
+
+/**
+ * Returns ticks obtained from ganttDateTime scale.
+ * @return {Array}
+ */
+anychart.timelineModule.Axis.prototype.getTicks = function() {
+  var ticksArray = [];
+  for (var interval in anychart.enums.Interval) {
+    ticksArray = this.scale().getSimpleTicks(anychart.enums.Interval[interval], 1);
+    if (ticksArray.length >= 3) break;
+  }
+  return ticksArray;
 };
 
 
@@ -372,4 +383,14 @@ anychart.timelineModule.Axis.prototype.remove = function() {
   if (this.rootElement) {
     this.rootElement.parent(null);
   }
+};
+
+
+/** @inheritDoc */
+anychart.timelineModule.Axis.prototype.disposeInternal = function() {
+  goog.disposeAll(this.ticks_, this.line_, this.testLabelsArray);
+  this.ticks_ = null;
+  this.line_ = null;
+  this.testLabelsArray.length = 0;
+  anychart.timelineModule.Axis.base(this, 'disposeInternal');
 };
