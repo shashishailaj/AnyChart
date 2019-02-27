@@ -19,11 +19,7 @@ anychart.graphModule.elements.Node = function(chart) {
 
   this.chart_ = chart;
 
-  // /**
-  //  * Array of dom elements.
-  //  * For settings class contains all nodes without instance.
-  //  * */
-  // this.domElements = [];
+  this.type_ = anychart.graphModule.Chart.Element.NODE;
 
   /**
    * Array of text elements.
@@ -96,15 +92,17 @@ anychart.graphModule.elements.Node.prototype.getIterator = function() {
  * @inheritDoc
  */
 anychart.graphModule.elements.Node.prototype.provideMeasurements = function() {
-  if (!this.texts_.length) {
-    var nodes = this.chart_.getNodesMap();
-    for (var node in nodes) {
-      var text = new anychart.core.ui.OptimizedText();
-      // text.setClassName(this.labels().cssClass);
-      this.texts_.push(text);
+  var texts = [];
+
+  var nodes = this.chart_.getNodesMap();
+  for (var node in nodes) {
+    var nodeObj = this.chart_.getNodeById(node);
+    if (nodeObj.textElement) {
+      texts.push(nodeObj.textElement);
     }
   }
-  return this.texts_;
+
+  return texts;
 };
 
 
@@ -216,12 +214,18 @@ anychart.graphModule.elements.Node.prototype.updateLabelsStyle = function() {
  * @param {anychart.graphModule.Chart.Node} node
  * */
 anychart.graphModule.elements.Node.prototype.updateLabelStyle = function(node) {
-  node.textElement.resetComplexity();
-  this.setupText_(node);
-  node.textElement.renderTo(this.labelsLayerEl_);
-  node.textElement.prepareBounds();
-  this.drawLabel(node);
-  node.textElement.resetComplexity();
+  var enabled = this.resolveLabelSettings(node).enabled();
+  if (enabled && !node.textElement) {
+    node.textElement = this.getText();
+  }
+  if (node.textElement) {
+    node.textElement.resetComplexity();
+    this.setupText_(node);
+    node.textElement.renderTo(this.labelsLayerEl_);
+    node.textElement.prepareBounds();
+    this.drawLabel(node);
+    node.textElement.resetComplexity();
+  }
 };
 
 
@@ -231,15 +235,17 @@ anychart.graphModule.elements.Node.prototype.updateLabelStyle = function(node) {
  * @private
  */
 anychart.graphModule.elements.Node.prototype.setupText_ = function(node) {
-  var labels = this.resolveLabelSettingsForNode(node);
+  var labels = this.resolveLabelSettings(node);
   var provider = this.createFormatProvider(node);
   var textVal = labels.getText(provider);
 
   text = node.textElement;
-  text.text(textVal);
-  text.style(labels.flatten());
-  text.prepareComplexity();
-  text.applySettings();
+  if (text) {
+    text.text(textVal);
+    text.style(labels.flatten());
+    text.prepareComplexity();
+    text.applySettings();
+  }
 };
 
 
@@ -255,17 +261,10 @@ anychart.graphModule.elements.Node.prototype.applyLabelStyle = function(node) {
  * Applies style to labels.
  */
 anychart.graphModule.elements.Node.prototype.applyLabelsStyle = function() {
-  var i = 0;
   var nodes = this.chart_.getNodesMap();
   for (var node in nodes) {
     var nodeObj = this.chart_.getNodeById(node);
-    if (!nodeObj.textElement) {
-      var text = this.texts_[i]; //todo pool of text elements
-      nodeObj.textElement = text;
-    }
-
     this.applyLabelStyle(nodeObj);
-    i++;
   }
 };
 
@@ -278,15 +277,20 @@ anychart.graphModule.elements.Node.prototype.getLabelPosition = function(node) {
   var x = node.position.x;
   var y = node.position.y;
 
-  console.log(x,y);
-
   var nodeHeight = this.resolveSettings(node, 'height') / 2;
-  console.log(nodeHeight);
-  console.log('height'+node.textElement.getBounds().height);
   var textHeight = node.textElement.getBounds().height;
   y = y + nodeHeight;
 
   return {x: x, y: y};
+};
+
+
+/**
+ * @param {anychart.graphModule.Chart.Node} from
+ * @param {anychart.graphModule.Chart.Node} to
+ * */
+anychart.graphModule.elements.Node.prototype.getAngle = function(from, to) {
+
 };
 
 
@@ -317,20 +321,19 @@ anychart.graphModule.elements.Node.prototype.getLabelPosition = function(node) {
  * @param {anychart.graphModule.Chart.Node} node
  * */
 anychart.graphModule.elements.Node.prototype.drawLabel = function(node) {
-  debugger
   var textElement = node.textElement;
-  var labelSettings = this.resolveLabelSettingsForNode(node);
-  if (labelSettings.enabled()) {
-    var position = this.getLabelPosition(node);
-    // console.log(position);
-    var cellBounds = anychart.math.rect(position.x, position.y, 50, 30);
-    textElement.renderTo(this.labelsLayerEl_);
-    textElement.putAt(cellBounds);
-    textElement.finalizeComplexity();
-  } else {
-    textElement.renderTo(null);
+  if (textElement) {
+    var labelSettings = this.resolveLabelSettings(node);
+    if (labelSettings.enabled()) {
+      var position = this.getLabelPosition(node);
+      var cellBounds = anychart.math.rect(position.x, position.y, 50, 30);
+      textElement.renderTo(this.labelsLayerEl_);
+      textElement.putAt(cellBounds);
+      textElement.finalizeComplexity();
+    } else {
+      textElement.renderTo(null);
+    }
   }
-
 };
 
 
@@ -342,14 +345,18 @@ anychart.graphModule.elements.Node.prototype.drawLabels = function() {
   var nodes = this.chart_.getNodesMap();
 
   for (var node in nodes) {
-    node = nodes[node];
+    node = this.chart_.getNodeById(node);
     this.drawLabel(node);
   }
 };
+
+
 anychart.graphModule.elements.Node.prototype.resetComplexityForTexts = function() {
   for (var node in this.chart_.getNodesMap()) {
     node = this.chart_.getNodeById(node);
-    node.textElement.resetComplexity();
+    if (node.textElement) {
+      node.textElement.resetComplexity();
+    }
   }
 };
 
@@ -441,7 +448,6 @@ anychart.graphModule.elements.Node.prototype.getSettings = function() {
  * Get shape for node.
  * */
 anychart.graphModule.elements.Node.prototype.labelsInvalidated_ = function(event) {
-  console.log(event);
   if (event.hasSignal(anychart.Signal.BOUNDS_CHANGED)) {
     // this.applyLabelsStyle();
   }
@@ -544,6 +550,26 @@ anychart.graphModule.elements.Node.prototype.updateNodeColors = function(node) {
   node.domElement.stroke(stroke);
 };
 
+
+/**
+ * Create dom element for node and return it.
+ * @param {anychart.graphModule.Chart.Node} node
+ * @return {acgraph.vector.Path}
+ * */
+anychart.graphModule.elements.Node.prototype.createDOM = function(node) {
+  var domElement = this.getPath();
+
+  domElement.tag = /**@type {anychart.graphModule.Chart.Tag}*/({});
+  domElement.tag.type = this.getType();
+  domElement.tag.id = node.nodeId;
+  node.currentState = anychart.SettingsState.NORMAL;
+  var lbs = this.resolveLabelSettings(node);
+  if (lbs.enabled()) {
+    node.textElement = this.getText();
+  }
+  node.domElement = domElement;
+  return domElement;
+};
 
 // /**
 //  * @param {string} nodeId id of node.

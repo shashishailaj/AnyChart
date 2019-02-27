@@ -22,8 +22,10 @@ anychart.graphModule.elements.Edge = function(chart) {
    * */
   this.chart_ = chart;
 
+  this.type_ = anychart.graphModule.Chart.Element.EDGE;
+
   /**
-   * Array of text elements.
+   * Array of visible text elements.
    * @type {Array.<anychart.core.ui.OptimizedText>}
    * @private
    * */
@@ -43,6 +45,8 @@ anychart.graphModule.elements.Edge = function(chart) {
 };
 goog.inherits(anychart.graphModule.elements.Edge, anychart.graphModule.elements.Base);
 
+anychart.graphModule.elements.Edge.prototype.SUPPORTED_SIGNALS = anychart.graphModule.elements.Base.prototype |
+  anychart.Signal.NEEDS_REDRAW_APPEARANCE;
 
 /**
  * Getter for tooltip settings.
@@ -67,18 +71,41 @@ anychart.graphModule.elements.Edge.prototype.tooltip = function(opt_value) {
 
 
 /**
+ * Create dom element for node and return it.
+ * @param {anychart.graphModule.Chart.Edge} edge
+ * @return {acgraph.vector.Path}
+ * */
+anychart.graphModule.elements.Edge.prototype.createDOM = function(edge) {
+  var domElement = this.getPath();
+
+  domElement.tag = /**@type {anychart.graphModule.Chart.Tag}*/({});
+  domElement.tag.type = this.getType();
+  domElement.tag.id = this.getElementId(edge);
+  edge.currentState = anychart.SettingsState.NORMAL;
+  edge.domElement = domElement;
+  var lbs = this.resolveLabelSettings(edge);
+  if (lbs.enabled()) {
+    edge.textElement = this.getText();
+  }
+  return domElement;
+};
+
+
+/**
  * @inheritDoc
  */
 anychart.graphModule.elements.Edge.prototype.provideMeasurements = function() {
-  if (!this.texts_.length) {
-    var edges = this.chart_.getEdgesMap();
-    for (var edge in edges) {
-      var text = new anychart.core.ui.OptimizedText();
-      // text.setClassName(this.labels().cssClass);
-      this.texts_.push(text);
+  var texts = [];
+
+  var edges = this.chart_.getEdgesMap();
+  for (var edge in edges) {
+    var edgeObj = this.chart_.getEdgeById(edge);
+    if (edgeObj.textElement) {
+      texts.push(edgeObj.textElement);
     }
   }
-  return this.texts_;
+
+  return texts;
 };
 
 
@@ -87,12 +114,11 @@ anychart.graphModule.elements.Edge.prototype.provideMeasurements = function() {
  * @param {boolean=} opt_needsToDropOldBounds - Whether to drop old bounds and reset complexity.
  */
 anychart.graphModule.elements.Edge.prototype.applyLabelsStyle = function(opt_needsToDropOldBounds) {
-  var i = 0;
+
   var edges = this.chart_.getEdgesMap();
   for (var edge in edges) {
-    var text = this.texts_[i];
-    i++;
-    this.setupText_(text, edges[edge]);
+    edge = this.chart_.getEdgeById(edge);
+    this.setupText_(edge);
   }
 };
 
@@ -121,11 +147,55 @@ anychart.graphModule.elements.Edge.prototype.createFormatProvider = function(edg
 /**
  * @param {anychart.graphModule.Chart.Edge} edge
  * */
-anychart.graphModule.elements.Edge.prototype.updateLabelPosition = function(edge) {
+anychart.graphModule.elements.Edge.prototype.updateColors = function(edge) {
+  var stroke = this.resolveSettings(edge, 'stroke');
+
+  edge.domElement.stroke(stroke);
+};
+
+
+anychart.graphModule.elements.Edge.prototype.updateAppearance = function(edge) {
+  this.updateColors(edge);
+};
+
+/**
+ * @param {anychart.graphModule.Chart.Edge} edge
+ * */
+anychart.graphModule.elements.Edge.prototype.updateLabelStyle = function(edge) {
+  var enabled = this.resolveLabelSettings(edge).enabled();
+  if (enabled && !edge.textElement) {
+    edge.textElement = this.getText();
+  }
+  if (edge.textElement) {
+    edge.textElement.resetComplexity();
+    this.setupText_(edge);
+    edge.textElement.renderTo(this.labelsLayerEl_);
+    edge.textElement.prepareBounds();
+    this.drawLabel(edge);
+    edge.textElement.resetComplexity();
+  }
+};
+
+
+/**
+ * @param {anychart.graphModule.Chart.Edge} edge
+ * */
+anychart.graphModule.elements.Edge.prototype.rotateLabel = function(edge) {
+  var from = this.chart_.getNodeById(edge.from);
+  var to = this.chart_.getNodeById(edge.to);
+  var angle = 0;
+  if (from.position.x == to.position.x) {
+    angle = 270;
+  } else {
+    var dx = to.position.x - from.position.x;
+    var dy = to.position.y - from.position.y;
+
+    angle = goog.math.toDegrees(Math.atan(dy / dx));
+  }
+  var position = this.getLabelPosition(edge);
+  var rotate = angle + ',' + position[0] + ',' + position[1];
   var domElement = edge.textElement.getDomElement();
-  this.calculateLabelPositionForEdge(edge);
-  var position = edge.labelsSettings.position.x + ',' + edge.labelsSettings.position.y;
-  domElement.setAttribute('transform', 'translate(' + position + ')');
+  domElement.setAttribute('transform', 'rotate(' + rotate + ')');
 };
 
 
@@ -176,11 +246,13 @@ anychart.graphModule.elements.Edge.prototype.updateEdgeColor = function(edge) {
 /**
  * Calculates middle position for label
  * @param {anychart.graphModule.Chart.Edge} edge
+ * @return {Array.<number>}
  * */
-anychart.graphModule.elements.Edge.prototype.calculateLabelPositionForEdge = function(edge) {
+anychart.graphModule.elements.Edge.prototype.getLabelPosition = function(edge) {
   var nodes = this.chart_.getNodesMap();
   var from = nodes[edge.from];
   var to = nodes[edge.to];
+
 
   var maxX = Math.max(to.position.x, from.position.x); //Most right x
   var minX = Math.min(to.position.x, from.position.x);
@@ -190,14 +262,13 @@ anychart.graphModule.elements.Edge.prototype.calculateLabelPositionForEdge = fun
   var x, y;
   if (maxX == minX) {
     x = maxX;
-    y = (maxY - minY) / 2;
+    y = minY + ((maxY - minY) / 2);
   } else {
     x = minX + ((maxX - minX) / 2);
     y = ((x - minX) / (maxX - minX)) * (maxY - minY) + minY;
   }
 
-  edge.labelsSettings.position.x = x;
-  edge.labelsSettings.position.y = y;
+  return [x, y];
 };
 
 
@@ -223,20 +294,22 @@ anychart.graphModule.elements.Edge.prototype.getElementState = function(edge) {
 
 /**
  * Fills text with style and text value.
- * @param {anychart.core.ui.OptimizedText} text - Text to setup.
  * @param {anychart.graphModule.Chart.Edge} edge
  * @private
  */
-anychart.graphModule.elements.Edge.prototype.setupText_ = function(text, edge) {
-  var labels = this.resolveLabelSettingsForNode(edge);
+anychart.graphModule.elements.Edge.prototype.setupText_ = function(edge) {
+  var labels = this.resolveLabelSettings(edge);
 
   var provider = this.createFormatProvider(edge);
   var textVal = labels.getText(provider);
-  text.text(textVal);
-  edge.textElement = text;
-  text.style(labels.flatten());
-  text.prepareComplexity();
-  text.applySettings();
+
+  text = edge.textElement;
+  if (text) {
+    text.text(textVal);
+    text.style(labels.flatten());
+    text.prepareComplexity();
+    text.applySettings();
+  }
 };
 
 
@@ -265,24 +338,31 @@ anychart.graphModule.elements.Edge.prototype.getIterator = function() {
 /**
  *
  * */
-anychart.graphModule.elements.Edge.prototype.drawLabels = function() {
-  var layer = this.getLabelsLayer();
-  var edges = this.chart_.getEdgesMap();
-  var i = 0;
-  for (var edge in edges) {
-    var textElement = this.texts_[i];
-
-    var labelSettings = this.resolveLabelSettingsForNode(edges[edge]);
+anychart.graphModule.elements.Edge.prototype.drawLabel = function(edge) {
+  var textElement = edge.textElement;
+  if (textElement) {
+    var labelSettings = this.resolveLabelSettings(edge);
     if (labelSettings.enabled()) {
-      var cellBounds = anychart.math.rect(edges[edge].labelsSettings.position.x, edges[edge].labelsSettings.position.y, 0, 0);
-
+      var position = this.getLabelPosition(edge);
+      var cellBounds = anychart.math.rect(position[0], position[1], 0, 0);
       textElement.renderTo(this.labelsLayerEl_);
       textElement.putAt(cellBounds);
       textElement.finalizeComplexity();
+      this.rotateLabel(edge);
     } else {
       textElement.renderTo(null);
     }
-    i++;
+  }
+};
+
+/**
+ *
+ * */
+anychart.graphModule.elements.Edge.prototype.drawLabels = function() {
+  var edges = this.chart_.getEdgesMap();
+  for (var edge in edges) {
+    edge = this.chart_.getEdgeById(edge);
+    this.drawLabel(edge);
   }
 };
 
@@ -291,7 +371,7 @@ anychart.graphModule.elements.Edge.prototype.drawLabels = function() {
  * Get shape for node.
  * */
 anychart.graphModule.elements.Edge.prototype.labelsInvalidated_ = function(event) {
-  console.log('labels Edge' , event);
+  // console.log('labels Edge', event);
 };
 
 

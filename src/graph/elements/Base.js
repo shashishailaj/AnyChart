@@ -16,6 +16,22 @@ anychart.graphModule.elements.Base = function(chart) {
   this.chart_ = chart;
 
   /**
+   * @type {anychart.graphModule.Chart.Element}
+   * @private
+   * */
+  this.type_;
+
+  /**
+   * @private
+   * */
+  this.pathPool_ = [];
+
+  /**
+   * @private
+   * */
+  this.textPool_ = [];
+
+  /**
    * @private
    * */
   this.labelsSettings_ = {};
@@ -121,10 +137,63 @@ anychart.graphModule.elements.Base.prototype.selected = function(opt_value) {
 //endregion
 
 
+anychart.graphModule.elements.Base.prototype.getType = function() {
+  return this.type_;
+};
+
+
+/**
+ * Create new path or get if from pool and return it.
+ * @return {acgraph.vector.Path}
+ * */
+anychart.graphModule.elements.Base.prototype.getPath = function() {
+  var path = this.pathPool_.pop();
+  if (!path) {
+    path = acgraph.path();
+  }
+  return path;
+};
+
+
+/**
+ * Create new text or get if from pool and return it.
+ * @return {anychart.core.ui.OptimizedText}
+ * */
+anychart.graphModule.elements.Base.prototype.getText = function() {
+  var text = this.textPool_.pop();
+  if (!text) {
+    text = new anychart.core.ui.OptimizedText();
+  }
+  return text;
+};
+
+
 anychart.graphModule.elements.Base.prototype.SUPPORTED_SIGNALS =
   anychart.Signal.MEASURE_COLLECT | //Signal for Measuriator to collect labels to measure.
   anychart.Signal.MEASURE_BOUNDS | //Signal for Measuriator to measure the bounds of collected labels.
   anychart.Signal.NEEDS_REDRAW_LABELS; //Signal for DG to change the labels placement.
+
+
+/**
+  @param {anychart.graphModule.Chart.Edge|anychart.graphModule.Chart.Node} element
+ * */
+anychart.graphModule.elements.Base.prototype.clear = function(element) {
+  var domElement = element.domElement;
+  if (domElement) {
+    element.domElement = null;
+    domElement.tag = null;
+    domElement.clear();
+    domElement.parent(null);
+    this.pathPool_.push(domElement);
+  }
+
+  var textElement = element.textElement;
+  if (textElement) {
+    element.textElement = null;
+    textElement.renderTo(null);
+    this.textPool_.push(textElement);
+  }
+};
 
 
 /**
@@ -138,6 +207,7 @@ anychart.graphModule.elements.Base.prototype.getElementId = goog.nullFunction;
  */
 anychart.graphModule.elements.Base.prototype.getElementState = goog.nullFunction;
 
+
 /**
  * Returns interator.
  */
@@ -149,7 +219,7 @@ anychart.graphModule.elements.Base.prototype.getIterator = goog.nullFunction;
  * @param {(anychart.graphModule.Chart.Node|anychart.graphModule.Chart.Edge)} element
  * @return {anychart.core.ui.LabelsSettings} instance of LabelSettings.
  * */
-anychart.graphModule.elements.Base.prototype.resolveLabelSettingsForNode = function(element) {
+anychart.graphModule.elements.Base.prototype.resolveLabelSettings = function(element) {
   // debugger
   var state = this.getElementState(element),
       stringState = anychart.utils.pointStateToName(state),

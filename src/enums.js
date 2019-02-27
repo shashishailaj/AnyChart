@@ -5074,7 +5074,8 @@ anychart.enums.Store = {
   SERIES_CHART: 'serieschart',
   PLOT: 'plot',
   DATA_AREA: 'dataarea',
-  SANKEY: 'sankey'
+  SANKEY: 'sankey',
+  GRAPH: 'graph'
 };
 
 

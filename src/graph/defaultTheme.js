@@ -34,10 +34,11 @@ goog.mixin(goog.global['anychart']['themes']['defaultTheme'], {
           'color': '#ccc'
         },
         'stroke': {
-          'thickness': 2,
+          'thickness': 1,
           'color': 'yellow'
         },
         'labels': {
+          'enabled': false,
           'format': '{%id}',
           'fontSize': 8,
           'textAnchor': 'middle'
@@ -62,7 +63,7 @@ goog.mixin(goog.global['anychart']['themes']['defaultTheme'], {
       }
     },
     'edges': {
-      'stroke': '#ccc',
+      'stroke': '2 #ccc',
       'labels': {
         'enabled': false,
         'format': 'from {%from} to {%to}',
