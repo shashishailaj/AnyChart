@@ -1,6 +1,7 @@
 goog.provide('anychart.timelineModule.Axis');
 
 goog.require('anychart.core.VisualBase');
+goog.require('anychart.core.ui.LabelsSettings');
 goog.require('anychart.math.Rect');
 goog.require('anychart.timelineModule.AxisTicks');
 
@@ -84,10 +85,10 @@ anychart.timelineModule.Axis.prototype.scale = function(opt_value) {
   if (goog.isDef(opt_value)) {
     if (opt_value != this.scale_) {
       if (this.scale_) {
-        this.scale_.unlistenSignals(this.onScaleSignal_, this);
+        this.scale_.unlistenSignals(this.scaleInvalidated_, this);
       }
       this.scale_ = opt_value;
-      this.scale_.listenSignals(this.onScaleSignal_, this);
+      this.scale_.listenSignals(this.scaleInvalidated_, this);
 
     }
     return this;
@@ -99,10 +100,73 @@ anychart.timelineModule.Axis.prototype.scale = function(opt_value) {
 
 /**
  * Scale signals listener.
+ * @param {anychart.SignalEvent} event - Signal event.
  * @private
  */
-anychart.timelineModule.Axis.prototype.onScaleSignal_ = function() {
+anychart.timelineModule.Axis.prototype.scaleInvalidated_ = function(event) {
   this.invalidate(anychart.ConsistencyState.AXIS_TICKS, anychart.Signal.NEEDS_REDRAW);
+};
+
+
+/**
+ *
+ * @param {Object=} opt_config
+ * @return {anychart.timelineModule.AxisTicks|anychart.timelineModule.Axis}
+ */
+anychart.timelineModule.Axis.prototype.ticks = function(opt_config) {
+  if (!this.ticks_) {
+    this.ticks_ = new anychart.timelineModule.AxisTicks();
+    this.setupCreated('ticks', this.ticks_);
+    this.ticks_.listenSignals(this.ticksInvalidated_, this);
+  }
+
+  if (goog.isDef(opt_config)) {
+    this.ticks_.setup(opt_config);
+    return this;
+  }
+
+  return this.ticks_;
+};
+
+
+/**
+ * Axis tick signals handler.
+ * @param {anychart.SignalEvent} event - Signal event.
+ * @private
+ */
+anychart.timelineModule.Axis.prototype.ticksInvalidated_ = function(event) {
+  this.invalidate(anychart.ConsistencyState.AXIS_TICKS, anychart.Signal.NEEDS_REDRAW);
+};
+
+
+/**
+ *
+ * @param {Object=} opt_config
+ * @return {anychart.core.ui.LabelsSettings|anychart.timelineModule.Axis}
+ */
+anychart.timelineModule.Axis.prototype.labels = function(opt_config) {
+  if (!this.labelsSettings_) {
+    this.labelsSettings_ = new anychart.core.ui.LabelsSettings();
+    this.labelsSettings_.listenSignals(this.labelsSettingsInvalidated_, this);
+    this.setupCreated('labels', this.labelsSettings_);
+  }
+
+  if (goog.isDef(opt_config)) {
+    this.labelsSettings_.setup(opt_config);
+    return this;
+  }
+
+  return this.labelsSettings_;
+};
+
+
+/**
+ *
+ * @param {anychart.SignalEvent} event - Signal event.
+ * @private
+ */
+anychart.timelineModule.Axis.prototype.labelsSettingsInvalidated_ = function(event) {
+
 };
 
 
@@ -220,15 +284,18 @@ anychart.timelineModule.Axis.prototype.drawTicks = function() {
       label = this.rootElement.text();
       this.testLabelsArray[i] = label;
     }
-    label.parent(this.rootElement);
     var tick = ticksArray[i];
     var d = new Date(tick);
     var tickRatio = this.scale_.transform(tick);
+    if (tickRatio > 1) continue;
+
+    label.parent(this.rootElement);
+
     var tickX = bounds.left + bounds.width * tickRatio;
 
     label.text(d.toLocaleDateString('en-US'));
     label.x(tickX);
-    label.y(this.zero_ - this.height_ / 2);
+    label.y(Math.floor(this.zero_ - this.height_ / 2));
     label.selectable(false);
   }
 
@@ -280,7 +347,7 @@ anychart.timelineModule.Axis.prototype.checkDrawingNeeded = function() {
   if (!this.enabled()) {
     if (this.hasInvalidationState(anychart.ConsistencyState.ENABLED)) {
       this.remove();
-      // this.markConsistent(anychart.ConsistencyState.ENABLED);
+      this.markConsistent(anychart.ConsistencyState.ENABLED);
       // this.title().invalidate(anychart.ConsistencyState.CONTAINER);
       // this.ticks().invalidate(anychart.ConsistencyState.CONTAINER);
       // this.minorTicks().invalidate(anychart.ConsistencyState.CONTAINER);
@@ -293,7 +360,6 @@ anychart.timelineModule.Axis.prototype.checkDrawingNeeded = function() {
           anychart.ConsistencyState.AXIS_LABELS
       );
     }
-    this.markConsistent(anychart.ConsistencyState.ENABLED);
     return false;
   }
   this.markConsistent(anychart.ConsistencyState.ENABLED);
@@ -306,34 +372,4 @@ anychart.timelineModule.Axis.prototype.remove = function() {
   if (this.rootElement) {
     this.rootElement.parent(null);
   }
-};
-
-
-/**
- *
- * @param {Object=} opt_config
- * @return {anychart.timelineModule.AxisTicks|anychart.timelineModule.Axis}
- */
-anychart.timelineModule.Axis.prototype.ticks = function(opt_config) {
-  if (!this.ticks_) {
-    this.ticks_ = new anychart.timelineModule.AxisTicks();
-    this.setupCreated('ticks', this.ticks_);
-    this.ticks_.listenSignals(this.onTicksSignal_, this);
-  }
-
-  if (goog.isDef(opt_config)) {
-    this.ticks_.setup(opt_config);
-    return this;
-  }
-
-  return this.ticks_;
-};
-
-
-/**
- * Axis tick signals handler.
- * @private
- */
-anychart.timelineModule.Axis.prototype.onTicksSignal_ = function() {
-  this.invalidate(anychart.ConsistencyState.AXIS_TICKS, anychart.Signal.NEEDS_REDRAW);
 };

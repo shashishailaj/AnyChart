@@ -33,8 +33,6 @@ anychart.timelineModule.Chart = function() {
    * @private
    */
   this.xScale_ = new anychart.scales.GanttDateTime();
-
-  this.yScale_ = new anychart.scales.Linear();
   this.setupCreated('scale', this.xScale_);
 
   /**
@@ -101,6 +99,14 @@ anychart.timelineModule.Chart.prototype.calculate = function() {
   }
   this.dateMin = dateMin;
   this.dateMax = dateMax;
+
+  if (this.hasInvalidationState(anychart.ConsistencyState.SCALE_CHART_SCALES)) {
+    this.drawingPlans = [];
+    for (var i = 0; i < this.seriesList.length; i++) {
+      var drawingPlan = this.seriesList[i].getScatterDrawingPlan(false, true);
+      this.drawingPlans.push(drawingPlan);
+    }
+  }
 };
 
 
@@ -115,8 +121,6 @@ anychart.timelineModule.Chart.prototype.drawContent = function(bounds) {
 
   if (this.hasInvalidationState(anychart.ConsistencyState.BOUNDS)) {
     this.dataBounds = bounds.clone();
-    this.yScale_.minimum(this.dataBounds.getBottom());
-    this.yScale_.maximum(this.dataBounds.top);
     this.invalidate(anychart.ConsistencyState.AXES_CHART_AXES | anychart.ConsistencyState.SERIES_CHART_SERIES);
     this.markConsistent(anychart.ConsistencyState.BOUNDS);
   }

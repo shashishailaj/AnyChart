@@ -31,21 +31,6 @@ anychart.timelineModule.series.Base.prototype.needsExtremums = function() {
 
 
 /** @inheritDoc */
-anychart.timelineModule.series.Base.prototype.startDrawing = function(opt_crispEdges) {
-  this.calculate();
-  anychart.timelineModule.series.Base.base(this, 'startDrawing', opt_crispEdges);
-};
-
-
-/**
- * Calculate drawing plan.
- */
-anychart.timelineModule.series.Base.prototype.calculate = function() {
-  var drawingPlan = this.getScatterDrawingPlan(false, true);
-};
-
-
-/** @inheritDoc */
 anychart.timelineModule.series.Base.prototype.isPointVisible = function(point) {
   var x = anychart.utils.normalizeTimestamp(point.getX());
   var range = this.chart.xScale().getRange();
