@@ -51,6 +51,7 @@ anychart.timelineModule.series.Base.prototype.isPointVisible = function(point) {
  */
 anychart.timelineModule.series.Base.prototype.makeTimelineMeta = function(rowInfo, yNames, yColumns, pointMissing, xRatio) {
   if (this.drawer.type == anychart.enums.SeriesDrawerTypes.RANGE) {
+    var bounds = this.parentBounds();
     var startX = this.parentBounds().left + this.parentBounds().width * rowInfo.meta('startXRatio');
     var endXRatio = rowInfo.meta('endXRatio');
     var endX;
@@ -60,6 +61,9 @@ anychart.timelineModule.series.Base.prototype.makeTimelineMeta = function(rowInf
     endX = this.parentBounds().left + this.parentBounds().width * endXRatio;
     rowInfo.meta('startX', startX);
     rowInfo.meta('endX', endX);
+
+    var height = anychart.utils.normalizeSize(this.getOption('height'), bounds.height);
+    rowInfo.meta('height', height);
   } else {
     rowInfo.meta('length', anychart.utils.normalizeSize(/** @type {string|number} */(this.connector().getOption('length')), this.parentBounds().height));
     rowInfo.meta('x', this.parentBounds().left + this.parentBounds().width * xRatio);

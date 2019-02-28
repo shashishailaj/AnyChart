@@ -79,7 +79,7 @@ anychart.timelineModule.Chart.prototype.calculate = function() {
     var series = this.seriesList[i];
     var it = series.getResetIterator();
     var seriesType = series.seriesType();
-    while(it.advance()) {
+    while (it.advance()) {
       if (seriesType == anychart.enums.TimelineSeriesType.EVENT) {
         var date = anychart.utils.normalizeTimestamp(it.get('x'));
         dateMin = Math.min(dateMin, date);
@@ -101,9 +101,57 @@ anychart.timelineModule.Chart.prototype.calculate = function() {
   this.dateMax = dateMax;
 
   this.drawingPlans = [];
+  this.drawingPlansRange = [];
   for (var i = 0; i < this.seriesList.length; i++) {
     var drawingPlan = this.seriesList[i].getScatterDrawingPlan(false, true);
     this.drawingPlans.push(drawingPlan);
+    if (drawingPlan.series.getType() == anychart.enums.TimelineSeriesType.RANGE) {
+      this.drawingPlansRange.push(drawingPlan);
+    }
+  }
+
+  var stack = true;
+  var stacks = [];
+  for (var i = 0; i < this.drawingPlansRange.length; i++) {
+    debugger;
+    drawingPlan = this.drawingPlansRange[i];
+    var data = drawingPlan.data;
+    if (stack) {
+      for (var k = 0; k < data.length; k++) {
+        var point = data[k];
+        var stack = {};
+        stack.start = point.data['start'];
+        stack.end = point.data['end'];
+
+        var intersectingStacks = stacks.filter(function(value) {
+          if (stack.start > value.start && (stack.start < value.end || isNaN(value.end))) {
+            return true;
+          }
+          if (stack.end > value.start && (stack.end < value.end || isNaN(value.end))) {
+            return true;
+          }
+          return false;
+        });
+
+        if (intersectingStacks.length == 0) {
+          stack.stackLevel = 1;
+          stacks.push(stack);
+        } else {
+          var stackLevel = 1;
+          for (var j = 0; j < intersectingStacks.length; j++) {
+            if (intersectingStacks[j].stackLevel > stackLevel) {
+              stackLevel = intersectingStacks[j].stackLevel;
+            }
+          }
+          stackLevel++;
+
+          stack.stackLevel = stackLevel;
+          stacks.push(stack);
+        }
+
+        point.meta['stackLevel'] = stack.stackLevel;
+      }
+    }
   }
 };
 

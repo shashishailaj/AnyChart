@@ -73,10 +73,17 @@ anychart.timelineModule.drawers.Range.prototype.drawSubsequentPoint = function(p
  * @param {acgraph.vector.Path} path
  */
 anychart.timelineModule.drawers.Range.prototype.drawPointShape = function(point, path) {
-  var height = 40;
+  var height = point.meta('height');
   var startX = /** @type {number}*/(point.meta('startX'));
   var endX = /** @type {number} */(point.meta('endX'));
   var zero = /** @type {number} */(point.meta('zero'));
+  var stackLevel = /** @type {number} */(point.meta('stackLevel'));
+
+  if (!goog.isDef(stackLevel)) {
+    stackLevel = 1;
+  }
+
+  zero -= height * (stackLevel - 1);
 
   var thickness = anychart.utils.extractThickness(/** @type {acgraph.vector.Stroke}*/(path.stroke()));
   startX = anychart.utils.applyPixelShift(startX, thickness);
