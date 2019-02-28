@@ -484,7 +484,6 @@ anychart.graphModule.Chart.prototype.handleMouseOut = function(event) {
   if (!this.interactivityLockerdByDrag) {
     if (tag) {
       if (tag.type == anychart.graphModule.Chart.Element.NODE) {
-        debugger
         var node = this.getNodeById(tag.id);
         this.nodes().nodeState(node, anychart.SettingsState.NORMAL);
         this.updateNode(node);
@@ -542,6 +541,8 @@ anychart.graphModule.Chart.prototype.proceedNode_ = function(dataRow, i) {
     nodeObj.dataRow = i;
     nodeObj.settings = {};
     nodeObj.connectedEdges = [];
+    nodeObj.siblings = [];
+
     nodeObj.position = {
       x: dataRow['x'],
       y: dataRow['y']
@@ -580,6 +581,9 @@ anychart.graphModule.Chart.prototype.proceedEdge_ = function(edgeRow, i) {
   this.edges_[edgeId].from = from;
   this.edges_[edgeId].to = to;
   this.edges_[edgeId].dataRow = i;
+
+  this.nodes_[from].siblings.push(to);
+  this.nodes_[to].siblings.push(from);
 
   if (!this.getNodeById(from)) {
     this.nodes_[from] = {};
@@ -687,8 +691,6 @@ anychart.graphModule.Chart.prototype.data = function(opt_value) {
       }
       data['edges'].listenSignals(this.edgesDataInvalidated_, this);
     }
-
-    debugger
     if (this.data_) {
       this.proceedCurrentDataBeforeRemove_();
     }
@@ -915,7 +917,6 @@ anychart.graphModule.Chart.prototype.drawEdges = function() {
 
 /** @inheritDoc */
 anychart.graphModule.Chart.prototype.drawContent = function(bounds) {
-debugger
   if (this.isConsistent())
     return;
 
