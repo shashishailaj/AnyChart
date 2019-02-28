@@ -576,7 +576,7 @@ goog.addDependency('../../../../src/themes/morning.js', ['anychart.themes.mornin
 goog.addDependency('../../../../src/themes/pastel.js', ['anychart.themes.pastel'], [], {});
 goog.addDependency('../../../../src/themes/sea.js', ['anychart.themes.sea'], [], {});
 goog.addDependency('../../../../src/themes/wines.js', ['anychart.themes.wines'], [], {});
-goog.addDependency('../../../../src/timeline/Axis.js', ['anychart.timelineModule.Axis'], ['anychart.core.VisualBase', 'anychart.core.ui.LabelsSettings', 'anychart.math.Rect', 'anychart.timelineModule.AxisTicks'], {});
+goog.addDependency('../../../../src/timeline/Axis.js', ['anychart.timelineModule.Axis'], ['anychart.core.VisualBase', 'anychart.core.ui.LabelsSettings', 'anychart.core.ui.OptimizedText', 'anychart.math.Rect', 'anychart.reflow.IMeasurementsTargetProvider', 'anychart.timelineModule.AxisTicks'], {});
 goog.addDependency('../../../../src/timeline/AxisTicks.js', ['anychart.timelineModule.AxisTicks'], ['anychart.core.VisualBase'], {});
 goog.addDependency('../../../../src/timeline/Chart.js', ['anychart.timelineModule.Chart'], ['anychart.core.ChartWithSeries', 'anychart.core.IChart', 'anychart.core.IPlot', 'anychart.core.StateSettings', 'anychart.core.settings', 'anychart.scales.GanttDateTime', 'anychart.scales.Linear', 'anychart.timelineModule.Axis', 'anychart.timelineModule.series.Event', 'anychart.timelineModule.series.Range'], {});
 goog.addDependency('../../../../src/timeline/ConnectorSettings.js', ['anychart.timelineModule.ConnectorSettings'], ['anychart.core.Base', 'anychart.core.settings'], {});

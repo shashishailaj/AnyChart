@@ -2,7 +2,9 @@ goog.provide('anychart.timelineModule.Axis');
 
 goog.require('anychart.core.VisualBase');
 goog.require('anychart.core.ui.LabelsSettings');
+goog.require('anychart.core.ui.OptimizedText');
 goog.require('anychart.math.Rect');
+goog.require('anychart.reflow.IMeasurementsTargetProvider');
 goog.require('anychart.timelineModule.AxisTicks');
 
 
@@ -11,6 +13,7 @@ goog.require('anychart.timelineModule.AxisTicks');
  * Timeline Axis class.
  * @constructor
  * @extends {anychart.core.VisualBase}
+ * @implements {anychart.reflow.IMeasurementsTargetProvider}
  */
 anychart.timelineModule.Axis = function() {
   anychart.timelineModule.Axis.base(this, 'constructor');
@@ -35,6 +38,13 @@ anychart.timelineModule.Axis = function() {
    * @type {Array.<acgraph.vector.Text>}
    */
   this.testLabelsArray = [];
+
+  /**
+   *
+   * @type {Array.<anychart.core.ui.OptimizedText>}
+   * @private
+   */
+  this.texts_ = [];
 
 
   anychart.core.settings.createDescriptorsMeta(this.descriptorsMeta, [
@@ -177,6 +187,8 @@ anychart.timelineModule.Axis.prototype.labelsSettingsInvalidated_ = function(eve
 anychart.timelineModule.Axis.prototype.draw = function() {
   var scale = this.scale();
 
+  this.prepareLabels();
+
   if (!scale) {
     anychart.core.reporting.error(anychart.enums.ErrorCode.SCALE_NOT_SET);
     return this;
@@ -191,6 +203,7 @@ anychart.timelineModule.Axis.prototype.draw = function() {
     if (!this.line_) {
       this.line_ = this.rootElement.path();
     }
+    this.rootElement.addChild(this.getLabelsLayer_());
   }
 
   if (this.hasInvalidationState(anychart.ConsistencyState.Z_INDEX)) {
@@ -231,7 +244,7 @@ anychart.timelineModule.Axis.prototype.draw = function() {
       }
     }
 
-    this.drawTicks();
+    this.drawLabels();
     this.markConsistent(anychart.ConsistencyState.AXIS_TICKS);
   }
 
@@ -278,40 +291,51 @@ anychart.timelineModule.Axis.prototype.calculateZero = function() {
 
 
 /**
+ *
+ * @return {acgraph.vector.UnmanagedLayer}
+ * @private
+ */
+anychart.timelineModule.Axis.prototype.getLabelsLayer_ = function() {
+  if (!this.labelsLayer_) {
+    this.labelsLayerEl_ = acgraph.getRenderer().createLayerElement();
+    this.labelsLayer_ = acgraph.unmanagedLayer(this.labelsLayerEl_);
+  }
+
+  return this.labelsLayer_;
+};
+
+
+/**
  * Test draw ticks.
  */
-anychart.timelineModule.Axis.prototype.drawTicks = function() {
-  // var ticksArray = this.scale().getSimpleTicks(anychart.enums.Interval.YEAR, 1);
-  var ticksArray = [];
-  for (var interval in anychart.enums.Interval) {
-    ticksArray = this.scale().getSimpleTicks(anychart.enums.Interval[interval], 1);
-    if (ticksArray.length >= 3) break;
-  }
+anychart.timelineModule.Axis.prototype.drawLabels = function() {
+  var ticksArray = this.getTicks();
 
   var bounds = this.parentBounds();
+
   for (var i = 0; i < ticksArray.length; i++) {
-    var label = this.testLabelsArray[i];
-    if (!label) {
-      label = this.rootElement.text();
-      this.testLabelsArray[i] = label;
-    }
+    var text = this.texts_[i];
     var tick = ticksArray[i];
-    var d = new Date(tick);
+    var date = new Date(tick);
     var tickRatio = this.scale_.transform(tick);
-    if (tickRatio > 1) continue;
 
-    label.parent(this.rootElement);
+    if (this.labels()['enabled']() && tickRatio <= 1) {
+      text.renderTo(this.labelsLayerEl_);
 
-    var tickX = bounds.left + bounds.width * tickRatio;
-
-    label.text(d.toLocaleDateString('en-US'));
-    label.x(tickX);
-    label.y(Math.floor(this.zero_ - this.height_ / 2));
-    label.selectable(false);
+      var x = bounds.left + bounds.width * tickRatio;
+      var y = Math.floor(this.zero_ - this.height_ / 2);
+      var width = 40;
+      var height = this.height_;
+      var textBounds = new anychart.math.Rect(x, y, width, height);
+      text.putAt(textBounds);
+      text.finalizeComplexity();
+    } else {
+      text.renderTo(null);
+    }
   }
 
-  for (var i = ticksArray.length; i < this.testLabelsArray.length; i++) {
-    this.testLabelsArray[i].remove();
+  for (var i = ticksArray.length; i < this.texts_.length; i++) {
+    this.texts_[i].renderTo(null);
   }
 };
 
@@ -393,4 +417,51 @@ anychart.timelineModule.Axis.prototype.disposeInternal = function() {
   this.line_ = null;
   this.testLabelsArray.length = 0;
   anychart.timelineModule.Axis.base(this, 'disposeInternal');
+};
+
+
+/** @inheritDoc */
+anychart.timelineModule.Axis.prototype.provideMeasurements = function() {
+  var ticksArray = this.getTicks();
+  if (!this.texts_.length) {
+    for (var i = 0; i < ticksArray.length; i++) {
+      var text = new anychart.core.ui.OptimizedText();
+      this.texts_.push(text);
+    }
+  }
+
+  // if there are not enough text elements - create additional texts.
+  if (this.texts_.length < ticksArray.length) {
+    for (var i = this.texts_.length; i < ticksArray.length; i++) {
+      this.texts_.push(new anychart.core.ui.OptimizedText());
+    }
+  }
+
+  return this.texts_;
+};
+
+
+/**
+ * Applies labels style to texts.
+ */
+anychart.timelineModule.Axis.prototype.applyLabelsStyle = function() {
+  var labelsSettings = this.labels();
+  var ticksArray = this.getTicks();
+  for (var i = 0; i < this.texts_.length; i++) {
+    var date = new Date(ticksArray[i]).toLocaleDateString("en-US");
+    var text = this.texts_[i];
+    text.text(date);
+    text.style(labelsSettings.flatten());
+    text.prepareComplexity();
+    text.applySettings();
+  }
+};
+
+
+/**
+ * Prepares labels.
+ */
+anychart.timelineModule.Axis.prototype.prepareLabels = function() {
+  this.provideMeasurements();
+  this.applyLabelsStyle();
 };

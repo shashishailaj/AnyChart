@@ -162,6 +162,7 @@ anychart.timelineModule.Chart.prototype.axis = function(opt_value) {
   if (!this.axis_) {
     this.axis_ = new anychart.timelineModule.Axis();
     this.axis_.listenSignals(this.onAxisSignal_, this);
+    anychart.measuriator.register(this.axis_);
     this.setupCreated('axis', this.axis_);
   }
 

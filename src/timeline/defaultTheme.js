@@ -11,6 +11,9 @@ goog.mixin(goog.global['anychart']['themes']['defaultTheme'], {
         'enabled': true,
         'stroke': 'red',
         'zIndex': 36
+      },
+      'labels': {
+        'fontSize': '10px'
       }
     },
     'defaultSeriesSettings': {
@@ -18,10 +21,12 @@ goog.mixin(goog.global['anychart']['themes']['defaultTheme'], {
         'connector': {'length': '10%'},
         'normal': {
           'markers': {'enabled': true}
-        }
+        },
+        'zIndex': 34.2
       },
       'range': {
-        'height': '10%'
+        'height': '10%',
+        'zIndex': 34.1
       }
 
     }
