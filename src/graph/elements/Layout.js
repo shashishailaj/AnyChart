@@ -70,6 +70,7 @@ anychart.graphModule.elements.Layout.prototype.explicitLayout_ = function (nodes
   return coordinates;
 };
 
+
 /**
  * @param {Object} nodes
  * @return {Array.<Object>} coordinate for nodes for draw.
@@ -77,24 +78,23 @@ anychart.graphModule.elements.Layout.prototype.explicitLayout_ = function (nodes
  * */
 anychart.graphModule.elements.Layout.prototype.forceLayout_ = function (nodes) {
   //todo place randomly
-  /**
-   * @type {Array.<anychart.graphModule.Chart.Node>}
-   * */
-  var nodes = [];
-  for (var nodeId in this.chart_.getNodesMap()) {
-    var node = this.chart_.getNodeById(nodeId);
+
+  var nodes = this.chart_.getNodesArray();
+  var c = 1;
+  var pi2 = Math.PI * 2;
+  for (var i = 0, length = nodes.length; i < length; i++, c) {
+    var node = nodes[i];
     node.velocityX = 0;
     node.velocityY = 0;
-    node.position.x = Math.random() * 50;
-    node.position.y = Math.random() * 50;
-    nodes.push(node);
+    node.position.x = 10 * Math.cos(pi2/c++);
+    node.position.y = 10 * Math.sin(pi2/c++);
+    console.log(node.position.x, node.position.y );
   }
 
-  var maximumVelocity = 0.056;
+  var maximumVelocity = 0.030;
   var minimumVelocity = -maximumVelocity;
 
-  console.time();
-  for (var iteration = 0; iteration < 5000; iteration++) {
+  for (var iteration = 0; iteration < 300; iteration++) {
 
     for (var i = 0, length = nodes.length; i < length; i++) {
       var node = nodes[i];
@@ -152,14 +152,14 @@ anychart.graphModule.elements.Layout.prototype.forceLayout_ = function (nodes) {
 
 
       if (node.velocityX > maximumVelocity) {
-        node.velocityX = maximumVelocity
+        node.velocityX = maximumVelocity;
       } else if (node.velocityX < minimumVelocity) {
         node.velocityX = minimumVelocity;
       }
       if (node.velocityY > maximumVelocity) {
-        node.velocityY = maximumVelocity
+        node.velocityY = maximumVelocity;
       } else if (node.velocityY < minimumVelocity) {
-        node.velocityY = minimumVelocity
+        node.velocityY = minimumVelocity;
       }
 
       node.position.x += node.velocityX;
@@ -167,56 +167,6 @@ anychart.graphModule.elements.Layout.prototype.forceLayout_ = function (nodes) {
     }
   }
 
-  var res = [];
-  var mostTop = Infinity;
-  var mostLeft = Infinity;
-  var mostRight = -Infinity;
-  var mostBottom = -Infinity;
-
-
-  for (var i = 0; i < nodes.length; i++) {
-    var x = nodes[i].position.x;
-    var y = nodes[i].position.y;
-    if (x < mostLeft) {
-      mostLeft = x;
-    }
-    if (x > mostRight) {
-      mostRight = x;
-    }
-    if (y > mostBottom) {
-      mostBottom = y;
-    }
-    if (y < mostTop) {
-      mostTop = y;
-    }
-  }
-  if (mostTop < 0) {
-    mostTop = Math.abs(mostTop);
-    mostBottom += mostTop;
-    for (var i = 0; i < nodes.length; i++) {
-      nodes[i].position.x += mostTop;
-    }
-  }
-  if (mostLeft < 0) {
-    mostLeft = Math.abs(mostLeft);
-    mostRight += mostLeft;
-    for (var i = 0; i < nodes.length; i++) {
-      nodes[i].position.y += mostLeft;
-    }
-  }
-
-  var width = mostRight - mostLeft;
-  var height = mostBottom - mostTop;
-
-  var mlt = Math.max(width, height);
-
-  for (var i = 0; i < nodes.length; i++) {
-    nodes[i].position.x *= 500 / mlt;
-    nodes[i].position.y *= 500 / mlt;
-
-  }
-
-  console.timeEnd();
   return nodes;
 }
 ;

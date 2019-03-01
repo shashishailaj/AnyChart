@@ -50,6 +50,11 @@ anychart.graphModule.Chart = function(opt_data) {
   this.groups_ = {};
 
   /**
+   * @type {?Array.<anychart.graphModule.Chart.Node>}
+   * @private
+   * */
+  this.nodesArray_ = null;
+  /**
    * @type {Object.<string, anychart.graphModule.Chart.Edge>}
    * @private
    * */
@@ -360,6 +365,61 @@ anychart.graphModule.Chart.prototype.handleMouseDown = function(event) {
     } else if (!tag) {
       this.layerDragInteractivity(domTarget, event);
     }
+  }
+};
+
+
+anychart.graphModule.Chart.prototype.setOffset = function() {
+  var nodes = this.getNodesArray();
+
+  var mostTop = Infinity;
+  var mostLeft = Infinity;
+  var mostRight = -Infinity;
+  var mostBottom = -Infinity;
+
+  var length = nodes.length;
+
+  var i;
+
+
+  for (i = 0; i < length; i++) {
+    var x = nodes[i].position.x;
+    var y = nodes[i].position.y;
+    if (x < mostLeft) {
+      mostLeft = x;
+    }
+    if (x > mostRight) {
+      mostRight = x;
+    }
+    if (y > mostBottom) {
+      mostBottom = y;
+    }
+    if (y < mostTop) {
+      mostTop = y;
+    }
+  }
+
+  mostBottom += -mostTop;
+  for (i = 0; i < length; i++) {
+    var y = nodes[i].position.y;
+    y += -mostTop;
+    nodes[i].position.y = y;
+  }
+
+  mostRight += -mostLeft;
+  for (i = 0; i < length; i++) {
+    nodes[i].position.x += -mostLeft;
+  }
+
+  var mlt = Math.max(mostRight, mostBottom);
+
+  mlt = 300 / mlt;//todo bounds
+
+  console.log(mlt);
+  for (i = 0; i < length; i++) {
+    nodes[i].position.x *= mlt;
+    nodes[i].position.y *= mlt;
+
   }
 };
 
@@ -829,6 +889,22 @@ anychart.graphModule.Chart.prototype.getNodesMap = function() {
 
 
 /**
+ * @return {Array.<anychart.graphModule.Chart.Node>}
+ * */
+anychart.graphModule.Chart.prototype.getNodesArray = function() {
+
+  if (!this.nodesArray_) {
+    this.nodesArray_ = [];
+    for (var nodeId in this.getNodesMap()) {
+      var nodes = this.getNodeById(nodeId);
+      this.nodesArray_.push(nodes);
+    }
+  }
+  return this.nodesArray_;
+};
+
+
+/**
  * @param {string} id
  * @return {anychart.graphModule.Chart.Node}
  * */
@@ -896,8 +972,8 @@ anychart.graphModule.Chart.prototype.drawEdge = function(edge) {
   from.connectedEdges.push(edge.id);
   to.connectedEdges.push(edge.id);
   domElement
-      .moveTo(from.position.x, from.position.y)
-      .lineTo(to.position.x, to.position.y);
+    .moveTo(from.position.x, from.position.y)
+    .lineTo(to.position.x, to.position.y);
 
   domElement.parent(this.rootLayer);
 };
@@ -928,6 +1004,9 @@ anychart.graphModule.Chart.prototype.drawContent = function(bounds) {
   if (this.hasStateInvalidation(anychart.enums.Store.GRAPH, anychart.enums.State.DATA)) {
     var coords = this.layout().getCoordinatesForCurrentLayout();
     this.setCoordinatesForNodes(coords);
+    if (this.layout().type() == anychart.graphModule.elements.LayoutType.FORCE) {
+      this.setOffset();
+    }
     this.drawEdges();
     this.drawNodes();
     this.markStateConsistent(anychart.enums.Store.GRAPH, anychart.enums.State.DATA);
