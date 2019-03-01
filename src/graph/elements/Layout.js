@@ -9,7 +9,7 @@ goog.require('anychart.core.StateSettings');
  * @param {anychart.graphModule.Chart} chart
  * @extends {anychart.core.Base}
  * */
-anychart.graphModule.elements.Layout = function (chart) {
+anychart.graphModule.elements.Layout = function(chart) {
   anychart.graphModule.elements.Layout.base(this, 'constructor');
 
   anychart.core.settings.createDescriptorsMeta(this.descriptorsMeta, [
@@ -37,7 +37,7 @@ anychart.graphModule.elements.LayoutType = {
 };
 
 
-anychart.graphModule.elements.Layout.prototype.getCoordinatesForCurrentLayout = function () {
+anychart.graphModule.elements.Layout.prototype.getCoordinatesForCurrentLayout = function() {
   var type = this.getOption('type');
   var layout = this.func[type];
   return layout.call(this, this.chart_.nodes_);//todo getter/setter for nodes_
@@ -49,7 +49,7 @@ anychart.graphModule.elements.Layout.prototype.getCoordinatesForCurrentLayout = 
  * @return {Array.<Object>} coordinate for nodes for draw.
  * @private
  * */
-anychart.graphModule.elements.Layout.prototype.explicitLayout_ = function (nodes) {
+anychart.graphModule.elements.Layout.prototype.explicitLayout_ = function(nodes) {
   var coordinates = [];
 
   for (var nodeId in nodes) {
@@ -76,41 +76,48 @@ anychart.graphModule.elements.Layout.prototype.explicitLayout_ = function (nodes
  * @return {Array.<Object>} coordinate for nodes for draw.
  * @private
  * */
-anychart.graphModule.elements.Layout.prototype.forceLayout_ = function (nodes) {
+anychart.graphModule.elements.Layout.prototype.forceLayout_ = function(nodes) {
   //todo place randomly
 
+
+  var MAXIMUM_VELOCITY = 0.040;
+  var MINIMUM_VELOCITY = -MAXIMUM_VELOCITY;
+  var INITIAL_POSITION_FACTOR = 10;
+  var COULOMB_FORCE_FACTOR = 0.1;
+  var HARMONIC_FORCE_FACTOR = 1;
+  var ITERATION = 500;
+
   var nodes = this.chart_.getNodesArray();
-  var c = 1;
+  var length, node, i;
+
   var pi2 = Math.PI * 2;
-  for (var i = 0, length = nodes.length; i < length; i++, c) {
+  for (i = 0, length = nodes.length; i < length; i++) {
     var node = nodes[i];
     node.velocityX = 0;
     node.velocityY = 0;
-    node.position.x = 10 * Math.cos(pi2/c++);
-    node.position.y = 10 * Math.sin(pi2/c++);
-    console.log(node.position.x, node.position.y );
+
+    node.position.x = INITIAL_POSITION_FACTOR * Math.cos(pi2 / (i + 1));
+    node.position.y = INITIAL_POSITION_FACTOR * Math.sin(pi2 / (i + 1));
   }
 
-  var maximumVelocity = 0.030;
-  var minimumVelocity = -maximumVelocity;
 
-  for (var iteration = 0; iteration < 300; iteration++) {
+  for (var iteration = 0; iteration < ITERATION; iteration++) {
 
-    for (var i = 0, length = nodes.length; i < length; i++) {
-      var node = nodes[i];
+    for (i = 0, length = nodes.length; i < length; i++) {
+      node = nodes[i];
       node.coulumbX = 0;
       node.coulumbY = 0;
       for (var j = 0; j < length; j++) {
         var node2 = nodes[j];
-        if (node != node2) {
+        if (node != node2 && node.coloumGroup == node2.coloumGroup) { //
           var distanceX = node.position.x - node2.position.x;
           var distanceY = node.position.y - node2.position.y;
           var distance = Math.sqrt(distanceX * distanceX + distanceY * distanceY);
           if (distance != 0) {
             var directX = distanceX / distance;
             var directY = distanceY / distance;
-            node.coulumbX += directX / distance * 0.01;
-            node.coulumbY += directY / distance * 0.01;
+            node.coulumbX += directX / distance * COULOMB_FORCE_FACTOR;
+            node.coulumbY += directY / distance * COULOMB_FORCE_FACTOR;
           } else {
             node.coulumbX += Math.random() - 0.5;
             node.coulumbY += Math.random() - 0.5;
@@ -118,15 +125,15 @@ anychart.graphModule.elements.Layout.prototype.forceLayout_ = function (nodes) {
         }
       }
     }
-    for (var i = 0, length = nodes.length; i < length; i++) {
-      var node = nodes[i];
+    for (i = 0, length = nodes.length; i < length; i++) {
+      node = nodes[i];
       node.harmonicX = 0;
       node.harmonicY = 0;
       var neighbour = node.siblings;
 
       var harmonicX;
       var harmonicY;
-      for (var j = 0, nlength = neighbour.length; j < nlength; j++) {
+      for (var j = 0, neighboursLength = neighbour.length; j < neighboursLength; j++) {
         var node2 = this.chart_.getNodeById(neighbour[j]);
         var distanceX = node.position.x - node2.position.x;
         var distanceY = node.position.y - node2.position.y;
@@ -135,8 +142,8 @@ anychart.graphModule.elements.Layout.prototype.forceLayout_ = function (nodes) {
           var directX = -distanceX / distance;
           var directY = -distanceY / distance;
           var ml = distance * distance / 20;
-          harmonicX = directX * ml;
-          harmonicY = directY * ml;
+          harmonicX = directX * ml * HARMONIC_FORCE_FACTOR;
+          harmonicY = directY * ml * HARMONIC_FORCE_FACTOR;
         } else {
           harmonicX = Math.random() - 0.5;
           harmonicY = Math.random() - 0.5;
@@ -145,21 +152,21 @@ anychart.graphModule.elements.Layout.prototype.forceLayout_ = function (nodes) {
         node.harmonicY += harmonicY;
       }
     }
-    for (var i = 0, length = nodes.length; i < length; i++) {
-      var node = nodes[i];
+    for (i = 0, length = nodes.length; i < length; i++) {
+      node = nodes[i];
       node.velocityX += (node.coulumbX + node.harmonicX);
       node.velocityY += (node.coulumbY + node.harmonicY);
 
 
-      if (node.velocityX > maximumVelocity) {
-        node.velocityX = maximumVelocity;
-      } else if (node.velocityX < minimumVelocity) {
-        node.velocityX = minimumVelocity;
+      if (node.velocityX > MAXIMUM_VELOCITY) {
+        node.velocityX = MAXIMUM_VELOCITY;
+      } else if (node.velocityX < MINIMUM_VELOCITY) {
+        node.velocityX = MINIMUM_VELOCITY;
       }
-      if (node.velocityY > maximumVelocity) {
-        node.velocityY = maximumVelocity;
-      } else if (node.velocityY < minimumVelocity) {
-        node.velocityY = minimumVelocity;
+      if (node.velocityY > MAXIMUM_VELOCITY) {
+        node.velocityY = MAXIMUM_VELOCITY;
+      } else if (node.velocityY < MINIMUM_VELOCITY) {
+        node.velocityY = MINIMUM_VELOCITY;
       }
 
       node.position.x += node.velocityX;
@@ -171,11 +178,11 @@ anychart.graphModule.elements.Layout.prototype.forceLayout_ = function (nodes) {
 }
 ;
 
-anychart.graphModule.elements.Layout.OWN_DESCRIPTORS = (function () {
+anychart.graphModule.elements.Layout.OWN_DESCRIPTORS = (function() {
   /** @type {!Object.<string, anychart.core.settings.PropertyDescriptor>} */
   var map = {};
 
-  function layoutNormalizer(value) {
+  function layoutNormalizer (value) {
     return anychart.enums.normalize(anychart.graphModule.elements.LayoutType, value, anychart.graphModule.elements.LayoutType.EXPLICIT);
   }
 

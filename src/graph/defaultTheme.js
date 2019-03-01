@@ -34,7 +34,6 @@ goog.mixin(goog.global['anychart']['themes']['defaultTheme'], {
           'color': '#ccc'
         },
         'stroke': {
-          'thickness': 1,
           'color': 'yellow'
         },
         'labels': {
