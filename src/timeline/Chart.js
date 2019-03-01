@@ -100,6 +100,22 @@ anychart.timelineModule.Chart.prototype.calculate = function() {
   this.dateMin = dateMin;
   this.dateMax = dateMax;
 
+  var directions = [anychart.enums.EventMarkerDirection.UP, anychart.enums.EventMarkerDirection.DOWN];
+  var rangeNum = 0;
+  var eventNum = 0;
+  for (var i = 0; i < this.seriesList.length; i++) {
+    var series = this.seriesList[i];
+    if (series.getOption('direction') == anychart.enums.EventMarkerDirection.AUTO) {
+      if (series.seriesType() == anychart.enums.TimelineSeriesType.RANGE) {
+        series.autoDirection(directions[rangeNum & 1]);
+        rangeNum++;
+      } else if (series.seriesType() == anychart.enums.TimelineSeriesType.EVENT) {
+        series.autoDirection(directions[eventNum & 1]);
+        eventNum++;
+      }
+    }
+  }
+
   this.drawingPlans = [];
   this.drawingPlansRange = [];
   for (var i = 0; i < this.seriesList.length; i++) {
@@ -110,33 +126,35 @@ anychart.timelineModule.Chart.prototype.calculate = function() {
     }
   }
 
-  var stack = true;
+  var stacked = true;
   var stacks = [];
   for (var i = 0; i < this.drawingPlansRange.length; i++) {
-    debugger;
     drawingPlan = this.drawingPlansRange[i];
     var data = drawingPlan.data;
-    if (stack) {
+    if (stacked) {
       for (var k = 0; k < data.length; k++) {
         var point = data[k];
         var stack = {};
         stack.start = point.data['start'];
         stack.end = point.data['end'];
+        stack.direction = /** @type {anychart.enums.EventMarkerDirection} */(drawingPlan.series.getFinalDirection());
 
+        // find in already stacked ranges all of those, that contain current range start or end value
         var intersectingStacks = stacks.filter(function(value) {
-          if (stack.start > value.start && (stack.start < value.end || isNaN(value.end))) {
+          if (stack.start > value.start && (stack.start < value.end || isNaN(value.end)) && stack.direction == value.direction) {
             return true;
           }
-          if (stack.end > value.start && (stack.end < value.end || isNaN(value.end))) {
+          if (stack.end > value.start && (stack.end < value.end || isNaN(value.end)) && stack.direction == value.direction) {
             return true;
           }
           return false;
         });
 
+        // no intersections, so it's placed on the first level
         if (intersectingStacks.length == 0) {
           stack.stackLevel = 1;
           stacks.push(stack);
-        } else {
+        } else {// if there are intersections - find range that is stacked the heighest, so that we stack above it
           var stackLevel = 1;
           for (var j = 0; j < intersectingStacks.length; j++) {
             if (intersectingStacks[j].stackLevel > stackLevel) {
@@ -277,7 +295,10 @@ anychart.timelineModule.Chart.prototype.getXAxisByIndex = function(index) {
 
 /** @inheritDoc */
 anychart.timelineModule.Chart.prototype.yScale = function() {
-  return null;
+  if (!this.yScale_) {
+    this.yScale_ = new anychart.scales.Linear();
+  }
+  return this.yScale_;
 };
 
 

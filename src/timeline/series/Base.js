@@ -14,8 +14,56 @@ goog.require('anychart.core.series.Cartesian');
  */
 anychart.timelineModule.series.Base = function(chart, plot, type, config, sortedMode) {
   anychart.timelineModule.series.Base.base(this, 'constructor', chart, plot, type, config, sortedMode);
+
+  this.autoDirection_ = anychart.enums.EventMarkerDirection.UP;
+  anychart.core.settings.createDescriptorsMeta(this.descriptorsMeta, [
+    ['direction', anychart.ConsistencyState.APPEARANCE, anychart.Signal.NEEDS_REDRAW]
+  ]);
 };
 goog.inherits(anychart.timelineModule.series.Base, anychart.core.series.Cartesian);
+
+
+/**
+ * @type {!Object<string, anychart.core.settings.PropertyDescriptor>}
+ */
+anychart.timelineModule.series.Base.PROPERTY_DESCRIPTORS = (function() {
+  /** @type {!Object.<string, anychart.core.settings.PropertyDescriptor>} */
+  var map = {};
+
+  var d = anychart.core.settings.descriptors;
+  anychart.core.settings.createDescriptors(map, [
+    d.DIRECTION
+  ]);
+
+  return map;
+})();
+anychart.core.settings.populate(anychart.timelineModule.series.Base, anychart.timelineModule.series.Base.PROPERTY_DESCRIPTORS);
+
+
+/**
+ * @param {anychart.enums.EventMarkerDirection=} opt_value
+ * @return {anychart.enums.EventMarkerDirection|anychart.timelineModule.series.Base}
+ */
+anychart.timelineModule.series.Base.prototype.autoDirection = function(opt_value) {
+  if (goog.isDef(opt_value)) {
+    this.autoDirection_ = opt_value;
+    return this;
+  }
+  return this.autoDirection_;
+};
+
+
+/**
+ * Returns UP or DOWN direction. Handles auto direction.
+ * @return {anychart.enums.EventMarkerDirection}
+ */
+anychart.timelineModule.series.Base.prototype.getFinalDirection = function() {
+  var direction = /** @type {anychart.enums.EventMarkerDirection} */(this.getOption('direction'));
+  if (direction == anychart.enums.EventMarkerDirection.AUTO) {
+    return this.autoDirection_;
+  }
+  return direction;
+};
 
 
 /** @inheritDoc */
@@ -43,32 +91,38 @@ anychart.timelineModule.series.Base.prototype.isPointVisible = function(point) {
 
 /**
  * Meta maker for timeline.
- * @param rowInfo
- * @param yNames
- * @param yColumns
- * @param pointMissing
- * @param xRatio
+ * @param {anychart.data.IRowInfo} rowInfo
+ * @param {Array.<string>} yNames
+ * @param {Array.<string|number>} yColumns
+ * @param {number} pointMissing
+ * @param {number} xRatio
  */
 anychart.timelineModule.series.Base.prototype.makeTimelineMeta = function(rowInfo, yNames, yColumns, pointMissing, xRatio) {
+  var direction = /** @type {anychart.enums.EventMarkerDirection} */(this.getOption('direction'));
+  if (direction == anychart.enums.EventMarkerDirection.AUTO) {
+    direction = this.autoDirection();
+  }
+  rowInfo.meta('direction', direction);
+  var bounds = this.parentBounds();
   if (this.drawer.type == anychart.enums.SeriesDrawerTypes.RANGE) {
-    var bounds = this.parentBounds();
-    var startX = this.parentBounds().left + this.parentBounds().width * rowInfo.meta('startXRatio');
+    var startXRatio = /** @type {number} */(rowInfo.meta('startXRatio'));
+    var startX = bounds.left + bounds.width * startXRatio;
     var endXRatio = rowInfo.meta('endXRatio');
-    var endX;
     if (!goog.isNumber(endXRatio) || isNaN(endXRatio)) {
       endXRatio = 1;
     }
-    endX = this.parentBounds().left + this.parentBounds().width * endXRatio;
+    var endX = bounds.left + bounds.width * endXRatio;
     rowInfo.meta('startX', startX);
     rowInfo.meta('endX', endX);
 
-    var height = anychart.utils.normalizeSize(this.getOption('height'), bounds.height);
+    var height = anychart.utils.normalizeSize(/** @type {number} */(this.getOption('height')), bounds.height);
     rowInfo.meta('height', height);
   } else {
-    rowInfo.meta('length', anychart.utils.normalizeSize(/** @type {string|number} */(this.connector().getOption('length')), this.parentBounds().height));
-    rowInfo.meta('x', this.parentBounds().left + this.parentBounds().width * xRatio);
+    var connectorLength = /** @type {string|number} */(this.connector().getOption('length'));
+    rowInfo.meta('length', anychart.utils.normalizeSize(connectorLength, bounds.height));
+    rowInfo.meta('x', bounds.left + bounds.width * xRatio);
   }
-  rowInfo.meta('zero', this.parentBounds().top + this.parentBounds().height / 2);
+  rowInfo.meta('zero', bounds.top + bounds.height / 2);
 };
 
 

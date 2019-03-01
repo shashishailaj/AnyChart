@@ -5,6 +5,7 @@ goog.require('anychart.timelineModule.drawers.Range');
 goog.require('anychart.timelineModule.series.Base');
 
 
+
 /**
  * @param {!anychart.core.IChart} chart
  * @param {!anychart.core.IPlot} plot
@@ -36,3 +37,25 @@ anychart.timelineModule.series.Range.PROPERTY_DESCRIPTORS = (function() {
   return map;
 })();
 anychart.core.settings.populate(anychart.timelineModule.series.Range, anychart.timelineModule.series.Range.PROPERTY_DESCRIPTORS);
+
+
+/** @inheritDoc */
+anychart.timelineModule.series.Range.prototype.createPositionProvider = function(position, opt_shift3d) {
+  var iterator = this.getIterator();
+  var x, y;
+  var height = /** @type {number} */(iterator.meta('height'));
+  var stackLevel = /** @type {number} */(iterator.meta('stackLevel'));
+  var zero = /** @type {number} */(iterator.meta('zero'));
+  var startX = /** @type {number} */(iterator.meta('startX'));
+  var direction = /** @type {anychart.enums.EventMarkerDirection} */(this.getFinalDirection());
+
+  if (direction == anychart.enums.EventMarkerDirection.AUTO) {
+    direction = anychart.enums.EventMarkerDirection.UP;
+  }
+
+  var yOffset = height * (stackLevel - 1) + height / 2;
+  x = startX;
+  y = zero + (direction == anychart.enums.EventMarkerDirection.UP ? -yOffset : yOffset);
+  var point = {'x': x, 'y': y};
+  return {'value': point};
+};

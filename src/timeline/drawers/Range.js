@@ -73,21 +73,32 @@ anychart.timelineModule.drawers.Range.prototype.drawSubsequentPoint = function(p
  * @param {acgraph.vector.Path} path
  */
 anychart.timelineModule.drawers.Range.prototype.drawPointShape = function(point, path) {
-  var height = point.meta('height');
+  var height = /** @type {number} */(point.meta('height'));
   var startX = /** @type {number}*/(point.meta('startX'));
   var endX = /** @type {number} */(point.meta('endX'));
   var zero = /** @type {number} */(point.meta('zero'));
   var stackLevel = /** @type {number} */(point.meta('stackLevel'));
+  var direction = /** @type {anychart.enums.EventMarkerDirection} */(point.meta('direction'));
 
   if (!goog.isDef(stackLevel)) {
     stackLevel = 1;
   }
 
-  zero -= height * (stackLevel - 1);
+  var pointZeroOffset = height * (stackLevel - 1);
+
+  // upper line is bottom line if direction is down
+  var pointZero, pointUpperLine;
+  if (direction == anychart.enums.EventMarkerDirection.UP) {
+    pointZero = zero - pointZeroOffset;
+    pointUpperLine = pointZero - height;
+  } else {
+    pointZero = zero + pointZeroOffset;
+    pointUpperLine = pointZero + height;
+  }
 
   var thickness = anychart.utils.extractThickness(/** @type {acgraph.vector.Stroke}*/(path.stroke()));
   startX = anychart.utils.applyPixelShift(startX, thickness);
   endX = anychart.utils.applyPixelShift(endX, thickness);
 
-  path.moveTo(startX, zero).lineTo(startX, zero - height).lineTo(endX, zero - height).lineTo(endX, zero).close();
+  path.moveTo(startX, pointZero).lineTo(startX, pointUpperLine).lineTo(endX, pointUpperLine).lineTo(endX, pointZero).close();
 };

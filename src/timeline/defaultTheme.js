@@ -17,16 +17,29 @@ goog.mixin(goog.global['anychart']['themes']['defaultTheme'], {
       }
     },
     'defaultSeriesSettings': {
+      'base': {
+        'direction': anychart.enums.EventMarkerDirection.AUTO
+      },
       'event': {
         'connector': {'length': '10%'},
         'normal': {
-          'markers': {'enabled': true}
+          'markers': {'enabled': true},
+          'labels': {
+            'enabled': true
+          }
         },
         'zIndex': 34.2
       },
       'range': {
-        'height': '10%',
-        'zIndex': 34.1
+        'height': '5%',
+        'zIndex': 34.1,
+        'normal': {
+          'labels': {
+            'enabled': true,
+            'anchor': anychart.enums.Anchor.LEFT_CENTER,
+            'format': '{%x}'
+          }
+        }
       }
 
     }
