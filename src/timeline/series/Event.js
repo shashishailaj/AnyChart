@@ -29,6 +29,8 @@ goog.inherits(anychart.timelineModule.series.Event, anychart.timelineModule.seri
 anychart.timelineModule.series.Event.prototype.connector = function(opt_config) {
   if (!this.connector_) {
     this.connector_ = new anychart.timelineModule.ConnectorSettings();
+    this.connector_.setParentEventTarget(this);
+    this.connector_.listenSignals(this.onConnectorSignal_, this);
     this.setupCreated('connector', this.connector_);
   }
 
@@ -38,6 +40,16 @@ anychart.timelineModule.series.Event.prototype.connector = function(opt_config) 
   }
 
   return this.connector_;
+};
+
+
+/**
+ * Listens connector invalidation.
+ * @param event
+ * @private
+ */
+anychart.timelineModule.series.Event.prototype.onConnectorSignal_ = function(event) {
+  this.invalidate(anychart.ConsistencyState.SERIES_COLOR, anychart.Signal.NEEDS_REDRAW);
 };
 
 
