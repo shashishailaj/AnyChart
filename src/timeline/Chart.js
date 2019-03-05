@@ -36,6 +36,12 @@ anychart.timelineModule.Chart = function() {
   this.setupCreated('scale', this.xScale_);
 
   /**
+   * Base transformation matrix without any transformations/translations.
+   * @type {number[]}
+   */
+  this.baseTransform = [1, 0, 0, 1, 0, 0];
+
+  /**
    * Whether scale range should be auto calculated.
    * When it is - it covers all dates in series.
    * @type {boolean}
@@ -185,6 +191,14 @@ anychart.timelineModule.Chart.prototype.drawContent = function(bounds) {
 
   if (this.hasInvalidationState(anychart.ConsistencyState.BOUNDS)) {
     this.dataBounds = bounds.clone();
+    this.rootElement.setTransformationMatrix.apply(this.rootElement, this.baseTransform);// cleaning up transformations
+
+    if (this.scroll_ < 0) {
+      this.rootElement.translate(0, this.dataBounds.height / 2);
+    } else if (this.scroll_ > 0) {
+      this.rootElement.translate(0, -this.dataBounds.height / 2);
+    }
+
     this.invalidate(anychart.ConsistencyState.AXES_CHART_AXES | anychart.ConsistencyState.SERIES_CHART_SERIES);
     this.markConsistent(anychart.ConsistencyState.BOUNDS);
   }
@@ -333,6 +347,19 @@ anychart.timelineModule.Chart.prototype.fit = function() {
 };
 
 
+/**
+ * Scrolls chart vertically.
+ * @param {number} value
+ */
+anychart.timelineModule.Chart.prototype.scroll = function(value) {
+  if (this.scroll_ != value) {
+    this.scroll_ = value;
+    // TODO(Ilya): Invalidating bounds is a bit too much. Consider another consistency state.
+    this.invalidate(anychart.ConsistencyState.BOUNDS, anychart.Signal.NEEDS_REDRAW);
+  }
+};
+
+
 //endregion
 //region -- Generating Series.
 /**
@@ -429,6 +456,7 @@ anychart.timelineModule.Chart.prototype.disposeInternal = function() {
   proto['fit'] = proto.fit;
   proto['zoomTo'] = proto.zoomTo;
   proto['getSeriesAt'] = proto.getSeriesAt;
+  proto['scroll'] = proto.scroll;
 })();
 //exports
 
