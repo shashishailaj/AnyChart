@@ -28,17 +28,17 @@ goog.mixin(goog.global['anychart']['themes']['defaultTheme'], {
             'enabled': true
           }
         },
-        'zIndex': 34.2
+        'zIndex': 34
       },
       'range': {
         'height': '5%',
-        'zIndex': 34.1,
         'normal': {
           'labels': {
             'enabled': true,
             'anchor': anychart.enums.Anchor.LEFT_CENTER,
             'format': '{%x}'
-          }
+          },
+          'fill': anychart.core.defaultTheme.returnSourceColor85
         }
       }
 

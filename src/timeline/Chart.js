@@ -77,6 +77,13 @@ anychart.timelineModule.Chart.prototype.SUPPORTED_SIGNALS = anychart.core.Separa
 
 //endregion
 //region -- Chart Infrastructure Overrides.
+/**
+ * Base z index of range series, used for z index calculation.
+ * @type {number}
+ */
+anychart.timelineModule.Chart.RANGE_BASE_Z_INDEX = 32;
+
+
 /** @inheritDoc */
 anychart.timelineModule.Chart.prototype.calculate = function() {
   var dateMin = +Infinity;
@@ -132,10 +139,23 @@ anychart.timelineModule.Chart.prototype.calculate = function() {
     }
   }
 
+  /**
+   * Checks if given value is inside range min and max.
+   * If range max is NaN, it's thought to be +Infinity.
+   * @param {number} value
+   * @param {number} rangeMin
+   * @param {number} rangeMax
+   * @return {boolean}
+   */
+  var valueInsideRange = function(value, rangeMin, rangeMax) {
+    return (value > rangeMin && (value < rangeMax || isNaN(rangeMax)));
+  };
+
   var stacked = true;
   var stacks = [];
   for (var i = 0; i < this.drawingPlansRange.length; i++) {
     drawingPlan = this.drawingPlansRange[i];
+    drawingPlan.series.zIndex(anychart.timelineModule.Chart.RANGE_BASE_Z_INDEX - (i / 100));
     var data = drawingPlan.data;
     if (stacked) {
       for (var k = 0; k < data.length; k++) {
@@ -147,12 +167,17 @@ anychart.timelineModule.Chart.prototype.calculate = function() {
 
         // find in already stacked ranges all of those, that contain current range start or end value
         var intersectingStacks = stacks.filter(function(value) {
-          if (stack.start > value.start && (stack.start < value.end || isNaN(value.end)) && stack.direction == value.direction) {
-            return true;
-          }
-          if (stack.end > value.start && (stack.end < value.end || isNaN(value.end)) && stack.direction == value.direction) {
-            return true;
-          }
+          // if (stack.start > value.start && (stack.start < value.end || isNaN(value.end)) && stack.direction == value.direction) {
+          //   return true;
+          // }
+          // if (stack.end > value.start && (stack.end < value.end || isNaN(value.end)) && stack.direction == value.direction) {
+          //   return true;
+          // }
+          if (stack.direction == value.direction)
+            return valueInsideRange(stack.start, value.start, value.end) ||
+                   valueInsideRange(stack.end, value.start, value.end) ||
+                   valueInsideRange(value.start, stack.start, stack.end) ||
+                   valueInsideRange(value.end, stack.start, stack.end);
           return false;
         });
 

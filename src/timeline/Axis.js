@@ -316,7 +316,6 @@ anychart.timelineModule.Axis.prototype.drawLabels = function() {
   for (var i = 0; i < ticksArray.length; i++) {
     var text = this.texts_[i];
     var tick = ticksArray[i];
-    var date = new Date(tick);
     var tickRatio = this.scale_.transform(tick);
 
     if (this.labels()['enabled']() && tickRatio <= 1) {
@@ -448,7 +447,8 @@ anychart.timelineModule.Axis.prototype.applyLabelsStyle = function() {
   var labelsSettings = this.labels();
   var ticksArray = this.getTicks();
   for (var i = 0; i < this.texts_.length; i++) {
-    var date = new Date(ticksArray[i]).toLocaleDateString("en-US");
+    // var date = new Date(ticksArray[i]).toLocaleDateString("en-US");
+    var date = anychart.format.date(ticksArray[i]);
     var text = this.texts_[i];
     text.text(date);
     text.style(labelsSettings.flatten());

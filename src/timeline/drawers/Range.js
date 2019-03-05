@@ -100,5 +100,5 @@ anychart.timelineModule.drawers.Range.prototype.drawPointShape = function(point,
   startX = anychart.utils.applyPixelShift(startX, thickness);
   endX = anychart.utils.applyPixelShift(endX, thickness);
 
-  path.moveTo(startX, pointZero).lineTo(startX, pointUpperLine).lineTo(endX, pointUpperLine).lineTo(endX, pointZero).close();
+  path.moveTo(startX, zero).lineTo(startX, pointUpperLine).lineTo(endX, pointUpperLine).lineTo(endX, zero).close();
 };
