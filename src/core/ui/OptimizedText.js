@@ -427,6 +427,20 @@ anychart.core.ui.OptimizedText.prototype.prepareComplexity = function() {
 
 
 /**
+ * Initializes foreign object.
+ */
+anychart.core.ui.OptimizedText.prototype.initForeignObject = function() {
+  if (!this.foreignObject_) {
+    this.foreignObject_ = this.renderer.createSVGElement_('foreignObject');
+    this.foreignDiv_ = goog.dom.createDom('div');
+    this.foreignDiv_.setAttribute('xmlns', 'http://www.w3.org/1999/xhtml');
+    goog.dom.appendChild(this.foreignObject_, this.foreignDiv_);
+  }
+  this.foreignDiv_.innerHTML = this.text_ || '';
+};
+
+
+/**
  * Prepares html complexity.
  * @private
  */
@@ -435,13 +449,6 @@ anychart.core.ui.OptimizedText.prototype.prepareHtmlComplexity_ = function() {
     acgraph.utils.HTMLParser.getInstance().parseText(this);
   } else {
     this.useHtml_ = true;
-    if (!this.foreignObject_) {
-      this.foreignObject_ = this.renderer.createSVGElement_('foreignObject');
-      this.foreignDiv_ = goog.dom.createDom('div');
-      this.foreignDiv_.setAttribute('xmlns', 'http://www.w3.org/1999/xhtml');
-      goog.dom.appendChild(this.foreignObject_, this.foreignDiv_);
-    }
-    this.foreignDiv_.innerHTML = this.text_ || '';
   }
 };
 
@@ -718,9 +725,12 @@ anychart.core.ui.OptimizedText.prototype.renderTo = function(element, opt_stage)
     if (this.container != element) {
       this.container = element;
       if (element) {
+        if (!this.foreignObject_)
+          this.initForeignObject();
         element.appendChild(this.foreignObject_);
       } else {
-        goog.dom.removeNode(this.foreignObject_);
+        if (this.foreignObject_)
+          goog.dom.removeNode(this.foreignObject_);
       }
     }
   } else {
@@ -797,6 +807,9 @@ anychart.core.ui.OptimizedText.prototype.putAt = function(bounds, opt_stage) {
     this.stage = opt_stage;
 
   if (this.useHtml_) {
+    if (!this.foreignObject_)
+      this.initForeignObject();
+
     this.foreignObject_.setAttribute('x', bounds.left);
     this.foreignObject_.setAttribute('y', bounds.top);
     this.foreignObject_.setAttribute('width', bounds.width);
