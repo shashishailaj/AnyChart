@@ -22,7 +22,7 @@ anychart.graphModule.elements.Edge = function(chart) {
    * */
   this.chart_ = chart;
 
-  this.type_ = anychart.graphModule.Chart.Element.EDGE;
+  this.type = anychart.graphModule.Chart.Element.EDGE;
 
   /**
    * Array of visible text elements.
@@ -37,15 +37,10 @@ anychart.graphModule.elements.Edge = function(chart) {
    * @private
    */
   this.formatProvider_ = null;
-
-  this.labelsSettings_ = {};
-  this.labelsSettings_.normal = {};
-  this.labelsSettings_.hovered = {};
-  this.labelsSettings_.selected = {};
 };
 goog.inherits(anychart.graphModule.elements.Edge, anychart.graphModule.elements.Base);
 
-anychart.graphModule.elements.Edge.prototype.SUPPORTED_SIGNALS = anychart.graphModule.elements.Base.prototype |
+anychart.graphModule.elements.Edge.prototype.SUPPORTED_SIGNALS = anychart.graphModule.elements.Base.prototype.SUPPORTED_SIGNALS |
   anychart.Signal.NEEDS_REDRAW_APPEARANCE;
 
 /**
@@ -148,15 +143,20 @@ anychart.graphModule.elements.Edge.prototype.createFormatProvider = function(edg
  * @param {anychart.graphModule.Chart.Edge} edge
  * */
 anychart.graphModule.elements.Edge.prototype.updateColors = function(edge) {
-  var stroke = this.resolveSettings(edge, 'stroke');
+  var stroke = this.getStroke(edge);
 
   edge.domElement.stroke(stroke);
 };
 
 
+/**
+ * Update colors
+ * @param {anychart.graphModule.Chart.Edge} edge Edge for update.
+ * */
 anychart.graphModule.elements.Edge.prototype.updateAppearance = function(edge) {
   this.updateColors(edge);
 };
+
 
 /**
  * @param {anychart.graphModule.Chart.Edge} edge
@@ -178,22 +178,41 @@ anychart.graphModule.elements.Edge.prototype.updateLabelStyle = function(edge) {
 
 
 /**
+ * Update labels style of all edges
+ * */
+anychart.graphModule.elements.Edge.prototype.updateLabelsStyle = function() {
+  var edges = this.chart_.getEdgesMap();
+
+  for (var edge in edges) {
+    var edgeObj = this.chart_.getEdgeById(edge);
+    this.updateLabelStyle(edgeObj);
+  }
+};
+
+
+/**
  * @param {anychart.graphModule.Chart.Edge} edge
  * */
 anychart.graphModule.elements.Edge.prototype.rotateLabel = function(edge) {
   var from = this.chart_.getNodeById(edge.from);
   var to = this.chart_.getNodeById(edge.to);
   var angle = 0;
-  if (from.position.x == to.position.x) {
+  var fromX, toX, fromY, toY;
+  toX = to.position.x;
+  toY = to.position.y;
+  fromX = from.position.x;
+  fromY = from.position.y;
+
+  if (fromX == toY) {
     angle = 270;
   } else {
-    var dx = to.position.x - from.position.x;
-    var dy = to.position.y - from.position.y;
+    var dx = toX - fromX;
+    var dy = toY - fromY;
 
     angle = goog.math.toDegrees(Math.atan(dy / dx));
   }
   var position = this.getLabelPosition(edge);
-  var rotate = angle + ',' + position[0] + ',' + position[1];
+  var rotate = angle + ',' + position.x + ',' + position.y;
   var domElement = edge.textElement.getDomElement();
   domElement.setAttribute('transform', 'rotate(' + rotate + ')');
 };
@@ -234,11 +253,14 @@ anychart.graphModule.elements.Edge.prototype.resolveSettings = function(edge, se
   return result;
 };
 
+
 /**
+ * Update stroke for edge.
  * @param {anychart.graphModule.Chart.Edge} edge
  * */
 anychart.graphModule.elements.Edge.prototype.updateEdgeColor = function(edge) {
-  edge.domElement.stroke(this.resolveSettings(edge, 'stroke'));
+  var stroke = this.getStroke(edge);
+  edge.domElement.stroke(stroke);
 
 };
 
@@ -246,7 +268,7 @@ anychart.graphModule.elements.Edge.prototype.updateEdgeColor = function(edge) {
 /**
  * Calculates middle position for label
  * @param {anychart.graphModule.Chart.Edge} edge
- * @return {Array.<number>}
+ * @return {{x: number, y:number}}
  * */
 anychart.graphModule.elements.Edge.prototype.getLabelPosition = function(edge) {
   var nodes = this.chart_.getNodesMap();
@@ -268,7 +290,7 @@ anychart.graphModule.elements.Edge.prototype.getLabelPosition = function(edge) {
     y = ((x - minX) / (maxX - minX)) * (maxY - minY) + minY;
   }
 
-  return [x, y];
+  return {x: x, y: y};
 };
 
 
@@ -284,11 +306,23 @@ anychart.graphModule.elements.Edge.prototype.getElementId = function(edge) {
 
 /**
  * Returns state of element.
- * @param {anychart.graphModule.Chart.Node} edge
+ * @param {anychart.graphModule.Chart.Edge} edge
  * @return {anychart.SettingsState} id of element.
  */
 anychart.graphModule.elements.Edge.prototype.getElementState = function(edge) {
   return edge.currentState;
+};
+
+
+/**
+ * Returns state of element.
+ * @param {anychart.graphModule.Chart.Edge} edge
+ * @return {number} id of element.
+ */
+anychart.graphModule.elements.Edge.prototype.getLength = function(edge) {
+  var from = this.chart_.getNodeById(edge.from);
+  var to = this.chart_.getNodeById(edge.to);
+  return Math.sqrt(Math.pow(to.position.x - from.position.x, 2) + Math.pow(to.position.y - from.position.y, 2));
 };
 
 
@@ -303,7 +337,7 @@ anychart.graphModule.elements.Edge.prototype.setupText_ = function(edge) {
   var provider = this.createFormatProvider(edge);
   var textVal = labels.getText(provider);
 
-  text = edge.textElement;
+  var text = edge.textElement;
   if (text) {
     text.text(textVal);
     text.style(labels.flatten());
@@ -336,7 +370,8 @@ anychart.graphModule.elements.Edge.prototype.getIterator = function() {
 
 
 /**
- *
+ * Draw label for edge.
+ * @param {anychart.graphModule.Chart.Edge} edge
  * */
 anychart.graphModule.elements.Edge.prototype.drawLabel = function(edge) {
   var textElement = edge.textElement;
@@ -344,7 +379,10 @@ anychart.graphModule.elements.Edge.prototype.drawLabel = function(edge) {
     var labelSettings = this.resolveLabelSettings(edge);
     if (labelSettings.enabled()) {
       var position = this.getLabelPosition(edge);
-      var cellBounds = anychart.math.rect(position[0], position[1], 0, 0);
+      var stroke = this.getStroke(edge);
+      var edgeThickness = anychart.utils.extractThickness(stroke);
+      edgeThickness += edgeThickness * .1;
+      var cellBounds = anychart.math.rect(position.x, position.y, this.getLength(edge), edgeThickness);
       textElement.renderTo(this.labelsLayerEl_);
       textElement.putAt(cellBounds);
       textElement.finalizeComplexity();
@@ -355,8 +393,9 @@ anychart.graphModule.elements.Edge.prototype.drawLabel = function(edge) {
   }
 };
 
+
 /**
- *
+ * Draw all enabled labels for edge.
  * */
 anychart.graphModule.elements.Edge.prototype.drawLabels = function() {
   var edges = this.chart_.getEdgesMap();
@@ -368,7 +407,9 @@ anychart.graphModule.elements.Edge.prototype.drawLabels = function() {
 
 
 /**
- * Get shape for node.
+ * Labels signal listener.
+ * @param {anychart.SignalEvent} event Invalidation event.
+ * @private
  * */
 anychart.graphModule.elements.Edge.prototype.labelsInvalidated_ = function(event) {
   // console.log('labels Edge', event);

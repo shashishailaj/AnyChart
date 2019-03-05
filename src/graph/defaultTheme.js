@@ -13,15 +13,7 @@ goog.mixin(goog.global['anychart']['themes']['defaultTheme'], {
         'enabled': true
       },
       'separator': {'enabled': true},
-      /**
-       * @this {*}
-       * @return {*}
-       */
       'titleFormat': '',
-      /**
-       * @this {*}
-       * @return {*}
-       */
       'format': '{%id}'
     },
     'nodes': {
@@ -62,11 +54,11 @@ goog.mixin(goog.global['anychart']['themes']['defaultTheme'], {
       }
     },
     'edges': {
-      'stroke': '2 #ccc',
+      'stroke': '1.5 #ccc',
       'labels': {
         'enabled': false,
         'format': 'from {%from} to {%to}',
-        'fontSize': 6,
+        'fontSize': 20,
         'vAlign': 'middle',
         'height': '100%',
         'padding': {

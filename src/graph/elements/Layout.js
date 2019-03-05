@@ -2,6 +2,8 @@ goog.provide('anychart.graphModule.elements.Layout');
 
 goog.require('anychart.core.Base');
 goog.require('anychart.core.StateSettings');
+goog.require('goog.math.Rect');
+
 
 
 /**
@@ -13,8 +15,8 @@ anychart.graphModule.elements.Layout = function(chart) {
   anychart.graphModule.elements.Layout.base(this, 'constructor');
 
   anychart.core.settings.createDescriptorsMeta(this.descriptorsMeta, [
-    ['type', 0, anychart.Signal.NEEDS_REDRAW],
-    ['edgeLength', 0, anychart.Signal.NEEDS_REDRAW]
+    ['type', 0, anychart.Signal.NEEDS_REDRAW]
+    // ['edgeLength', 0, anychart.Signal.NEEDS_REDRAW]
   ]);
 
   this.func = {};
@@ -28,7 +30,27 @@ goog.inherits(anychart.graphModule.elements.Layout, anychart.core.Base);
 
 
 /**
- * Types of chart
+ * Own property descriptors
+ * */
+anychart.graphModule.elements.Layout.OWN_DESCRIPTORS = (function() {
+  /** @type {!Object.<string, anychart.core.settings.PropertyDescriptor>} */
+  var map = {};
+
+  function layoutNormalizer(value) {
+    return anychart.enums.normalize(anychart.graphModule.elements.LayoutType, value, anychart.graphModule.elements.LayoutType.EXPLICIT);
+  }
+
+  anychart.core.settings.createDescriptors(map, [
+      [anychart.enums.PropertyHandlerType.SINGLE_ARG, 'type', layoutNormalizer]]
+    // [anychart.enums.PropertyHandlerType.SINGLE_ARG, 'edgeLength', anychart.core.settings.numberNormalizer]]
+  );
+  return map;
+})();
+anychart.core.settings.populate(anychart.graphModule.elements.Layout, anychart.graphModule.elements.Layout.OWN_DESCRIPTORS);
+
+
+/**
+ * Types of layout
  * @enum {string}
  * */
 anychart.graphModule.elements.LayoutType = {
@@ -37,46 +59,41 @@ anychart.graphModule.elements.LayoutType = {
 };
 
 
+/**
+ * Call layout function for current layout type.
+ * */
 anychart.graphModule.elements.Layout.prototype.getCoordinatesForCurrentLayout = function() {
   var type = this.getOption('type');
   var layout = this.func[type];
-  return layout.call(this, this.chart_.nodes_);//todo getter/setter for nodes_
+  layout.call(this);
 };
 
 
 /**
- * @param {Object} nodes
- * @return {Array.<Object>} coordinate for nodes for draw.
+ * Set coordinates for nodes if in data or 0.
  * @private
  * */
-anychart.graphModule.elements.Layout.prototype.explicitLayout_ = function(nodes) {
-  var coordinates = [];
+anychart.graphModule.elements.Layout.prototype.explicitLayout_ = function() {
+  var nodes = this.chart_.getNodesArray();
 
-  for (var nodeId in nodes) {
-    var node = nodes[nodeId];
+  for (var i = 0; i < nodes.length; i++) {
+    var node = nodes[i];
     var x = node.position.x;
     var y = node.position.y;
 
     if (!x) x = 0;
     if (!y) y = 0;
-    coordinates.push({
-      nodeId: nodeId,
-      position: {
-        x: x,
-        y: y
-      }
-    });
+
+    node.position.x = x;
+    node.position.y = y;
   }
-  return coordinates;
 };
 
 
 /**
- * @param {Object} nodes
- * @return {Array.<Object>} coordinate for nodes for draw.
  * @private
  * */
-anychart.graphModule.elements.Layout.prototype.forceLayout_ = function(nodes) {
+anychart.graphModule.elements.Layout.prototype.forceLayout_ = function() {
   //todo place randomly
 
 
@@ -88,11 +105,12 @@ anychart.graphModule.elements.Layout.prototype.forceLayout_ = function(nodes) {
   var ITERATION = 500;
 
   var nodes = this.chart_.getNodesArray();
-  var length, node, i;
+  var groups = this.chart_.getGroupsMap();
+  var length, node, node2, i, j, force;
 
   var pi2 = Math.PI * 2;
   for (i = 0, length = nodes.length; i < length; i++) {
-    var node = nodes[i];
+    node = nodes[i];
     node.velocityX = 0;
     node.velocityY = 0;
 
@@ -101,27 +119,55 @@ anychart.graphModule.elements.Layout.prototype.forceLayout_ = function(nodes) {
   }
 
 
+  //repel two coordinates
+  function coulumb(x1, y1, x2, y2) {
+    var coulumbX, coulumbY;
+    var distanceX = x1 - x2;
+    var distanceY = y1 - y2;
+    var distance = Math.sqrt(distanceX * distanceX + distanceY * distanceY);
+    if (distance != 0) {
+      var directX = distanceX / distance;
+      var directY = distanceY / distance;
+      coulumbX = directX / distance * COULOMB_FORCE_FACTOR;
+      coulumbY = directY / distance * COULOMB_FORCE_FACTOR;
+    } else {
+      coulumbX = Math.random() - 0.5;
+      coulumbY = Math.random() - 0.5;
+    }
+    return [coulumbX, coulumbY];
+  }
+
+  //pull two coordinates
+  function harmonic(x1, y1, x2, y2) {
+    var harmonicX, harmonicY;
+    var distanceX = x1 - x2;
+    var distanceY = y1 - y2;
+    var distance = Math.sqrt(distanceX * distanceX + distanceY * distanceY);
+    if (distance != 0) {
+      var directX = -distanceX / distance;
+      var directY = -distanceY / distance;
+      var ml = distance * distance / 50;
+      harmonicX = directX * ml * HARMONIC_FORCE_FACTOR;
+      harmonicY = directY * ml * HARMONIC_FORCE_FACTOR;
+    } else {
+      harmonicX = Math.random() - 0.5;
+      harmonicY = Math.random() - 0.5;
+    }
+    return [harmonicX, harmonicY];
+  }
+
   for (var iteration = 0; iteration < ITERATION; iteration++) {
 
     for (i = 0, length = nodes.length; i < length; i++) {
       node = nodes[i];
       node.coulumbX = 0;
       node.coulumbY = 0;
-      for (var j = 0; j < length; j++) {
-        var node2 = nodes[j];
+      for (j = 0; j < length; j++) {
+        node2 = nodes[j];
         if (node != node2 && node.coloumGroup == node2.coloumGroup) { //
-          var distanceX = node.position.x - node2.position.x;
-          var distanceY = node.position.y - node2.position.y;
-          var distance = Math.sqrt(distanceX * distanceX + distanceY * distanceY);
-          if (distance != 0) {
-            var directX = distanceX / distance;
-            var directY = distanceY / distance;
-            node.coulumbX += directX / distance * COULOMB_FORCE_FACTOR;
-            node.coulumbY += directY / distance * COULOMB_FORCE_FACTOR;
-          } else {
-            node.coulumbX += Math.random() - 0.5;
-            node.coulumbY += Math.random() - 0.5;
-          }
+          force = coulumb(node.position.x, node.position.y, node2.position.x, node2.position.y);
+          node.coulumbX += force[0];
+          node.coulumbY += force[1];
         }
       }
     }
@@ -131,25 +177,16 @@ anychart.graphModule.elements.Layout.prototype.forceLayout_ = function(nodes) {
       node.harmonicY = 0;
       var neighbour = node.siblings;
 
+      if (!neighbour.length) {
+        neighbour = groups[node.coloumGroup];
+      }
       var harmonicX;
       var harmonicY;
-      for (var j = 0, neighboursLength = neighbour.length; j < neighboursLength; j++) {
-        var node2 = this.chart_.getNodeById(neighbour[j]);
-        var distanceX = node.position.x - node2.position.x;
-        var distanceY = node.position.y - node2.position.y;
-        var distance = Math.sqrt(distanceX * distanceX + distanceY * distanceY);
-        if (distance != 0) {
-          var directX = -distanceX / distance;
-          var directY = -distanceY / distance;
-          var ml = distance * distance / 20;
-          harmonicX = directX * ml * HARMONIC_FORCE_FACTOR;
-          harmonicY = directY * ml * HARMONIC_FORCE_FACTOR;
-        } else {
-          harmonicX = Math.random() - 0.5;
-          harmonicY = Math.random() - 0.5;
-        }
-        node.harmonicX += harmonicX;
-        node.harmonicY += harmonicY;
+      for (j = 0; j < neighbour.length; j++) {
+        node2 = this.chart_.getNodeById(neighbour[j]);
+        force = harmonic(node.position.x, node.position.y, node2.position.x, node2.position.y);
+        node.harmonicX += force[0];
+        node.harmonicY += force[1];
       }
     }
     for (i = 0, length = nodes.length; i < length; i++) {
@@ -171,25 +208,133 @@ anychart.graphModule.elements.Layout.prototype.forceLayout_ = function(nodes) {
 
       node.position.x += node.velocityX;
       node.position.y += node.velocityY;
+
     }
   }
 
-  return nodes;
-}
-;
+  // var rects = [];
+  // if (goog.object.getKeys(this.chart_.groups_).length > 1) {
+  //   for (var key in this.chart_.groups_) {
+  //     var elementsOfGroup = this.chart_.groups_[key];
+  //     var top = Infinity;
+  //     var bottom = -Infinity;
+  //     var left = Infinity;
+  //     var right = -Infinity;
+  //
+  //     for (var i = 0, length = elementsOfGroup.length; i < length; i++) {
+  //       var node = this.chart_.getNodeById(elementsOfGroup[i]);
+  //       if (node.position.y < top) {
+  //         top = node.position.y;
+  //       }
+  //       if (node.position.y > bottom) {
+  //         bottom = node.position.y;
+  //       }
+  //       if (node.position.x > right) {
+  //         right = node.position.x;
+  //       }
+  //       if (node.position.x < left) {
+  //         left = node.position.x;
+  //       }
+  //     }
+  //     var width = Math.abs(left - right);
+  //     var height = Math.abs(bottom - top);
+  //
+  //     rects.push(
+  //       {
+  //         id: elementsOfGroup,
+  //         rect: new goog.math.Rect(left, top, width, height),
+  //         initialX: left,
+  //         initialY: top,
+  //         hx: 0,
+  //         hy: 0,
+  //         cx: 0,
+  //         cy: 0
+  //       }
+  //     );
+  //   }
+  //
+  //
+  //   for (var i = 0; i < 100; i++) {
+  //
+  //     for (var g1 = 0; g1 < rects.length; g1++) {
+  //       var rect1 = rects[g1];
+  //       rect1.cx = 0;
+  //       rect1.cy = 0;
+  //       for (var g2 = 0; g2 < rects.length; g2++) {
+  //         var rect2 = rects[g2];
+  //         if (rect1 != rect2 && rect1.rect.intersection(rect2.rect)) {
+  //           var pos = rect1.rect.getCenter();
+  //           var pos2 = rect2.rect.getCenter();
+  //           var force = coulumb(pos.x, pos.y, pos2.x, pos2.y);
+  //           rect1.cx += force[0];
+  //           rect1.cy += force[1];
+  //         } else {
+  //           console.log('intersec');
+  //         }
+  //
+  //       }
+  //     }
+  //
+  //     for (var g1 = 0; g1 < rects.length; g1++) {
+  //       var rect1 = rects[g1];
+  //       rect1.hx = 0;
+  //       rect1.hy = 0;
+  //
+  //       for (var g2 = 0; g2 < rects.length; g2++) {
+  //         var rect2 = rects[g2];
+  //         if (rect1 != rect2) {
+  //           var pos = rect1.rect.getCenter();
+  //           var pos2 = rect2.rect.getCenter();
+  //
+  //           if (!(rect1.rect.intersection(rect2.rect))) {
+  //
+  //             var force = harmonic(pos.x, pos.y, pos2.x, pos2.y);
+  //             rect1.hx += force[0];
+  //             rect1.hy += force[1];
+  //           } else {
+  //             console.log('inte');
+  //           }
+  //
+  //         }
+  //
+  //       }
+  //     }
+  //     // debugger
+  //     for (var j = 0; j < rects.length; j++) {
+  //       var r = /**@type {goog.math.Rect}*/(rects[j]);
+  //       var velx = r.hx + r.cx;
+  //       var vely = r.hy + r.cy;
+  //       var x = r.rect.getTopLeft().getX();
+  //       var y = r.rect.getTopLeft().getY();
+  //
+  //       if (velx > MAXIMUM_VELOCITY) {
+  //         velx = MAXIMUM_VELOCITY;
+  //       } else if (velx < MINIMUM_VELOCITY) {
+  //         velx = MINIMUM_VELOCITY;
+  //       }
+  //       if (vely > MAXIMUM_VELOCITY) {
+  //         vely = MAXIMUM_VELOCITY;
+  //       } else if (vely < MINIMUM_VELOCITY) {
+  //         vely = MINIMUM_VELOCITY;
+  //       }
+  //
+  //       x += velx;
+  //       y += vely;
+  //       rects[j].rect.left = x;
+  //       rects[j].rect.top = y;
+  //     }
+  //   }
+  //   for (var j = 0; j < rects.length; j++) {
+  //     var obj = rects[j];
+  //     var arrayOfNodeIds = obj.id;
+  //     var dx = obj.rect.getTopLeft().getX() - obj.initialX;
+  //     var dy = obj.rect.getTopLeft().getY() - obj.initialY;
+  //     for (i = 0; i < arrayOfNodeIds.length; i++) {
+  //       node = this.chart_.getNodeById(arrayOfNodeIds[i]);
+  //       node.position.x += dx;
+  //       node.position.y += dy;
+  //     }
+  //   }
+  // }
+};
 
-anychart.graphModule.elements.Layout.OWN_DESCRIPTORS = (function() {
-  /** @type {!Object.<string, anychart.core.settings.PropertyDescriptor>} */
-  var map = {};
-
-  function layoutNormalizer (value) {
-    return anychart.enums.normalize(anychart.graphModule.elements.LayoutType, value, anychart.graphModule.elements.LayoutType.EXPLICIT);
-  }
-
-  anychart.core.settings.createDescriptors(map, [
-    [anychart.enums.PropertyHandlerType.SINGLE_ARG, 'type', layoutNormalizer],
-    [anychart.enums.PropertyHandlerType.SINGLE_ARG, 'edgeLength', anychart.core.settings.numberNormalizer]]
-  );
-  return map;
-})();
-anychart.core.settings.populate(anychart.graphModule.elements.Layout, anychart.graphModule.elements.Layout.OWN_DESCRIPTORS);

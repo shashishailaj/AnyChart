@@ -565,7 +565,7 @@ anychart.core.StateSettings.prototype.headers = function(opt_value) {
 /**
  * Upper labels (tasks).
  * @param {(Object|boolean|null)=} opt_value
- * @return {anychart.core.StateSettings|anychart.core.ui.LabelsFactory}
+ * @return {anychart.core.StateSettings|anychart.core.ui.LabelsFactory|anychart.core.ui.LabelsSettings}
  */
 anychart.core.StateSettings.prototype.upperLabels = function(opt_value) {
   return this.labels(opt_value);
