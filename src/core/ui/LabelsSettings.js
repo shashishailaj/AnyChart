@@ -118,7 +118,7 @@ anychart.core.ui.LabelsSettings = function(opt_skipDefaultThemes) {
     ['maxFontSize', 0, 0], //TODO (A.Kudryavtsev): Not supported for a while.
     ['minFontSize', 0, 0], //TODO (A.Kudryavtsev): Not supported for a while.
     ['vAlign', 0, anychart.Signal.NEEDS_REDRAW, 0, this.resetFlatSettings],
-    ['anchor', 0, anychart.Signal.NEEDS_REAPPLICATION, 0], //Has no BOUNDS_CHANGED because affects only positioning, not bounds.
+    ['anchor', 0, anychart.Signal.NEEDS_REAPPLICATION, this.resetFlatSettings], //Only left, middle and right position. Has no BOUNDS_CHANGED because affects only positioning, not bounds.
     ['height', 0, anychart.Signal.BOUNDS_CHANGED, 0, this.resetFlatSettings],
     ['offsetX', 0, anychart.Signal.NEEDS_REAPPLICATION, 0], //Has no BOUNDS_CHANGED because affects only positioning, not bounds.
     ['offsetY', 0, anychart.Signal.NEEDS_REAPPLICATION, 0], //Has no BOUNDS_CHANGED because affects only positioning, not bounds.
@@ -128,8 +128,7 @@ anychart.core.ui.LabelsSettings = function(opt_skipDefaultThemes) {
     ['allowMultiline', 0, anychart.Signal.BOUNDS_CHANGED, 0, this.resetFlatSettings],
     ['zIndex', 0, 0], //TODO (A.Kudryavtsev): Not supported for a while.
     ['clip', 0, 0], ////TODO (A.Kudryavtsev): Not supported for a while.
-    ['enabled', 0, anychart.Signal.ENABLED_STATE_CHANGED, 0, this.resetFlatSettings],
-    ['textAnchor', 0, anychart.Signal.NEEDS_REDRAW, 0, this.resetFlatSettings]
+    ['enabled', 0, anychart.Signal.ENABLED_STATE_CHANGED, 0, this.resetFlatSettings]
   ]);
 
   if (!opt_skipDefaultThemes) {

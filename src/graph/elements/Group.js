@@ -4,6 +4,7 @@ goog.require('anychart.graphModule.Chart');
 goog.require('anychart.graphModule.elements.Base');
 
 
+
 /**
  * @constructor
  * @param {anychart.graphModule.Chart} chart

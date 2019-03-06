@@ -32,7 +32,7 @@ goog.mixin(goog.global['anychart']['themes']['defaultTheme'], {
           'enabled': false,
           'format': '{%id}',
           'fontSize': 8,
-          'textAnchor': 'middle'
+          'anchor': 'middle'
         },
         'shape': 'rect'
       },
@@ -41,7 +41,7 @@ goog.mixin(goog.global['anychart']['themes']['defaultTheme'], {
         'stroke': 'blue',
         'shape': 'rec',
         'width': 15,
-        'height': 15,
+        'height': 30,
         'labels': {
           'enabled': true,
           'fontColor': 'red',

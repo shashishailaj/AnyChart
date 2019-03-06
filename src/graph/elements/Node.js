@@ -166,33 +166,22 @@ anychart.graphModule.elements.Node.prototype.getElementState = function(node) {
  * */
 anychart.graphModule.elements.Node.prototype.resolveSettings = function(node, setting) {
   var stringState = anychart.utils.pointStateToName(node.currentState);
+  var normalStingState = anychart.utils.pointStateToName(anychart.SettingsState.NORMAL);
 
-  var defaultNodeSetting = this.chart_.nodes()[stringState]()[setting]();//
-  // var defaultGroupSetting = this.chart_.groups()[stringState]()[setting]();
-  var settingForSpecificNode,
-    settingForSpecificGroup;
+  var finalSetting, iteratorValue;
+  finalSetting = this[normalStingState]()[setting]();
+  var tmpSetting = this[stringState]()[setting]();
+  finalSetting = goog.isDef(tmpSetting) ? tmpSetting : finalSetting;
 
   var iterator = this.getIterator();
   iterator.select(node.dataRow);
 
-  var value = iterator.get(setting);
-  if (value) {
-    settingForSpecificNode = value;
-  }
+  iteratorValue = iterator.get(setting);
+  finalSetting = goog.isDef(iteratorValue) ? iteratorValue : finalSetting;
 
-  value = iterator.get(stringState);
-  if (value && value[setting]) {
-    settingForSpecificNode = value[setting];
-  }
-
-  // if (this.hasInstance(anychart.graphModule.Chart.Element.GROUP, node.groupId)) {
-  //   ingForSpecificGroup = this.getElementInstance(anychart.graphModule.Chart.Element.GROUP, node.group)[state]()[setting]();
-  // }
-  var result = defaultNodeSetting;
-  // result = goog.isDef(defaultGroupSetting) ? defaultGroupSetting : result;
-  // result = goog.isDef(settingForSpecificGroup) ? settingForSpecificGroup : result;
-  result = goog.isDef(settingForSpecificNode) ? settingForSpecificNode : result;
-  return result;
+  iteratorValue = iterator.get(stringState);
+  finalSetting = iteratorValue && goog.isDef(iteratorValue[setting]) ? iteratorValue[setting] : finalSetting;
+  return finalSetting;
 };
 
 
@@ -315,9 +304,14 @@ anychart.graphModule.elements.Node.prototype.getLabelPosition = function(node) {
  * @param {anychart.graphModule.Chart.Node} node
  * */
 anychart.graphModule.elements.Node.prototype.drawLabel = function(node) {
+  var labelSettings = this.resolveLabelSettings(node);
+  // console.log(labelSettings.enabled());
+  if (labelSettings.enabled() && !node.textElement) {
+    node.textElement = this.getText();
+  }
   var textElement = node.textElement;
   if (textElement) {
-    var labelSettings = this.resolveLabelSettings(node);
+
     if (labelSettings.enabled()) {
       var position = this.getLabelPosition(node);
       var cellBounds = anychart.math.rect(position.x, position.y, 50, 30);
@@ -402,16 +396,6 @@ anychart.graphModule.elements.Node.prototype.stickNode = function(node) {
 
 
 /**
- * Format provider for node.
- * @param {anychart.graphModule.Chart.Node} node
- * @param {anychart.SettingsState} state
- * */
-anychart.graphModule.elements.Node.prototype.updateNode = function(node, state) {
-
-};
-
-
-/**
  * Return height of node
  * @param {anychart.graphModule.Chart.Node} node
  * @return {number}
@@ -429,21 +413,6 @@ anychart.graphModule.elements.Node.prototype.getHeight = function(node) {
 anychart.graphModule.elements.Node.prototype.getWidth = function(node) {
   return /**@type {number}*/(this.resolveSettings(node, 'height'));
 };
-// /**
-//  * Returns type for node.
-//  * @param {anychart.graphModule.Chart.Node} node
-//  * @return {anychart.enums.MarkerType}
-//  * */
-// anychart.graphModule.elements.Node.prototype.getShapeType = function(node) {
-//   var state = node.currentState;
-//
-//   var type = /**@type {string|anychart.enums.MarkerType}*/(this.resolveSettings(node, 'type'));
-//   if (type == anychart.enums.normalizeMarkerType(type)) {
-//     return type;
-//   } else {
-//     return this[state]().getOption('type');
-//   }
-// };
 
 
 /**
@@ -456,16 +425,12 @@ anychart.graphModule.elements.Node.prototype.getSettings = function() {
 
 /**
  * Labels signal listener.
+ * Proxy signal to chart.
  * @param {anychart.SignalEvent} event Invalidation event.
  * @private
  * */
 anychart.graphModule.elements.Node.prototype.labelsInvalidated_ = function(event) {
-  if (event.hasSignal(anychart.Signal.BOUNDS_CHANGED)) {
-    // this.applyLabelsStyle();
-  }
-  if (event.hasSignal(anychart.Signal.NEEDS_REDRAW)) {
-    // this.dispatchSignal(anychart.Signal.NEEDS_REDRAW_LABELS);
-  }
+  this.dispatchSignal(event.signals);
 };
 
 
@@ -474,7 +439,7 @@ anychart.graphModule.elements.Node.prototype.labelsInvalidated_ = function(event
  * @param {anychart.SettingsState} state
  * @return {anychart.graphModule.Chart.Node|anychart.SettingsState}
  * */
-anychart.graphModule.elements.Node.prototype.nodeState = function(node, state) {
+anychart.graphModule.elements.Node.prototype.state = function(node, state) {
   if (goog.isDefAndNotNull(state)) {
     node.currentState = state;
     return node;
@@ -537,9 +502,9 @@ anychart.graphModule.elements.Node.prototype.getShapeDrawer = function(node) {
  * @param {anychart.graphModule.Chart.Node} node
  * */
 anychart.graphModule.elements.Node.prototype.updatePathShape = function(node) {
-
   var width = this.getWidth(node);
   var height = this.getHeight(node);
+
   var x = node.position.x;
   var y = node.position.y;
   var path = node.domElement;
@@ -580,6 +545,7 @@ anychart.graphModule.elements.Node.prototype.createDOM = function(node) {
   domElement.tag = /**@type {anychart.graphModule.Chart.Tag}*/({});
   domElement.tag.type = this.getType();
   domElement.tag.id = node.nodeId;
+  domElement.tag.currentState = anychart.SettingsState.NORMAL;
   node.currentState = anychart.SettingsState.NORMAL;
   var lbs = this.resolveLabelSettings(node);
   if (lbs.enabled()) {
@@ -589,37 +555,18 @@ anychart.graphModule.elements.Node.prototype.createDOM = function(node) {
   return domElement;
 };
 
-// /**
-//  * @param {string} nodeId id of node.
-//  * @return {?anychart.graphModule.elements.Node}
-//  * */
-// anychart.graphModule.elements.Node.prototype.node = function(nodeId) {
-//   return /** @type {anychart.graphModule.elements.Node} */(this.chart_.getElementInstance(anychart.graphModule.Chart.Element.NODE, nodeId));
-// };
-//
-//
-// /**
-//  * @return {Array.<anychart.graphModule.elements.Node>}
-//  * */
-// anychart.graphModule.elements.Node.prototype.getAllNodes = function() {
-//   var nodes = [];
-//   for (var node in this.chart_.nodes_) {
-//     nodes.push(this.node(node));
-//   }
-//   return nodes;
-// };
-//
-//
-// /**
-//  * @return {Array.<anychart.graphModule.elements.Node>}
-//  * */
-// anychart.graphModule.elements.Node.prototype.getNodeIds = function() {
-//   var ids = [];
-//   for (var node in this.chart_.nodes_) {
-//     ids.push(node);
-//   }
-//   return ids;
-// };
+
+/** @inheritDoc */
+anychart.graphModule.elements.Node.prototype.disposeInternal = function() {
+  var nodes = this.chart_.getNodesArray();
+
+  for (var i = 0; i < nodes.length; i++) {
+    var node = nodes[i];
+    this.clear(node);
+  }
+  //Dispose all elements in pools and dispose all label settings.
+  anychart.graphModule.elements.Node.base(this, 'disposeInternal');
+};
 //endregion
 //region Exports
 (function() {

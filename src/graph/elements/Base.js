@@ -73,13 +73,6 @@ anychart.graphModule.elements.Base = function(chart) {
   this.hovered_ = new anychart.core.StateSettings(this, descriptorsMeta, anychart.PointState.HOVER);
   this.selected_ = new anychart.core.StateSettings(this, descriptorsMeta, anychart.PointState.SELECT);
 
-  function afterInitClb () {
-    anychart.core.StateSettings.DEFAULT_LABELS_AFTER_INIT_CALLBACK = function(factory) {
-      factory.listenSignals(this.labelsInvalidated_, this);
-      factory.setParentEventTarget(/** @type {goog.events.EventTarget} */ (this));
-    };
-  }
-
   this.normal_.setOption(anychart.core.StateSettings.LABELS_FACTORY_CONSTRUCTOR, anychart.core.StateSettings.OPTIMIZED_LABELS_CONSTRUCTOR);
   this.hovered_.setOption(anychart.core.StateSettings.LABELS_FACTORY_CONSTRUCTOR, anychart.core.StateSettings.OPTIMIZED_LABELS_CONSTRUCTOR_NO_THEME);
   this.selected_.setOption(anychart.core.StateSettings.LABELS_FACTORY_CONSTRUCTOR, anychart.core.StateSettings.OPTIMIZED_LABELS_CONSTRUCTOR_NO_THEME);
@@ -213,8 +206,11 @@ anychart.graphModule.elements.Base.prototype.getText = function() {
 anychart.graphModule.elements.Base.prototype.SUPPORTED_SIGNALS =
   anychart.Signal.MEASURE_COLLECT | //Signal for Measuriator to collect labels to measure.
   anychart.Signal.MEASURE_BOUNDS | //Signal for Measuriator to measure the bounds of collected labels.
-  anychart.Signal.NEEDS_REDRAW_LABELS; //Signal for DG to change the labels placement.
-
+  anychart.Signal.NEEDS_REDRAW_LABELS| //Signal for DG to change the labels placement.
+  anychart.Signal.NEEDS_REDRAW |
+  anychart.Signal.BOUNDS_CHANGED |
+  anychart.Signal.NEEDS_REAPPLICATION |
+  anychart.Signal.ENABLED_STATE_CHANGED;
 
 /**
  * Reset DOM of passed element and add it in pool.
@@ -223,11 +219,11 @@ anychart.graphModule.elements.Base.prototype.SUPPORTED_SIGNALS =
 anychart.graphModule.elements.Base.prototype.clear = function(element) {
   var domElement = element.domElement;
   if (domElement) {
-    element.domElement = null;
     domElement.tag = null;
     domElement.clear();
     domElement.parent(null);
     this.pathPool_.push(domElement);
+    element.domElement = null;
   }
 
   var textElement = element.textElement;
@@ -320,6 +316,29 @@ anychart.graphModule.elements.Base.prototype.resolveLabelSettings = function(ele
   return /**@type {anychart.core.ui.LabelsSettings}*/(mainLabelSettings);
 };
 
+
+/** @inheritDoc */
+anychart.graphModule.elements.Base.prototype.disposeInternal = function() {
+  goog.disposeAll(this.textPool_);
+  goog.disposeAll(this.pathPool_);
+
+  for (var labelSettings in this.settingsForLabels) {
+    for (var setting in this.settingsForLabels[labelSettings]) {
+      var lblSetting = this.settingsForLabels[labelSettings][setting];
+      lblSetting.disposeInternal();
+    }
+  }
+
+  this.textPool_ = [];
+  this.pathPool_ = [];
+
+  this.settingsForLabels = {
+    normal: {},
+    hovered: {},
+    selected: {}
+  };
+
+};
 
 (function() {
   var proto = anychart.graphModule.elements.Base.prototype;
