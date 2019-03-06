@@ -92,12 +92,14 @@ anychart.timelineModule.Chart.prototype.calculate = function() {
     var series = this.seriesList[i];
     var it = series.getResetIterator();
     var seriesType = series.seriesType();
-    while (it.advance()) {
-      if (seriesType == anychart.enums.TimelineSeriesType.EVENT) {
+    if (seriesType == anychart.enums.TimelineSeriesType.EVENT) {
+      while (it.advance()) {
         var date = anychart.utils.normalizeTimestamp(it.get('x'));
         dateMin = Math.min(dateMin, date);
         dateMax = Math.max(dateMax, date);
-      } else if (seriesType == anychart.enums.TimelineSeriesType.RANGE) {
+      }
+    } else if (seriesType == anychart.enums.TimelineSeriesType.RANGE) {
+      while (it.advance()) {
         var start = anychart.utils.normalizeTimestamp(it.get('start'));
         var end = anychart.utils.normalizeTimestamp(it.get('end'));
         if (!isNaN(end)) {
