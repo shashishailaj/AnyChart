@@ -88,7 +88,31 @@ anychart.timelineModule.Chart.RANGE_BASE_Z_INDEX = 32;
 anychart.timelineModule.Chart.prototype.calculate = function() {
   var dateMin = +Infinity;
   var dateMax = -Infinity;
+
+  var directions = [anychart.enums.EventMarkerDirection.UP, anychart.enums.EventMarkerDirection.DOWN];
+  var rangeNum = 0;
+  var eventNum = 0;
+
+  this.drawingPlans = [];
+  this.drawingPlansRange = [];
+
+  /**
+   * Checks if given value is inside range min and max.
+   * If range max is NaN, it's thought to be +Infinity.
+   * @param {number} value
+   * @param {number} rangeMin
+   * @param {number} rangeMax
+   * @return {boolean}
+   */
+  var valueInsideRange = function(value, rangeMin, rangeMax) {
+    return (value > rangeMin && (value < rangeMax || isNaN(rangeMax)));
+  };
+  var stacked = true;
+  var stacks = [];
+
   for (var i = 0; i < this.seriesList.length; i++) {
+
+    //region searching min/max values
     var series = this.seriesList[i];
     var it = series.getResetIterator();
     var seriesType = series.seriesType();
@@ -111,15 +135,9 @@ anychart.timelineModule.Chart.prototype.calculate = function() {
         dateMax = Math.max(dateMax, start);
       }
     }
-  }
-  this.dateMin = dateMin;
-  this.dateMax = dateMax;
+    //endregion
 
-  var directions = [anychart.enums.EventMarkerDirection.UP, anychart.enums.EventMarkerDirection.DOWN];
-  var rangeNum = 0;
-  var eventNum = 0;
-  for (var i = 0; i < this.seriesList.length; i++) {
-    var series = this.seriesList[i];
+    //region setting auto directions for series if needed
     if (series.getOption('direction') == anychart.enums.EventMarkerDirection.AUTO) {
       if (series.seriesType() == anychart.enums.TimelineSeriesType.RANGE) {
         series.autoDirection(directions[rangeNum & 1]);
@@ -129,34 +147,18 @@ anychart.timelineModule.Chart.prototype.calculate = function() {
         eventNum++;
       }
     }
-  }
+    //endregion
 
-  this.drawingPlans = [];
-  this.drawingPlansRange = [];
-  for (var i = 0; i < this.seriesList.length; i++) {
-    var drawingPlan = this.seriesList[i].getScatterDrawingPlan(false, true);
+    //region obtaining drawing plan for series
+    var drawingPlan = series.getScatterDrawingPlan(false, true);
     this.drawingPlans.push(drawingPlan);
     if (drawingPlan.series.getType() == anychart.enums.TimelineSeriesType.RANGE) {
       this.drawingPlansRange.push(drawingPlan);
     }
-  }
+    //endregion
 
-  /**
-   * Checks if given value is inside range min and max.
-   * If range max is NaN, it's thought to be +Infinity.
-   * @param {number} value
-   * @param {number} rangeMin
-   * @param {number} rangeMax
-   * @return {boolean}
-   */
-  var valueInsideRange = function(value, rangeMin, rangeMax) {
-    return (value > rangeMin && (value < rangeMax || isNaN(rangeMax)));
-  };
 
-  var stacked = true;
-  var stacks = [];
-  for (var i = 0; i < this.drawingPlansRange.length; i++) {
-    drawingPlan = this.drawingPlansRange[i];
+    //region stacking ranges
     drawingPlan.series.zIndex(anychart.timelineModule.Chart.RANGE_BASE_Z_INDEX - (i / 100));
     var data = drawingPlan.data;
     if (stacked) {
@@ -203,7 +205,62 @@ anychart.timelineModule.Chart.prototype.calculate = function() {
         point.meta['stackLevel'] = stack.stackLevel;
       }
     }
+    //endregion
   }
+  this.dateMin = dateMin;
+  this.dateMax = dateMax;
+
+
+
+  // for (var i = 0; i < this.drawingPlansRange.length; i++) {
+  //   drawingPlan = this.drawingPlansRange[i];
+  //   drawingPlan.series.zIndex(anychart.timelineModule.Chart.RANGE_BASE_Z_INDEX - (i / 100));
+  //   var data = drawingPlan.data;
+  //   if (stacked) {
+  //     for (var k = 0; k < data.length; k++) {
+  //       var point = data[k];
+  //       var stack = {};
+  //       stack.start = point.data['start'];
+  //       stack.end = point.data['end'];
+  //       stack.direction = /** @type {anychart.enums.EventMarkerDirection} */(drawingPlan.series.getFinalDirection());
+  //
+  //       // find in already stacked ranges all of those, that contain current range start or end value
+  //       var intersectingStacks = stacks.filter(function(value) {
+  //         // if (stack.start > value.start && (stack.start < value.end || isNaN(value.end)) && stack.direction == value.direction) {
+  //         //   return true;
+  //         // }
+  //         // if (stack.end > value.start && (stack.end < value.end || isNaN(value.end)) && stack.direction == value.direction) {
+  //         //   return true;
+  //         // }
+  //         if (stack.direction == value.direction)
+  //           return valueInsideRange(stack.start, value.start, value.end) ||
+  //                  valueInsideRange(stack.end, value.start, value.end) ||
+  //                  valueInsideRange(value.start, stack.start, stack.end) ||
+  //                  valueInsideRange(value.end, stack.start, stack.end);
+  //         return false;
+  //       });
+  //
+  //       // no intersections, so it's placed on the first level
+  //       if (intersectingStacks.length == 0) {
+  //         stack.stackLevel = 1;
+  //         stacks.push(stack);
+  //       } else {// if there are intersections - find range that is stacked the heighest, so that we stack above it
+  //         var stackLevel = 1;
+  //         for (var j = 0; j < intersectingStacks.length; j++) {
+  //           if (intersectingStacks[j].stackLevel > stackLevel) {
+  //             stackLevel = intersectingStacks[j].stackLevel;
+  //           }
+  //         }
+  //         stackLevel++;
+  //
+  //         stack.stackLevel = stackLevel;
+  //         stacks.push(stack);
+  //       }
+  //
+  //       point.meta['stackLevel'] = stack.stackLevel;
+  //     }
+  //   }
+  // }
 };
 
 
