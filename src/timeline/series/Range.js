@@ -40,6 +40,25 @@ anychart.core.settings.populate(anychart.timelineModule.series.Range, anychart.t
 
 
 /** @inheritDoc */
+anychart.timelineModule.series.Range.prototype.makeTimelineMeta = function(rowInfo, yNames, yColumns, pointMissing, xRatio) {
+  anychart.timelineModule.series.Range.base(this, 'makeTimelineMeta', rowInfo, yNames, yColumns, pointMissing, xRatio);
+  var bounds = this.parentBounds();
+  var startXRatio = /** @type {number} */(rowInfo.meta('startXRatio'));
+  var startX = bounds.left + bounds.width * startXRatio;
+  var endXRatio = rowInfo.meta('endXRatio');
+  if (!goog.isNumber(endXRatio) || isNaN(endXRatio)) {
+    endXRatio = 1;
+  }
+  var endX = bounds.left + bounds.width * endXRatio;
+  rowInfo.meta('startX', startX);
+  rowInfo.meta('endX', endX);
+
+  var height = anychart.utils.normalizeSize(/** @type {number} */(this.getOption('height')), bounds.height);
+  rowInfo.meta('height', height);
+};
+
+
+/** @inheritDoc */
 anychart.timelineModule.series.Range.prototype.createPositionProvider = function(position, opt_shift3d) {
   var iterator = this.getIterator();
   var x, y;

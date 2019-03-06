@@ -104,24 +104,6 @@ anychart.timelineModule.series.Base.prototype.makeTimelineMeta = function(rowInf
   }
   rowInfo.meta('direction', direction);
   var bounds = this.parentBounds();
-  if (this.drawer.type == anychart.enums.SeriesDrawerTypes.RANGE) {
-    var startXRatio = /** @type {number} */(rowInfo.meta('startXRatio'));
-    var startX = bounds.left + bounds.width * startXRatio;
-    var endXRatio = rowInfo.meta('endXRatio');
-    if (!goog.isNumber(endXRatio) || isNaN(endXRatio)) {
-      endXRatio = 1;
-    }
-    var endX = bounds.left + bounds.width * endXRatio;
-    rowInfo.meta('startX', startX);
-    rowInfo.meta('endX', endX);
-
-    var height = anychart.utils.normalizeSize(/** @type {number} */(this.getOption('height')), bounds.height);
-    rowInfo.meta('height', height);
-  } else {
-    var connectorLength = /** @type {string|number} */(this.connector().getOption('length'));
-    rowInfo.meta('length', anychart.utils.normalizeSize(connectorLength, bounds.height));
-    rowInfo.meta('x', bounds.left + bounds.width * xRatio);
-  }
   rowInfo.meta('zero', bounds.top + bounds.height / 2);
 };
 
