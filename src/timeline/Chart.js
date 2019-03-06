@@ -157,110 +157,53 @@ anychart.timelineModule.Chart.prototype.calculate = function() {
     }
     //endregion
 
-
     //region stacking ranges
-    drawingPlan.series.zIndex(anychart.timelineModule.Chart.RANGE_BASE_Z_INDEX - (i / 100));
-    var data = drawingPlan.data;
-    if (stacked) {
-      for (var k = 0; k < data.length; k++) {
-        var point = data[k];
-        var stack = {};
-        stack.start = point.data['start'];
-        stack.end = point.data['end'];
-        stack.direction = /** @type {anychart.enums.EventMarkerDirection} */(drawingPlan.series.getFinalDirection());
+    if (drawingPlan.series.getType() == anychart.enums.TimelineSeriesType.RANGE) {
+      drawingPlan.series.zIndex(anychart.timelineModule.Chart.RANGE_BASE_Z_INDEX - (i / 100));
+      var data = drawingPlan.data;
+      if (stacked) {
+        for (var k = 0; k < data.length; k++) {
+          var point = data[k];
+          var stack = {};
+          stack.start = point.data['start'];
+          stack.end = point.data['end'];
+          stack.direction = /** @type {anychart.enums.EventMarkerDirection} */(drawingPlan.series.getFinalDirection());
 
-        // find in already stacked ranges all of those, that contain current range start or end value
-        var intersectingStacks = stacks.filter(function(value) {
-          // if (stack.start > value.start && (stack.start < value.end || isNaN(value.end)) && stack.direction == value.direction) {
-          //   return true;
-          // }
-          // if (stack.end > value.start && (stack.end < value.end || isNaN(value.end)) && stack.direction == value.direction) {
-          //   return true;
-          // }
-          if (stack.direction == value.direction)
-            return valueInsideRange(stack.start, value.start, value.end) ||
-                   valueInsideRange(stack.end, value.start, value.end) ||
-                   valueInsideRange(value.start, stack.start, stack.end) ||
-                   valueInsideRange(value.end, stack.start, stack.end);
-          return false;
-        });
+          // find in already stacked ranges all of those, that contain current range start or end value
+          var intersectingStacks = stacks.filter(function(value) {
+            if (stack.direction == value.direction)
+              return valueInsideRange(stack.start, value.start, value.end) ||
+                     valueInsideRange(stack.end, value.start, value.end) ||
+                     valueInsideRange(value.start, stack.start, stack.end) ||
+                     valueInsideRange(value.end, stack.start, stack.end);
+            return false;
+          });
 
-        // no intersections, so it's placed on the first level
-        if (intersectingStacks.length == 0) {
-          stack.stackLevel = 1;
-          stacks.push(stack);
-        } else {// if there are intersections - find range that is stacked the heighest, so that we stack above it
-          var stackLevel = 1;
-          for (var j = 0; j < intersectingStacks.length; j++) {
-            if (intersectingStacks[j].stackLevel > stackLevel) {
-              stackLevel = intersectingStacks[j].stackLevel;
+          // no intersections, so it's placed on the first level
+          if (intersectingStacks.length == 0) {
+            stack.stackLevel = 1;
+            stacks.push(stack);
+          } else {// if there are intersections - find range that is stacked the heighest, so that we stack above it
+            var stackLevel = 1;
+            for (var j = 0; j < intersectingStacks.length; j++) {
+              if (intersectingStacks[j].stackLevel > stackLevel) {
+                stackLevel = intersectingStacks[j].stackLevel;
+              }
             }
+            stackLevel++;
+
+            stack.stackLevel = stackLevel;
+            stacks.push(stack);
           }
-          stackLevel++;
 
-          stack.stackLevel = stackLevel;
-          stacks.push(stack);
+          point.meta['stackLevel'] = stack.stackLevel;
         }
-
-        point.meta['stackLevel'] = stack.stackLevel;
       }
     }
     //endregion
   }
   this.dateMin = dateMin;
   this.dateMax = dateMax;
-
-
-
-  // for (var i = 0; i < this.drawingPlansRange.length; i++) {
-  //   drawingPlan = this.drawingPlansRange[i];
-  //   drawingPlan.series.zIndex(anychart.timelineModule.Chart.RANGE_BASE_Z_INDEX - (i / 100));
-  //   var data = drawingPlan.data;
-  //   if (stacked) {
-  //     for (var k = 0; k < data.length; k++) {
-  //       var point = data[k];
-  //       var stack = {};
-  //       stack.start = point.data['start'];
-  //       stack.end = point.data['end'];
-  //       stack.direction = /** @type {anychart.enums.EventMarkerDirection} */(drawingPlan.series.getFinalDirection());
-  //
-  //       // find in already stacked ranges all of those, that contain current range start or end value
-  //       var intersectingStacks = stacks.filter(function(value) {
-  //         // if (stack.start > value.start && (stack.start < value.end || isNaN(value.end)) && stack.direction == value.direction) {
-  //         //   return true;
-  //         // }
-  //         // if (stack.end > value.start && (stack.end < value.end || isNaN(value.end)) && stack.direction == value.direction) {
-  //         //   return true;
-  //         // }
-  //         if (stack.direction == value.direction)
-  //           return valueInsideRange(stack.start, value.start, value.end) ||
-  //                  valueInsideRange(stack.end, value.start, value.end) ||
-  //                  valueInsideRange(value.start, stack.start, stack.end) ||
-  //                  valueInsideRange(value.end, stack.start, stack.end);
-  //         return false;
-  //       });
-  //
-  //       // no intersections, so it's placed on the first level
-  //       if (intersectingStacks.length == 0) {
-  //         stack.stackLevel = 1;
-  //         stacks.push(stack);
-  //       } else {// if there are intersections - find range that is stacked the heighest, so that we stack above it
-  //         var stackLevel = 1;
-  //         for (var j = 0; j < intersectingStacks.length; j++) {
-  //           if (intersectingStacks[j].stackLevel > stackLevel) {
-  //             stackLevel = intersectingStacks[j].stackLevel;
-  //           }
-  //         }
-  //         stackLevel++;
-  //
-  //         stack.stackLevel = stackLevel;
-  //         stacks.push(stack);
-  //       }
-  //
-  //       point.meta['stackLevel'] = stack.stackLevel;
-  //     }
-  //   }
-  // }
 };
 
 
