@@ -21,6 +21,7 @@ anychart.timelineModule.series.Event = function(chart, plot, type, config, sorte
 goog.inherits(anychart.timelineModule.series.Event, anychart.timelineModule.series.Base);
 
 
+/** @inheritDoc */
 anychart.timelineModule.series.Event.prototype.makeTimelineMeta = function(rowInfo, yNames, yColumns, pointMissing, xRatio) {
   anychart.timelineModule.series.Event.base(this, 'makeTimelineMeta', rowInfo, yNames, yColumns, pointMissing, xRatio);
   var bounds = this.parentBounds();

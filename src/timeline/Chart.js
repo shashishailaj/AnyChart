@@ -37,7 +37,7 @@ anychart.timelineModule.Chart = function() {
 
   /**
    * Base transformation matrix without any transformations/translations.
-   * @type {number[]}
+   * @type {Array.<number>}
    */
   this.baseTransform = [1, 0, 0, 1, 0, 0];
 

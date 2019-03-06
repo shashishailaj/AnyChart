@@ -25,6 +25,10 @@ anychart.timelineModule.series.Range = function(chart, plot, type, config, sorte
 goog.inherits(anychart.timelineModule.series.Range, anychart.timelineModule.series.Base);
 
 
+/**
+ * Range series property descriptors.
+ * @type {!Object<string, anychart.core.settings.PropertyDescriptor>}
+ */
 anychart.timelineModule.series.Range.PROPERTY_DESCRIPTORS = (function() {
   /** @type {!Object.<string, anychart.core.settings.PropertyDescriptor>} */
   var map = {};
