@@ -96,6 +96,9 @@ anychart.timelineModule.Chart.prototype.calculate = function() {
   this.drawingPlans = [];
   this.drawingPlansRange = [];
 
+  this.eventSeriesList = [];
+  this.rangeSeriesList = [];
+
   /**
    * Checks if given value is inside range min and max.
    * If range max is NaN, it's thought to be +Infinity.
@@ -111,11 +114,20 @@ anychart.timelineModule.Chart.prototype.calculate = function() {
   var stacks = [];
 
   for (var i = 0; i < this.seriesList.length; i++) {
+    var series = this.seriesList[i];
+    var seriesType = series.seriesType();
+
+    switch (seriesType) {
+      case anychart.enums.TimelineSeriesType.EVENT:
+        this.eventSeriesList.push(series);
+        break;
+      case anychart.enums.TimelineSeriesType.RANGE:
+        this.rangeSeriesList.push(series);
+        break;
+    }
 
     //region searching min/max values
-    var series = this.seriesList[i];
     var it = series.getResetIterator();
-    var seriesType = series.seriesType();
     if (seriesType == anychart.enums.TimelineSeriesType.EVENT) {
       while (it.advance()) {
         var date = anychart.utils.normalizeTimestamp(it.get('x'));
