@@ -239,7 +239,8 @@ anychart.timelineModule.Chart.prototype.calculate = function() {
       var minLength = 0;
       for (var j = 0; j < intersectingRanges.length; j++) {
         var range = intersectingRanges[j];
-        minLength < range.height ? minLength = range.height : 0;
+        if (minLength < range.height)
+          minLength = range.height;
       }
       it.meta('minLength', minLength);
     }
