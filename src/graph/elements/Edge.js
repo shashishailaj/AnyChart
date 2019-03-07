@@ -7,11 +7,12 @@ goog.require('anychart.graphModule.elements.Base');
 goog.require('anychart.reflow.IMeasurementsTargetProvider');
 
 
+
 /**
  * @constructor
  * @param {anychart.graphModule.Chart} chart
- * @extends {anychart.graphModule.elements.Base}
  * @implements {anychart.reflow.IMeasurementsTargetProvider}
+ * @extends {anychart.graphModule.elements.Base}
  * */
 anychart.graphModule.elements.Edge = function(chart) {
   anychart.graphModule.elements.Edge.base(this, 'constructor', chart);
@@ -37,11 +38,17 @@ anychart.graphModule.elements.Edge = function(chart) {
    * @private
    */
   this.formatProvider_ = null;
+  anychart.measuriator.register(this);
 };
 goog.inherits(anychart.graphModule.elements.Edge, anychart.graphModule.elements.Base);
 
-anychart.graphModule.elements.Edge.prototype.SUPPORTED_SIGNALS = anychart.graphModule.elements.Base.prototype.SUPPORTED_SIGNALS |
-  anychart.Signal.NEEDS_REDRAW_APPEARANCE;
+
+/**
+ * Supported signals.
+ * @type {number}
+ */
+anychart.graphModule.elements.Edge.prototype.SUPPORTED_SIGNALS = anychart.graphModule.elements.Base.prototype.SUPPORTED_SIGNALS;
+
 
 /**
  * Getter for tooltip settings.
@@ -229,6 +236,7 @@ anychart.graphModule.elements.Edge.prototype.rotateLabel = function(edge) {
   var position = this.getLabelPosition(edge);
   var rotate = angle + ',' + position.x + ',' + position.y;
   var domElement = edge.textElement.getDomElement();
+
   domElement.setAttribute('transform', 'rotate(' + rotate + ')');
 };
 
@@ -336,16 +344,6 @@ anychart.graphModule.elements.Edge.prototype.getElementId = function(edge) {
 /**
  * Returns state of element.
  * @param {anychart.graphModule.Chart.Edge} edge
- * @return {anychart.SettingsState} id of element.
- */
-anychart.graphModule.elements.Edge.prototype.getElementState = function(edge) {
-  return edge.currentState;
-};
-
-
-/**
- * Returns state of element.
- * @param {anychart.graphModule.Chart.Edge} edge
  * @return {number} id of element.
  */
 anychart.graphModule.elements.Edge.prototype.getLength = function(edge) {
@@ -446,6 +444,9 @@ anychart.graphModule.elements.Edge.prototype.drawLabels = function() {
  * @private
  * */
 anychart.graphModule.elements.Edge.prototype.labelsInvalidated_ = function(event) {
+  if (event.hasSignal(anychart.Signal.BOUNDS_CHANGED)) {
+    this.dispatchSignal(anychart.Signal.MEASURE_COLLECT | anychart.Signal.MEASURE_BOUNDS);
+  }
   this.dispatchSignal(event.signals);
 };
 

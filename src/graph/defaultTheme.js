@@ -4,7 +4,11 @@ goog.provide('anychart.graphModule.defaultTheme');
 goog.mixin(goog.global['anychart']['themes']['defaultTheme'], {
   'graph': {
 
-    'labels': {},
+    'labels': {
+      'format': '{%id}',
+      'fontSize': 8,
+      'anchor': 'middle'
+    },
 
     'tooltip': {
       'displayMode': 'single',
@@ -20,6 +24,9 @@ goog.mixin(goog.global['anychart']['themes']['defaultTheme'], {
       'width': 15,
       'height': 15,
       'shape': 'rectangle',
+      'labels': {
+        'enabled': false
+      },
       'normal': {
         'fill': {
           'opacity': 0.4,
@@ -27,12 +34,6 @@ goog.mixin(goog.global['anychart']['themes']['defaultTheme'], {
         },
         'stroke': {
           'color': 'yellow'
-        },
-        'labels': {
-          'enabled': false,
-          'format': '{%id}',
-          'fontSize': 8,
-          'anchor': 'middle'
         },
         'shape': 'rect'
       },
@@ -50,7 +51,11 @@ goog.mixin(goog.global['anychart']['themes']['defaultTheme'], {
       },
       'selected': {
         'fill': 'brown',
-        'stroke': 'pink'
+        'stroke': 'pink',
+        'labels': {
+          'enabled': false,
+          'fontColor':'black'
+        }
       }
     },
     'edges': {
@@ -58,7 +63,7 @@ goog.mixin(goog.global['anychart']['themes']['defaultTheme'], {
       'labels': {
         'enabled': false,
         'format': 'from {%from} to {%to}',
-        'fontSize': 20,
+        'fontSize': 12,
         'vAlign': 'middle',
         'height': '100%',
         'padding': {

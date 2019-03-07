@@ -105,7 +105,7 @@ anychart.graphModule.elements.Layout.prototype.forceLayout_ = function() {
   var ITERATION = 500;
 
   var nodes = this.chart_.getNodesArray();
-  var groups = this.chart_.getGroupsMap();
+  var subgraphs = this.chart_.getSubGraphsMap();
   var length, node, node2, i, j, force;
 
   var pi2 = Math.PI * 2;
@@ -178,7 +178,7 @@ anychart.graphModule.elements.Layout.prototype.forceLayout_ = function() {
       var neighbour = node.siblings;
 
       if (!neighbour.length) {
-        neighbour = groups[node.coloumGroup];
+        neighbour = subgraphs[node.coloumGroup];
       }
       var harmonicX;
       var harmonicY;

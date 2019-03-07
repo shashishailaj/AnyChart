@@ -58,7 +58,6 @@ goog.inherits(anychart.graphModule.elements.Node, anychart.graphModule.elements.
  *  Supported signals.
  * */
 anychart.graphModule.elements.Node.prototype.SUPPORTED_SIGNALS = anychart.graphModule.elements.Base.prototype.SUPPORTED_SIGNALS |
-  anychart.Signal.NEEDS_REDRAW_APPEARANCE |
   anychart.Signal.NEEDS_REDRAW;
 
 
@@ -133,16 +132,6 @@ anychart.graphModule.elements.Node.prototype.getElementId = function(node) {
 };
 
 
-/**
- * Returns state of element.
- * @param {anychart.graphModule.Chart.Node} node
- * @return {anychart.SettingsState} id of element.
- */
-anychart.graphModule.elements.Node.prototype.getElementState = function(node) {
-  return node.currentState;
-};
-
-
 // /**
 //  * Calculates middle position for label
 //  * @param {anychart.graphModule.Chart.Node} node
@@ -172,6 +161,12 @@ anychart.graphModule.elements.Node.prototype.resolveSettings = function(node, se
   finalSetting = this[normalStingState]()[setting]();
   var tmpSetting = this[stringState]()[setting]();
   finalSetting = goog.isDef(tmpSetting) ? tmpSetting : finalSetting;
+
+  var group = this.chart_.getGroupsMap()[/**@type {string}*/(node.groupId)];
+
+  var groupSettings = group ? group[stringState]().getOption(setting) : void 0;
+
+  finalSetting = goog.isDef(groupSettings) ? groupSettings : finalSetting;
 
   var iterator = this.getIterator();
   iterator.select(node.dataRow);
@@ -430,6 +425,10 @@ anychart.graphModule.elements.Node.prototype.getSettings = function() {
  * @private
  * */
 anychart.graphModule.elements.Node.prototype.labelsInvalidated_ = function(event) {
+  if (event.hasSignal(anychart.Signal.BOUNDS_CHANGED)) {
+    this.dispatchSignal(anychart.Signal.MEASURE_COLLECT | anychart.Signal.MEASURE_BOUNDS);
+  }
+
   this.dispatchSignal(event.signals);
 };
 

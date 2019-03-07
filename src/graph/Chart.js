@@ -4,7 +4,7 @@ goog.provide('anychart.graphModule.Chart');
 goog.require('anychart.core.Chart');
 goog.require('anychart.core.ui.LabelsSettings');
 goog.require('anychart.graphModule.elements.Edge');
-// goog.require('anychart.graphModule.elements.Group');
+goog.require('anychart.graphModule.elements.Group');
 goog.require('anychart.graphModule.elements.Interactivity');
 goog.require('anychart.graphModule.elements.Layout');
 goog.require('anychart.graphModule.elements.Node');
@@ -44,10 +44,18 @@ anychart.graphModule.Chart = function(opt_data) {
   this.nodes_ = {}; //todo should use Map here
 
   /**
-   * @type {Object.<number, Array.<string>>}
+   * @type {Object.<string, ?anychart.graphModule.elements.Group>}
    * @private
    * */
   this.groups_ = {};
+
+
+  /**
+   * @type {Object.<number, Array.<string>>}
+   * @private
+   * */
+  this.subGraphGroups_ = {};
+
 
   /**
    * @type {?Array.<anychart.graphModule.Chart.Node>}
@@ -66,13 +74,6 @@ anychart.graphModule.Chart = function(opt_data) {
    * @private
    * */
   this.edges_ = {};
-
-  this.scale_ = 1;
-  this.xDifference = 0;
-  this.yDifference = 0;
-  this.scaleDifference = 1;
-
-  this.interactivityLockerdByDrag = false;
 
   /**
    * @type {anychart.graphModule.elements.Interactivity}
@@ -288,7 +289,7 @@ anychart.graphModule.Chart.prototype.createContextProvider = function(tag) {
 anychart.graphModule.Chart.prototype.handleMouseClick = function(event) {
   // console.log(event);
   if (event['button'] != acgraph.events.BrowserEvent.MouseButton.LEFT) return;
-  if (this.selectedElement_) {
+  if (this.selectedElement_) { //deselect previous selected element
     switch (this.selectedElement_.type) {
       case anychart.graphModule.Chart.Element.EDGE:
         this.updateEdgeById(this.selectedElement_.id, anychart.SettingsState.NORMAL);
@@ -353,12 +354,13 @@ anychart.graphModule.Chart.prototype.handleMouseOverAndMove = function(event) {
  * @private
  * */
 anychart.graphModule.Chart.prototype.handleMouseWheel_ = function(event) {
+  var scale;
   if (event.deltaY > 0) {
-    this.scale_ = 0.9;
+    scale = 0.9;
   } else if (event.deltaY < 0) {
-    this.scale_ = 1.1;
+    scale = 1.1;
   }
-  this.rootLayer.scale(this.scale_, this.scale_, event.clientX, event.clientY);
+  this.rootLayer.scale(scale, scale, event.clientX, event.clientY);
 
 };
 
@@ -504,7 +506,9 @@ anychart.graphModule.Chart.prototype.setNodePosition = function(node, dx, dy) {
  * */
 anychart.graphModule.Chart.prototype.getXWithTranslate = function(x) {
   var matrix = this.rootLayer.getTransformationMatrix();
-  return (-this.xDifference * matrix[0] + x / matrix[0]);
+  var scale = matrix[0];
+  var offsetX = matrix[4];
+  return (-offsetX * scale + x / scale);
 };
 
 
@@ -515,7 +519,9 @@ anychart.graphModule.Chart.prototype.getXWithTranslate = function(x) {
  * */
 anychart.graphModule.Chart.prototype.getYWithTranslate = function(y) {
   var matrix = this.rootLayer.getTransformationMatrix();
-  return (-this.yDifference * matrix[0] + y / matrix[0]);
+  var scale = matrix[0];
+  var offsetY = matrix[5];
+  return (-offsetY * scale + y / scale);
 };
 
 
@@ -577,9 +583,9 @@ anychart.graphModule.Chart.prototype.nodeDragInteractivity = function(node, domT
  * @param {anychart.core.MouseEvent} event
  * */
 anychart.graphModule.Chart.prototype.layerDragInteractivity = function(domTarget, event) {
-  console.log(domTarget);
   var domElement = new goog.fx.Dragger(domTarget['domElement']());
   var startX = 0, startY = 0;
+  var scale = this.rootLayer.getTransformationMatrix()[0];
   domElement.listen(goog.fx.Dragger.EventType.START, function(e) {
     startX = event.clientX;
     startY = event.clientY;
@@ -587,12 +593,10 @@ anychart.graphModule.Chart.prototype.layerDragInteractivity = function(domTarget
   domElement.listen(goog.fx.Dragger.EventType.DRAG, function(e) {
     var x = e.clientX;
     var y = e.clientY;
-    var dx = x - startX;
-    var dy = y - startY;
+    var dx = (x - startX) / scale; //slowdown drag when zoom are used
+    var dy = (y - startY) / scale;
     startX = x;
     startY = y;
-    this.xDifference += dx;
-    this.yDifference += dy;
 
     this.rootLayer.translate(dx, dy);
 
@@ -708,13 +712,13 @@ anychart.graphModule.Chart.prototype.proceedNode_ = function(dataRow, i) {
     };
   }
 
+  // debugger
   var groupId = dataRow['group'];
   if (goog.isDefAndNotNull(groupId)) {
     if (!this.groups_[groupId]) {
-      this.groups_[groupId] = [];
+      this.groups_[groupId] = null;
     }
-    this.groups_[groupId][nodeId] = dataRow.nodeId;
-    // this.nodes_[nodeId].groupId = this.groups_[groupId];
+    nodeObj.groupId = groupId;
   }
 };
 
@@ -802,10 +806,10 @@ anychart.graphModule.Chart.prototype.setupGroupsForChart = function() {
       var group = groupElements.length != 1 ? groupNumber : -1;
       node.coloumGroup = group;
 
-      if (!(group in this.groups_)) {
-        this.groups_[group] = [];
+      if (!(group in this.subGraphGroups_)) {
+        this.subGraphGroups_[group] = [];
       }
-      this.groups_[group].push(node.nodeId);
+      this.subGraphGroups_[group].push(node.nodeId);
     }
   }
 
@@ -896,6 +900,27 @@ anychart.graphModule.Chart.prototype.onEdgeSignal_ = function(event) {
   }
 };
 
+
+/**
+ * Edge signal handler
+ * @param {anychart.SignalEvent} event
+ * @private
+ * */
+anychart.graphModule.Chart.prototype.onGroupSignal_ = function(event) {
+  console.log('signal');
+  if (event.hasSignal(anychart.Signal.NEEDS_REDRAW |
+    anychart.Signal.BOUNDS_CHANGED |
+    anychart.Signal.NEEDS_REAPPLICATION |
+    anychart.Signal.ENABLED_STATE_CHANGED)
+  ) {
+    this.labelsSettingsInvalidated_(event);
+  }
+  if (event.hasSignal(anychart.Signal.NEEDS_REDRAW_APPEARANCE)) {
+    this.invalidateState(anychart.enums.Store.GRAPH, anychart.enums.State.APPEARANCE, anychart.Signal.NEEDS_REDRAW_APPEARANCE);
+  }
+};
+
+
 /**
  * @param {anychart.SignalEvent} e
  * @private
@@ -956,20 +981,31 @@ anychart.graphModule.Chart.prototype.interactivity = function(opt_value) {
 };
 
 
-// /**
-//  * @param {Object=} opt_value
-//  * @return {(anychart.graphModule.Chart|anychart.graphModule.elements.Group)}
-//  * */
-// anychart.graphModule.Chart.prototype.groups = function(opt_value) {
-//   if (!this.grps_) {
-//     this.grps_ = new anychart.graphModule.elements.Group(this);
-//   }
-//   if (opt_value) {
-//
-//     return this;
-//   }
-//   return this.grps_;
-// };
+/**
+ *
+ * @param {string} id Id of group
+ * @param {Object=} opt_value Config object
+ * @return {(anychart.graphModule.Chart|anychart.graphModule.elements.Group)}
+ * */
+anychart.graphModule.Chart.prototype.groups = function(id, opt_value) {
+  if (goog.isDefAndNotNull(id)) {
+    if (goog.isNull(this.groups_[id])) {
+      var group = new anychart.graphModule.elements.Group(this);
+      // group.setupElements();
+      group.listenSignals(this.onGroupSignal_, this);
+      this.groups_[id] = group;
+    } else {
+      //todo warn no group
+      return this;
+    }
+    if (opt_value) {
+      this.groups_[id].setup(opt_value);
+      return this;
+    }
+    return this.groups_[id];
+  }
+  return this;
+};
 
 
 /**
@@ -1013,21 +1049,22 @@ anychart.graphModule.Chart.prototype.edges = function(opt_value) {
  * */
 anychart.graphModule.Chart.prototype.labelsSettingsInvalidated_ = function(event) {
   var state = [];
+  var signal = anychart.Signal.NEEDS_REDRAW;
   if (event.hasSignal(anychart.Signal.NEEDS_REDRAW)) {
-    state.push('labelsStyle');
+    state.push(anychart.graphModule.Chart.States.LABELS_STYLE);
   }
   if (event.hasSignal(anychart.Signal.BOUNDS_CHANGED)) {
-
+    state.push(anychart.graphModule.Chart.States.LABELS_BOUNDS, anychart.graphModule.Chart.States.LABELS_STYLE);
   }
 
   if (event.hasSignal(anychart.Signal.NEEDS_REAPPLICATION)) {
-
+    console.log('n');
   }
 
   if (event.hasSignal(anychart.Signal.ENABLED_STATE_CHANGED)) {
-    state.push('labelsEnabled', 'labelsStyle');
+    state.push(anychart.graphModule.Chart.States.LABELS_ENABLED, anychart.graphModule.Chart.States.LABELS_STYLE);
   }
-  this.invalidateMultiState(anychart.enums.Store.GRAPH, state, anychart.Signal.NEEDS_REDRAW);
+  this.invalidateMultiState(anychart.enums.Store.GRAPH, state, signal);
 };
 
 
@@ -1039,7 +1076,7 @@ anychart.graphModule.Chart.prototype.labels = function(opt_value) {
   if (!this.labelsSettings_) {
     this.labelsSettings_ = new anychart.core.ui.LabelsSettings();
     this.setupCreated('labels', this.labelsSettings_);
-    this.labelsSettings_.listenSignals(this.labelsSettingsInvalidated_, this);
+    // this.labelsSettings_.listenSignals(this.labelsSettingsInvalidated_, this);
   }
 
   if (goog.isDef(opt_value)) {
@@ -1069,10 +1106,18 @@ anychart.graphModule.Chart.prototype.getNodesMap = function() {
 
 
 /**
- * @return {Object.<number, Array.<string>>}
+ * @return {Object.<string, anychart.graphModule.elements.Group>}
  * */
 anychart.graphModule.Chart.prototype.getGroupsMap = function() {
   return this.groups_;
+};
+
+
+/**
+ * @return {Object.<number, Array.<string>>}
+ * */
+anychart.graphModule.Chart.prototype.getSubGraphsMap = function() {
+  return this.subGraphGroups_;
 };
 
 
@@ -1081,7 +1126,6 @@ anychart.graphModule.Chart.prototype.getGroupsMap = function() {
  * @return {Array.<anychart.graphModule.Chart.Node>}
  * */
 anychart.graphModule.Chart.prototype.getNodesArray = function() {
-
   if (!this.nodesArray_) {
     this.nodesArray_ = [];
     for (var nodeId in this.getNodesMap()) {
@@ -1158,6 +1202,7 @@ anychart.graphModule.Chart.prototype.drawNodes = function() {
     node = this.getNodeById(node);
     this.drawNode(node);
   }
+  this.nodes().dispatchSignal(anychart.Signal.MEASURE_COLLECT);
 };
 
 
@@ -1185,6 +1230,7 @@ anychart.graphModule.Chart.prototype.drawEdges = function() {
     var edge = this.getEdgeById(i);
     this.drawEdge(edge);
   }
+  this.edges().dispatchSignal(anychart.Signal.MEASURE_COLLECT);
 };
 
 
@@ -1225,7 +1271,6 @@ anychart.graphModule.Chart.prototype.drawContent = function(bounds) {
   }
 
   if (this.hasStateInvalidation(anychart.enums.Store.GRAPH, anychart.graphModule.Chart.States.LABELS_BOUNDS)) {
-    this.nodes().dispatchSignal(anychart.Signal.MEASURE_COLLECT | anychart.Signal.MEASURE_BOUNDS);
     anychart.measuriator.measure();
     this.markStateConsistent(anychart.enums.Store.GRAPH, anychart.graphModule.Chart.States.LABELS_BOUNDS);
   }
@@ -1239,10 +1284,6 @@ anychart.graphModule.Chart.prototype.drawContent = function(bounds) {
     this.mouseWheelHandler_ = new goog.events.MouseWheelHandler(this.container().getStage().getDomWrapper(), false);
     this.mouseWheelHandler_.listen('mousewheel', this.handleMouseWheel_, false, this);
   }
-
-
-  this.markConsistent(anychart.ConsistencyState.ALL);
-  // anychart.measuriator.measure();
 };
 
 
@@ -1282,9 +1323,6 @@ anychart.graphModule.Chart.prototype.move = function(dx, dy) {
  * */
 anychart.graphModule.Chart.prototype.fit = function() {
   this.rootLayer.setTransformationMatrix(1, 0, 0, 1, 0, 0);
-  this.scale_ = 1;
-  this.xDifference = 0;
-  this.yDifference = 0;
 };
 
 
@@ -1430,7 +1468,7 @@ anychart.graphModule.Chart.prototype.disposeInternal = function() {
   proto['fit'] = proto.fit;
   proto['zoom'] = proto.zoom;
   proto['move'] = proto.move;
-  // proto['groups'] = proto.groups;
+  proto['groups'] = proto.groups;
   proto['nodes'] = proto.nodes;
   proto['layout'] = proto.layout;
   proto['interactivity'] = proto.interactivity;

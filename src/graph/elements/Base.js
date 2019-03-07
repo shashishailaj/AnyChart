@@ -44,9 +44,9 @@ anychart.graphModule.elements.Base = function(chart) {
    *    }}
    * */
   this.settingsForLabels = {
-    normal: {},
-    hovered: {},
-    selected: {}
+    'normal': {},
+    'hovered': {},
+    'selected': {}
   };
 
   var normalDescriptorsMeta = {};
@@ -73,14 +73,11 @@ anychart.graphModule.elements.Base = function(chart) {
   this.hovered_ = new anychart.core.StateSettings(this, descriptorsMeta, anychart.PointState.HOVER);
   this.selected_ = new anychart.core.StateSettings(this, descriptorsMeta, anychart.PointState.SELECT);
 
-  this.normal_.setOption(anychart.core.StateSettings.LABELS_FACTORY_CONSTRUCTOR, anychart.core.StateSettings.OPTIMIZED_LABELS_CONSTRUCTOR);
+  this.normal_.setOption(anychart.core.StateSettings.LABELS_FACTORY_CONSTRUCTOR, anychart.core.StateSettings.OPTIMIZED_LABELS_CONSTRUCTOR_NO_THEME);
   this.hovered_.setOption(anychart.core.StateSettings.LABELS_FACTORY_CONSTRUCTOR, anychart.core.StateSettings.OPTIMIZED_LABELS_CONSTRUCTOR_NO_THEME);
   this.selected_.setOption(anychart.core.StateSettings.LABELS_FACTORY_CONSTRUCTOR, anychart.core.StateSettings.OPTIMIZED_LABELS_CONSTRUCTOR_NO_THEME);
 
   this.normal_.setOption(anychart.core.StateSettings.LABELS_AFTER_INIT_CALLBACK, anychart.core.StateSettings.DEFAULT_LABELS_AFTER_INIT_CALLBACK);
-  this.hovered_.setOption(anychart.core.StateSettings.LABELS_AFTER_INIT_CALLBACK, anychart.core.StateSettings.DEFAULT_LABELS_AFTER_INIT_CALLBACK);
-  this.selected_.setOption(anychart.core.StateSettings.LABELS_AFTER_INIT_CALLBACK, anychart.core.StateSettings.DEFAULT_LABELS_AFTER_INIT_CALLBACK);
-
 };
 goog.inherits(anychart.graphModule.elements.Base, anychart.core.Base);
 anychart.core.settings.populateAliases(anychart.graphModule.elements.Base, ['fill', 'stroke', 'labels', 'shape', 'height', 'width'], 'normal');
@@ -203,7 +200,12 @@ anychart.graphModule.elements.Base.prototype.getText = function() {
 };
 
 
+/**
+ * Supported signals.
+ * @type {number}
+ */
 anychart.graphModule.elements.Base.prototype.SUPPORTED_SIGNALS =
+  anychart.Signal.NEEDS_REDRAW_APPEARANCE |
   anychart.Signal.MEASURE_COLLECT | //Signal for Measuriator to collect labels to measure.
   anychart.Signal.MEASURE_BOUNDS | //Signal for Measuriator to measure the bounds of collected labels.
   anychart.Signal.NEEDS_REDRAW_LABELS| //Signal for DG to change the labels placement.
@@ -211,6 +213,7 @@ anychart.graphModule.elements.Base.prototype.SUPPORTED_SIGNALS =
   anychart.Signal.BOUNDS_CHANGED |
   anychart.Signal.NEEDS_REAPPLICATION |
   anychart.Signal.ENABLED_STATE_CHANGED;
+
 
 /**
  * Reset DOM of passed element and add it in pool.
@@ -248,72 +251,43 @@ anychart.graphModule.elements.Base.prototype.getIterator = goog.abstractMethod;
  * @return {anychart.core.ui.LabelsSettings} instance of LabelSettings.
  * */
 anychart.graphModule.elements.Base.prototype.resolveLabelSettings = function(element) {
-  // debugger
-  var state = this.getElementState(element),
+  var state = this.state(element),
     stringState = anychart.utils.pointStateToName(state),
     id = this.getElementId(element),
     dataRow = element.dataRow,
-    mainLabelSettings,
-    specificLabelSetting,
+    groupSettings = this.chart_.getGroupsMap()[/**@type {string}*/(element.groupId)],
     iteratorData;
 
 
-  var iterator = this.getIterator();
-  iterator.select(dataRow);
+  if (!this.settingsForLabels[stringState][id]) {
+    var specificLblSettings;
 
-  iteratorData = iterator.get('labels');
-  var labelsSettingsFromData = iteratorData;
-  iteratorData = iterator.get(stringState);
-  var labelsSettingsFromDataForState = iteratorData ? iteratorData['labels'] : void 0;
+    var iterator = this.getIterator();
+    iterator.select(dataRow);
 
-  if (state == anychart.SettingsState.NORMAL) {
-    if (!this.settingsForLabels.normal[id])
-      this.settingsForLabels.normal[id] = /**@type {anychart.core.ui.LabelsSettings}*/ (this.normal_.labels());
-    mainLabelSettings = this.settingsForLabels.normal[id];
-
-    if (labelsSettingsFromData) {
-      specificLabelSetting = new anychart.core.ui.LabelsSettings(true);
-      specificLabelSetting.parent(mainLabelSettings);
-      specificLabelSetting.setup(labelsSettingsFromData);
-      mainLabelSettings = specificLabelSetting;
-    }
-    if (labelsSettingsFromDataForState) {
-      specificLabelSetting = new anychart.core.ui.LabelsSettings(true);
-      specificLabelSetting.parent(mainLabelSettings);
-      specificLabelSetting.setup(labelsSettingsFromDataForState);
-      mainLabelSettings = specificLabelSetting;
+    iteratorData = iterator.get('labels');
+    if (iteratorData) {
+      var specificSettingForElement = {};
+      if (iteratorData[stringState] && iteratorData[stringState]['labels']) {
+        goog.mixin(specificSettingForElement, iteratorData[stringState]['labels']);
+      }
+      specificLblSettings = new anychart.core.ui.LabelsSettings(true);
+      specificLblSettings.setup(specificSettingForElement);
     }
 
-    this.settingsForLabels.normal[id] = mainLabelSettings;
-  } else if (state == anychart.SettingsState.HOVERED) {
-    if (!this.settingsForLabels.hovered[id])
-      this.settingsForLabels.hovered[id] = /**@type {anychart.core.ui.LabelsSettings}*/ (this.hovered_.labels());
+    var groupLabelSettings = groupSettings ? groupSettings[stringState]()['labels']() : void 0;
+    var finalLblSetting = this[stringState]()['labels']();
 
-    mainLabelSettings = this.settingsForLabels.hovered[id];
-    if (labelsSettingsFromDataForState) {
-      specificLabelSetting = new anychart.core.ui.LabelsSettings(true);
-      specificLabelSetting.parent(mainLabelSettings);
-      specificLabelSetting.setup(labelsSettingsFromDataForState);
-      mainLabelSettings = specificLabelSetting;
+    if (groupLabelSettings) {
+      finalLblSetting = groupLabelSettings.parent(finalLblSetting);
     }
-
-    this.settingsForLabels.hovered[id] = mainLabelSettings;
-  } else if (state == anychart.SettingsState.SELECTED) {
-    if (!this.settingsForLabels.selected[id])
-      this.settingsForLabels.selected[id] = /**@type {anychart.core.ui.LabelsSettings}*/ (this.normal_.labels());
-
-    mainLabelSettings = this.settingsForLabels.selected[id];
-    if (labelsSettingsFromDataForState) {
-      specificLabelSetting = new anychart.core.ui.LabelsSettings(true);
-      specificLabelSetting.parent(mainLabelSettings);
-      specificLabelSetting.setup(labelsSettingsFromDataForState);
-      mainLabelSettings = specificLabelSetting;
+    if (specificLblSettings) {
+      finalLblSetting = specificLblSettings.parent(finalLblSetting);
     }
-
-    this.settingsForLabels.normal[id] = mainLabelSettings;
+    this.settingsForLabels[stringState][id] = finalLblSetting;
   }
 
-  return /**@type {anychart.core.ui.LabelsSettings}*/(mainLabelSettings);
+  return /**@type {anychart.core.ui.LabelsSettings}*/(this.settingsForLabels[stringState][id]);
 };
 
 
@@ -333,9 +307,9 @@ anychart.graphModule.elements.Base.prototype.disposeInternal = function() {
   this.pathPool_ = [];
 
   this.settingsForLabels = {
-    normal: {},
-    hovered: {},
-    selected: {}
+    'normal': {},
+    'hovered': {},
+    'selected': {}
   };
 
 };
