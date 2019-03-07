@@ -81,7 +81,8 @@ anychart.timelineModule.drawers.Event.prototype.drawPointShape = function(point,
   // false - direction is down, it can't be auto
   var directionUp = /** @type {anychart.enums.EventMarkerDirection} */(point.meta('direction')) == anychart.enums.EventMarkerDirection.UP;
 
-  if (length < minLength) length += minLength;
+  if (length < minLength)
+    length += minLength;
 
   x = anychart.utils.applyPixelShift(x, thickness);
   anychart.core.drawers.move(path, this.isVertical, x, zero);

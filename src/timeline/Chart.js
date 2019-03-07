@@ -200,7 +200,7 @@ anychart.timelineModule.Chart.prototype.calculate = function() {
             stack.stackLevel = 1;
             stacks.push(stack);
           } else {// if there are intersections - find range that is stacked the highest, so that we stack above it
-            var stackLevel = 1;
+            var stackLevel = 0;
             var baseHeight = 0;
             for (var j = 0; j < intersectingStacks.length; j++) {
               if (intersectingStacks[j].stackLevel > stackLevel) {
@@ -239,9 +239,36 @@ anychart.timelineModule.Chart.prototype.calculate = function() {
       var minLength = 0;
       for (var j = 0; j < intersectingRanges.length; j++) {
         var range = intersectingRanges[j];
-        minLength < range.height ? minLength = range.height : 0;
+        if (minLength < (range.height + range.base))
+          minLength = (range.height + range.base);
       }
       it.meta('minLength', minLength);
+    }
+  }
+  //endregion
+
+  //region with event labels overlap handling
+  var points = [];
+  for (var i = 0; i < this.eventSeriesList.length; i++) {
+    series = this.eventSeriesList[i];
+    var factory = series.labels();
+    var it = series.getResetIterator();
+    var needsCreateLabels = factory.getLabelsCount() == 0;
+    while (it.advance()) {
+      var label;
+      if (needsCreateLabels) {
+        var formatProvider = series.createLabelsContextProvider();
+        var positionProvider = series.createPositionProvider(anychart.enums.Position.CENTER);
+        label = factory.add(formatProvider, positionProvider);
+      } else {
+        label = factory.getLabel(it.getIndex());
+      }
+      label.draw();
+
+      var bounds = label.getTextElement().getBounds();
+      var date = it.get('x');
+      debugger;
+      points.push({bounds: bounds, date: date, series: series, id: it.getIndex()});
     }
   }
   //endregion
@@ -290,6 +317,50 @@ anychart.timelineModule.Chart.prototype.drawContent = function(bounds) {
       series.container(this.rootElement);
       series.draw();
     }
+
+    // //region where really bad things happen
+    // debugger;
+    // var points = [];
+    // this.eventSeriesList.forEach(function(series) {
+    //   var labelsCount = series.labels().getLabelsCount();
+    //   for (var i = 0; i < labelsCount; i++) {
+    //     var point = {};
+    //     var it = series.getResetIterator();
+    //     it.select(i);
+    //     point.bounds = series.labels().getLabel(i).getTextElement().getBounds();
+    //     point.date = it.get('x');
+    //     point.series = series;
+    //     point.id = i;
+    //     points.push(point);
+    //   }
+    // });
+    //
+    // var spikedRedraw = false;
+    // points = points.sort((a, b) => a.date - b.date);
+    // for (var i = 0; i < points.length; i++) {
+    //   var firstPoint = points[i];
+    //   for (var k = i + 1; k < points.length; k++) {
+    //     var secondPoint = points[k];
+    //     if (firstPoint.bounds.intersection(secondPoint.bounds)) {
+    //       var secondPointIterator = secondPoint.series.getResetIterator();
+    //       secondPointIterator.select(secondPoint.id);
+    //       var length = Math.max(secondPointIterator.meta('length'), secondPointIterator.meta('minLength'));
+    //       secondPointIterator.meta('minLength', length + 15);
+    //       spikedRedraw = true;
+    //     }
+    //   }
+    // }
+    //
+    // if (spikedRedraw) {
+    //   for (var i = 0; i < this.eventSeriesList.length; i++) {
+    //     var series = this.eventSeriesList[i];
+    //     series.invalidate(anychart.ConsistencyState.ALL, anychart.Signal.NEEDS_REDRAW);
+    //     series.parentBounds(this.dataBounds);
+    //     series.container(this.rootElement);
+    //     series.draw();
+    //   }
+    // }
+    // //endregion
     this.markConsistent(anychart.ConsistencyState.SERIES_CHART_SERIES);
   }
 

@@ -31,6 +31,16 @@ anychart.timelineModule.series.Event.prototype.makeTimelineMeta = function(rowIn
 };
 
 
+/** @inheritDoc */
+anychart.timelineModule.series.Event.prototype.makePointMeta = function(rowInfo, yNames, yColumns) {
+  var xRatio = this.getXScale().transform(rowInfo.getX());
+  rowInfo.meta('xRatio', xRatio);
+  for (var i = 0; i < this.metaMakers.length; i++) {
+    this.metaMakers[i].call(this, rowInfo, yNames, yColumns, 0, xRatio);
+  }
+};
+
+
 /**
  * Event connector getter\setter.
  * @param {Object=} opt_config
@@ -53,9 +63,25 @@ anychart.timelineModule.series.Event.prototype.connector = function(opt_config) 
 };
 
 
+/** @inheritDoc */
+anychart.timelineModule.series.Event.prototype.pushSeriesBasedPointData = function(data, dataPusher, xNormalizer) {
+  var dataSource = /** @type {anychart.data.IView} */(this.data());
+  var iterator = dataSource.getIterator();
+
+  while (iterator.advance()) {
+    var xValue = xNormalizer(iterator.get('x'));
+    var pointData = {};
+    var meta = {};
+    pointData['x'] = xValue;
+    meta['rawIndex'] = iterator.getIndex();
+    dataPusher(data, {data: pointData, meta: meta});
+  }
+};
+
+
 /**
  * Listens connector invalidation.
- * @param event
+ * @param {anychart.SignalEvent} event
  * @private
  */
 anychart.timelineModule.series.Event.prototype.onConnectorSignal_ = function(event) {

@@ -128,21 +128,12 @@ anychart.timelineModule.series.Base.prototype.prepareMetaMakers = function(yName
 };
 
 
-/** @inheritDoc */
-anychart.timelineModule.series.Base.prototype.makePointMeta = function(rowInfo, yNames, yColumns) {
-  if (this.drawer.type == anychart.enums.SeriesDrawerTypes.RANGE) {
-    var startXRatio = this.getXScale().transform(rowInfo.get('start'));
-    var endXRatio = this.getXScale().transform(rowInfo.get('end'));
-    rowInfo.meta('startXRatio', startXRatio);
-    rowInfo.meta('endXRatio', endXRatio);
-  } else {
-    var xRatio = this.getXScale().transform(rowInfo.getX());
-    rowInfo.meta('xRatio', xRatio);
-  }
-  for (var i = 0; i < this.metaMakers.length; i++) {
-    this.metaMakers[i].call(this, rowInfo, yNames, yColumns, 0, xRatio);
-  }
-};
+/**
+ * @param {Array} data
+ * @param {Function} dataPusher
+ * @param {Function} xNormalizer
+ */
+anychart.timelineModule.series.Base.prototype.pushSeriesBasedPointData = goog.nullFunction;
 
 
 /** @inheritDoc */
@@ -153,28 +144,9 @@ anychart.timelineModule.series.Base.prototype.getDrawingData = function(data, da
   var hasYErrors = false;
 
   var nonMissingCount = 0;
-  while (iterator.advance()) {
-    if (this.drawer.type == anychart.enums.SeriesDrawerTypes.RANGE) {
-      var start = xNormalizer(iterator.get('start'));
-      var end = xNormalizer(iterator.get('end'));
-      var pointData = {};
-      var meta = {};
-      pointData['start'] = start;
-      pointData['end'] = end;
-      meta['rawIndex'] = iterator.getIndex();
-    } else {
-      var xValue = xNormalizer(iterator.get('x'));
-      var pointData = {};
-      var meta = {};
-      pointData['x'] = xValue;
-      meta['rawIndex'] = iterator.getIndex();
-    }
-    var point = {
-      data: pointData,
-      meta: meta
-    };
-    dataPusher(data, point);
-  }
+
+  this.pushSeriesBasedPointData(data, dataPusher, xNormalizer);
+
   this.invalidate(anychart.ConsistencyState.SERIES_DATA);
   this.drawingPlan = {
     data: data,

@@ -44,6 +44,36 @@ anychart.core.settings.populate(anychart.timelineModule.series.Range, anychart.t
 
 
 /** @inheritDoc */
+anychart.timelineModule.series.Range.prototype.pushSeriesBasedPointData = function(data, dataPusher, xNormalizer) {
+  var dataSource = /** @type {anychart.data.IView} */(this.data());
+  var iterator = dataSource.getIterator();
+
+  while (iterator.advance()) {
+    var start = xNormalizer(iterator.get('start'));
+    var end = xNormalizer(iterator.get('end'));
+    var pointData = {};
+    var meta = {};
+    pointData['start'] = start;
+    pointData['end'] = end;
+    meta['rawIndex'] = iterator.getIndex();
+    dataPusher(data, {data: pointData, meta: meta});
+  }
+};
+
+
+/** @inheritDoc */
+anychart.timelineModule.series.Range.prototype.makePointMeta = function(rowInfo, yNames, yColumns) {
+  var startXRatio = this.getXScale().transform(rowInfo.get('start'));
+  var endXRatio = this.getXScale().transform(rowInfo.get('end'));
+  rowInfo.meta('startXRatio', startXRatio);
+  rowInfo.meta('endXRatio', endXRatio);
+  for (var i = 0; i < this.metaMakers.length; i++) {
+    this.metaMakers[i].call(this, rowInfo, yNames, yColumns, 0);
+  }
+};
+
+
+/** @inheritDoc */
 anychart.timelineModule.series.Range.prototype.makeTimelineMeta = function(rowInfo, yNames, yColumns, pointMissing, xRatio) {
   anychart.timelineModule.series.Range.base(this, 'makeTimelineMeta', rowInfo, yNames, yColumns, pointMissing, xRatio);
   var bounds = this.parentBounds();
