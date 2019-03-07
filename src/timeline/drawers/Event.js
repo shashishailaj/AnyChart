@@ -77,15 +77,10 @@ anychart.timelineModule.drawers.Event.prototype.drawPointShape = function(point,
   var zero = /** @type {number} */(point.meta('zero'));
   var length = /** @type {number} */(point.meta('length'));
   var thickness = anychart.utils.extractThickness(/** @type {acgraph.vector.Stroke} */(path.stroke()));
-  var direction = /** @type {anychart.enums.EventMarkerDirection} */(point.meta('direction'));
+  // false - direction is down, it can't be auto
+  var directionUp = /** @type {anychart.enums.EventMarkerDirection} */(point.meta('direction')) == anychart.enums.EventMarkerDirection.UP;
 
-  var yEnd;
-  if (direction == anychart.enums.EventMarkerDirection.UP) {
-    yEnd = zero - length;
-  } else if (direction == anychart.enums.EventMarkerDirection.DOWN) {
-    yEnd = zero + length;
-  }
   x = anychart.utils.applyPixelShift(x, thickness);
   anychart.core.drawers.move(path, this.isVertical, x, zero);
-  anychart.core.drawers.line(path, this.isVertical, x, zero - length);
+  anychart.core.drawers.line(path, this.isVertical, x, directionUp ? zero - length : zero + length);
 };
