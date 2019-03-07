@@ -24,6 +24,14 @@ goog.inherits(anychart.timelineModule.series.Base, anychart.core.series.Cartesia
 
 
 /**
+ * Timeline base series supported consistency states.
+ * @type {number}
+ */
+anychart.timelineModule.series.Base.prototype.SUPPORTED_CONSISTENCY_STATES =
+    anychart.core.series.Cartesian.prototype.SUPPORTED_CONSISTENCY_STATES;
+
+
+/**
  * @type {!Object<string, anychart.core.settings.PropertyDescriptor>}
  */
 anychart.timelineModule.series.Base.PROPERTY_DESCRIPTORS = (function() {
