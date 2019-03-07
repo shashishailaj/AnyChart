@@ -65,10 +65,14 @@ anychart.timelineModule.series.Event.prototype.onConnectorSignal_ = function(eve
 
 /** @inheritDoc */
 anychart.timelineModule.series.Event.prototype.transformY = function(value, opt_subRangeRatio) {
+  var iterator = this.getIterator();
+  var minLength = /** @type {number} */(iterator.meta('minLength'));
   var bounds = this.parentBounds();
   var zero = bounds.top + bounds.height / 2;
   var length = /** @type {number|string} */(this.connector().getOption('length'));
   var directionUp = this.getFinalDirection() == anychart.enums.EventMarkerDirection.UP;
   length = anychart.utils.normalizeSize(length, this.parentBounds().height);
+  if (length < minLength)
+    length += minLength;
   return directionUp ? zero - length : zero + length;
 };

@@ -75,10 +75,14 @@ anychart.timelineModule.drawers.Event.prototype.drawSubsequentPoint = function(p
 anychart.timelineModule.drawers.Event.prototype.drawPointShape = function(point, path) {
   var x = /** @type {number} */(point.meta('x'));
   var zero = /** @type {number} */(point.meta('zero'));
+  var minLength = /** @type {number} */(point.meta('minLength'));
   var length = /** @type {number} */(point.meta('length'));
   var thickness = anychart.utils.extractThickness(/** @type {acgraph.vector.Stroke} */(path.stroke()));
   // false - direction is down, it can't be auto
   var directionUp = /** @type {anychart.enums.EventMarkerDirection} */(point.meta('direction')) == anychart.enums.EventMarkerDirection.UP;
+
+  if (length < minLength)
+    length += minLength;
 
   x = anychart.utils.applyPixelShift(x, thickness);
   anychart.core.drawers.move(path, this.isVertical, x, zero);

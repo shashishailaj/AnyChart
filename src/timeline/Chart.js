@@ -191,19 +191,27 @@ anychart.timelineModule.Chart.prototype.calculate = function() {
             return false;
           });
 
+          var seriesHeight = /** @type {number} */(series.getOption('height'));
+          seriesHeight = anychart.utils.normalizeSize(seriesHeight, this.dataBounds.height);
           // no intersections, so it's placed on the first level
           if (intersectingStacks.length == 0) {
+            stack.height = seriesHeight;
+            stack.base = 0;
             stack.stackLevel = 1;
             stacks.push(stack);
           } else {// if there are intersections - find range that is stacked the highest, so that we stack above it
             var stackLevel = 1;
+            var baseHeight = 0;
             for (var j = 0; j < intersectingStacks.length; j++) {
               if (intersectingStacks[j].stackLevel > stackLevel) {
                 stackLevel = intersectingStacks[j].stackLevel;
+                baseHeight = intersectingStacks[j].base + intersectingStacks[j].height;
               }
             }
             stackLevel++;
 
+            stack.base = baseHeight;
+            stack.height = seriesHeight;
             stack.stackLevel = stackLevel;
             stacks.push(stack);
           }
@@ -213,7 +221,30 @@ anychart.timelineModule.Chart.prototype.calculate = function() {
       }
     }
     //endregion
+
   }
+
+  //region where event series length is calculated
+  for (var i = 0; i < this.eventSeriesList.length; i++) {
+    series = this.eventSeriesList[i];
+    var direction = series.getFinalDirection();
+    it = series.getResetIterator();
+    while (it.advance()) {
+      var date = anychart.utils.normalizeTimestamp(it.get('x'));
+      var intersectingRanges = stacks.filter(function(value) {
+        if (direction == value.direction)
+          return valueInsideRange(date, value.start, value.end);
+        return false;
+      });
+      var minLength = 0;
+      for (var j = 0; j < intersectingRanges.length; j++) {
+        var range = intersectingRanges[j];
+        minLength < range.height ? minLength = range.height : 0;
+      }
+      it.meta('minLength', minLength);
+    }
+  }
+  //endregion
   this.dateMin = dateMin;
   this.dateMax = dateMax;
 };
@@ -224,9 +255,6 @@ anychart.timelineModule.Chart.prototype.drawContent = function(bounds) {
   if (this.isConsistent())
     return;
 
-  this.calculate();
-  if (this.autoRange_)
-    this.scale().setRange(this.dateMin, this.dateMax);
 
   if (this.hasInvalidationState(anychart.ConsistencyState.BOUNDS)) {
     this.dataBounds = bounds.clone();
@@ -241,6 +269,10 @@ anychart.timelineModule.Chart.prototype.drawContent = function(bounds) {
     this.invalidate(anychart.ConsistencyState.AXES_CHART_AXES | anychart.ConsistencyState.SERIES_CHART_SERIES);
     this.markConsistent(anychart.ConsistencyState.BOUNDS);
   }
+
+  this.calculate();
+  if (this.autoRange_)
+    this.scale().setRange(this.dateMin, this.dateMax);
 
   var axis = this.getCreated('axis');
   if (this.hasInvalidationState(anychart.ConsistencyState.SCALE_CHART_SCALES)) {
