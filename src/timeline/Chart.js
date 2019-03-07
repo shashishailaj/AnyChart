@@ -195,7 +195,7 @@ anychart.timelineModule.Chart.prototype.calculate = function() {
           if (intersectingStacks.length == 0) {
             stack.stackLevel = 1;
             stacks.push(stack);
-          } else {// if there are intersections - find range that is stacked the heighest, so that we stack above it
+          } else {// if there are intersections - find range that is stacked the highest, so that we stack above it
             var stackLevel = 1;
             for (var j = 0; j < intersectingStacks.length; j++) {
               if (intersectingStacks[j].stackLevel > stackLevel) {
