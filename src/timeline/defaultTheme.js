@@ -21,7 +21,7 @@ goog.mixin(goog.global['anychart']['themes']['defaultTheme'], {
         'direction': anychart.enums.EventMarkerDirection.AUTO
       },
       'event': {
-        'connector': {'length': '10%'},
+        'connector': {'length': '4%'},
         'normal': {
           'markers': {'enabled': true},
           'labels': {
