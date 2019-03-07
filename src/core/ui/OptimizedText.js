@@ -725,8 +725,7 @@ anychart.core.ui.OptimizedText.prototype.renderTo = function(element, opt_stage)
     if (this.container != element) {
       this.container = element;
       if (element) {
-        if (!this.foreignObject_)
-          this.initForeignObject();
+        this.initForeignObject();
         element.appendChild(this.foreignObject_);
       } else {
         if (this.foreignObject_)
@@ -807,8 +806,7 @@ anychart.core.ui.OptimizedText.prototype.putAt = function(bounds, opt_stage) {
     this.stage = opt_stage;
 
   if (this.useHtml_) {
-    if (!this.foreignObject_)
-      this.initForeignObject();
+    this.initForeignObject();
 
     this.foreignObject_.setAttribute('x', bounds.left);
     this.foreignObject_.setAttribute('y', bounds.top);
@@ -927,7 +925,7 @@ anychart.core.ui.OptimizedText.prototype.putWordBreakKeepAll_ = function(bounds,
       newText = new anychart.core.ui.OptimizedText();
       newText.text(cut);
       newText.bounds = lastBounds;
-      newText.style(lastLine.style_);
+      newText.style(this.style_);
       newText.stage = this.stage;
       this.textsToRender_.push(newText);
     }
