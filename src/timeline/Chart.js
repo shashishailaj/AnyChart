@@ -200,7 +200,7 @@ anychart.timelineModule.Chart.prototype.calculate = function() {
             stack.stackLevel = 1;
             stacks.push(stack);
           } else {// if there are intersections - find range that is stacked the highest, so that we stack above it
-            var stackLevel = 1;
+            var stackLevel = 0;
             var baseHeight = 0;
             for (var j = 0; j < intersectingStacks.length; j++) {
               if (intersectingStacks[j].stackLevel > stackLevel) {
@@ -239,8 +239,8 @@ anychart.timelineModule.Chart.prototype.calculate = function() {
       var minLength = 0;
       for (var j = 0; j < intersectingRanges.length; j++) {
         var range = intersectingRanges[j];
-        if (minLength < range.height)
-          minLength = range.height;
+        if (minLength < (range.height + range.base))
+          minLength = (range.height + range.base);
       }
       it.meta('minLength', minLength);
     }
