@@ -5,6 +5,7 @@ goog.mixin(goog.global['anychart']['themes']['defaultTheme'], {
     'axis': {
       'enabled': true,
       'zIndex': 35,
+      'height': 10,
       'stroke': anychart.core.defaultTheme.colorStrokeNormal,
       'fill': anychart.core.defaultTheme.colorStrokeNormal,
       'ticks': {

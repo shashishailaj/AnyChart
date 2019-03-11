@@ -19,13 +19,6 @@ anychart.timelineModule.Axis = function() {
   anychart.timelineModule.Axis.base(this, 'constructor');
 
   /**
-   * Axis box height.
-   * @type {number}
-   * @private
-   */
-  this.height_ = 10;
-
-  /**
    * Pixel coordinates of zero line.
    * Axis is drawn around this zero line.
    * @type {number}
@@ -49,7 +42,8 @@ anychart.timelineModule.Axis = function() {
 
   anychart.core.settings.createDescriptorsMeta(this.descriptorsMeta, [
     ['stroke', anychart.ConsistencyState.APPEARANCE, anychart.Signal.NEEDS_REDRAW],
-    ['fill', anychart.ConsistencyState.APPEARANCE, anychart.Signal.NEEDS_REDRAW]
+    ['fill', anychart.ConsistencyState.APPEARANCE, anychart.Signal.NEEDS_REDRAW],
+    ['height', anychart.ConsistencyState.APPEARANCE | anychart.ConsistencyState.AXIS_TICKS | anychart.ConsistencyState.BOUNDS, anychart.Signal.NEEDS_REDRAW]
   ]);
 };
 goog.inherits(anychart.timelineModule.Axis, anychart.core.VisualBase);
@@ -66,7 +60,8 @@ anychart.timelineModule.Axis.PROPERTY_DESCRIPTORS = (function() {
   var d = anychart.core.settings.descriptors;
   anychart.core.settings.createDescriptors(map, [
     d.STROKE,
-    d.FILL
+    d.FILL,
+    d.HEIGHT
   ]);
 
   return map;
@@ -215,12 +210,12 @@ anychart.timelineModule.Axis.prototype.draw = function() {
     this.calculateZero();
     var bounds = this.parentBounds();
     var x = bounds.left;
-    var y = this.zero_ - this.height_ / 2;
+    var height = /** @type {number} */(this.getOption('height'));
+    var y = this.zero_ - height / 2;
     var width = bounds.width;
-    var height = this.height_;
     this.axisBounds_ = new anychart.math.Rect(x, y, width, height);
 
-    this.invalidate(anychart.ConsistencyState.APPEARANCE | anychart.ConsistencyState.AXIS_TICKS);
+    this.invalidate(anychart.ConsistencyState.APPEARANCE | anychart.ConsistencyState.AXIS_TICKS | anychart.ConsistencyState.AXIS_LABELS);
     this.markConsistent(anychart.ConsistencyState.BOUNDS);
   }
 
@@ -244,7 +239,6 @@ anychart.timelineModule.Axis.prototype.draw = function() {
       }
     }
 
-    this.drawLabels();
     this.markConsistent(anychart.ConsistencyState.AXIS_TICKS);
   }
 
@@ -254,7 +248,7 @@ anychart.timelineModule.Axis.prototype.draw = function() {
   }
 
   if (this.hasInvalidationState(anychart.ConsistencyState.AXIS_LABELS)) {
-
+    this.drawLabels();
     this.markConsistent(anychart.ConsistencyState.AXIS_LABELS);
   }
 
@@ -312,6 +306,7 @@ anychart.timelineModule.Axis.prototype.drawLabels = function() {
   var ticksArray = this.getTicks();
 
   var bounds = this.parentBounds();
+  var height = /** @type {number} */(this.getOption('height'));
 
   for (var i = 0; i < ticksArray.length; i++) {
     var text = this.texts_[i];
@@ -322,9 +317,8 @@ anychart.timelineModule.Axis.prototype.drawLabels = function() {
       text.renderTo(this.labelsLayerEl_);
 
       var x = bounds.left + bounds.width * tickRatio;
-      var y = Math.floor(this.zero_ - this.height_ / 2);
+      var y = Math.floor(this.zero_ - height / 2);
       var width = 40;
-      var height = this.height_;
       var textBounds = new anychart.math.Rect(x, y, width, height);
       text.putAt(textBounds);
       text.finalizeComplexity();
@@ -346,7 +340,8 @@ anychart.timelineModule.Axis.prototype.drawAxis = function() {
   var bounds = this.parentBounds();
   var center = this.zero_;
 
-  var halfHeight = this.height_ / 2;
+  var height = /** @type {number} */(this.getOption('height'));
+  var halfHeight = height / 2;
 
   var stroke = /** @type {acgraph.vector.Stroke} */(this.getOption('stroke'));
   var fill = /** @type {acgraph.vector.Fill} */(this.getOption('fill'));
