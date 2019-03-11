@@ -17,7 +17,7 @@ anychart.timelineModule.series.Base = function(chart, plot, type, config, sorted
 
   this.autoDirection_ = anychart.enums.EventMarkerDirection.UP;
   anychart.core.settings.createDescriptorsMeta(this.descriptorsMeta, [
-    ['direction', anychart.ConsistencyState.APPEARANCE, anychart.Signal.NEEDS_REDRAW]
+    ['direction', anychart.ConsistencyState.ALL, anychart.Signal.NEEDS_REDRAW, anychart.core.series.Capabilities.ANY]
   ]);
 };
 goog.inherits(anychart.timelineModule.series.Base, anychart.core.series.Cartesian);
