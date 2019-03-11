@@ -102,3 +102,15 @@ anychart.timelineModule.series.Event.prototype.transformY = function(value, opt_
     length += minLength;
   return directionUp ? zero - length : zero + length;
 };
+
+
+/** @inheritDoc */
+anychart.timelineModule.series.Event.prototype.resolveAutoAnchor = function(position, rotation) {
+  var direction = this.getFinalDirection();
+
+  if (direction == anychart.enums.EventMarkerDirection.UP) {
+    return anychart.enums.Anchor.CENTER_BOTTOM;
+  } else if (direction == anychart.enums.EventMarkerDirection.DOWN) {
+    return anychart.enums.Anchor.CENTER_TOP;
+  }
+};
