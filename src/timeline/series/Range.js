@@ -112,3 +112,19 @@ anychart.timelineModule.series.Range.prototype.createPositionProvider = function
   var point = {'x': x, 'y': y};
   return {'value': point};
 };
+
+
+/** @inheritDoc */
+anychart.timelineModule.series.Range.prototype.getContextProviderValues = function(provider, rowInfo) {
+  var values = anychart.timelineModule.series.Range.base(this, 'getContextProviderValues', provider, rowInfo);
+  values['start'] = {
+    value: rowInfo.get('start'),
+    type: anychart.enums.TokenType.NUMBER
+  };
+
+  values['end'] = {
+    value: rowInfo.get('end'),
+    type: anychart.enums.TokenType.NUMBER
+  };
+  return values;
+};

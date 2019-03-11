@@ -30,7 +30,17 @@ goog.mixin(goog.global['anychart']['themes']['defaultTheme'], {
             'enabled': true
           }
         },
-        'zIndex': 34
+        'zIndex': 34,
+        'tooltip': {
+          /**
+           * @this {*}
+           * @return {string}
+           */
+          'titleFormat': function() {
+            var date = anychart.format.parseDateTime(this['x']);
+            return anychart.format.date(date);
+          }
+        }
       },
       'range': {
         'height': '5%',
@@ -41,6 +51,17 @@ goog.mixin(goog.global['anychart']['themes']['defaultTheme'], {
             'format': '{%x}'
           },
           'fill': anychart.core.defaultTheme.returnSourceColor85
+        },
+        'tooltip': {
+          /**
+           * @this {*}
+           * @return {string}
+           */
+          'format': function() {
+            var start = this['start'];
+            var end = this['end'];
+            return 'Start: ' + anychart.format.date(start) + '\nEnd: ' + (isNaN(end) ? 'no end date' : anychart.format.date(end));
+          }
         }
       }
 

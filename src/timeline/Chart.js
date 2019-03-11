@@ -99,7 +99,7 @@ anychart.timelineModule.Chart.prototype.calculate = function() {
   this.eventSeriesList = [];
   this.rangeSeriesList = [];
 
-  var axisHeight = /** @type {number} */(this.axis().getOption('height'));
+  var axisHeight = this.axis().enabled() ? /** @type {number} */(this.axis().getOption('height')) : 0;
   var gap = 10;
 
   /**
@@ -378,12 +378,12 @@ anychart.timelineModule.Chart.prototype.xScale = function() {
 
 
 /**
- *
+ * @param {anychart.SignalEvent} event
  * @private
  */
 anychart.timelineModule.Chart.prototype.onAxisSignal_ = function(event) {
   var consistency = anychart.ConsistencyState.AXES_CHART_AXES;
-  if (event.signal & anychart.Signal.NEEDS_RECALCULATION) {
+  if (event.hasSignal(anychart.Signal.ENABLED_STATE_CHANGED | anychart.Signal.NEEDS_RECALCULATION)) {
     consistency |= anychart.ConsistencyState.SERIES_CHART_SERIES | anychart.ConsistencyState.BOUNDS;
   }
   this.invalidate(consistency, anychart.Signal.NEEDS_REDRAW);
