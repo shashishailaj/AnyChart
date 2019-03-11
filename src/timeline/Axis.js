@@ -43,7 +43,7 @@ anychart.timelineModule.Axis = function() {
   anychart.core.settings.createDescriptorsMeta(this.descriptorsMeta, [
     ['stroke', anychart.ConsistencyState.APPEARANCE, anychart.Signal.NEEDS_REDRAW],
     ['fill', anychart.ConsistencyState.APPEARANCE, anychart.Signal.NEEDS_REDRAW],
-    ['height', anychart.ConsistencyState.APPEARANCE | anychart.ConsistencyState.AXIS_TICKS | anychart.ConsistencyState.BOUNDS, anychart.Signal.NEEDS_REDRAW]
+    ['height', anychart.ConsistencyState.APPEARANCE | anychart.ConsistencyState.AXIS_TICKS | anychart.ConsistencyState.BOUNDS, anychart.Signal.NEEDS_REDRAW | anychart.Signal.NEEDS_RECALCULATION]
   ]);
 };
 goog.inherits(anychart.timelineModule.Axis, anychart.core.VisualBase);
@@ -312,15 +312,18 @@ anychart.timelineModule.Axis.prototype.drawLabels = function() {
     var text = this.texts_[i];
     var tick = ticksArray[i];
     var tickRatio = this.scale_.transform(tick);
+    var nextTickRatio = (i == ticksArray.length - 1 ? 1 : this.scale_.transform(ticksArray[i + 1]));
 
     if (this.labels()['enabled']() && tickRatio <= 1) {
+      if (nextTickRatio > 1)
+        nextTickRatio = 1;
       text.renderTo(this.labelsLayerEl_);
 
       var x = bounds.left + bounds.width * tickRatio;
       var y = Math.floor(this.zero_ - height / 2);
-      var width = 40;
+      var width = (bounds.left + bounds.width * nextTickRatio) - x;
       var textBounds = new anychart.math.Rect(x, y, width, height);
-      text.putAt(textBounds);
+      text.putAt(textBounds, this.rootElement.getStage());
       text.finalizeComplexity();
     } else {
       text.renderTo(null);

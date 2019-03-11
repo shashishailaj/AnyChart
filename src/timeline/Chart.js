@@ -380,8 +380,12 @@ anychart.timelineModule.Chart.prototype.xScale = function() {
  *
  * @private
  */
-anychart.timelineModule.Chart.prototype.onAxisSignal_ = function() {
-  this.invalidate(anychart.ConsistencyState.AXES_CHART_AXES, anychart.Signal.NEEDS_REDRAW);
+anychart.timelineModule.Chart.prototype.onAxisSignal_ = function(event) {
+  var consistency = anychart.ConsistencyState.AXES_CHART_AXES;
+  if (event.signal & anychart.Signal.NEEDS_RECALCULATION) {
+    consistency |= anychart.ConsistencyState.SERIES_CHART_SERIES | anychart.ConsistencyState.BOUNDS;
+  }
+  this.invalidate(consistency, anychart.Signal.NEEDS_REDRAW);
 };
 
 

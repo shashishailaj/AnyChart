@@ -14,7 +14,8 @@ goog.mixin(goog.global['anychart']['themes']['defaultTheme'], {
         'zIndex': 36
       },
       'labels': {
-        'fontSize': '10px'
+        'fontSize': '10px',
+        'textOverflow': true
       }
     },
     'defaultSeriesSettings': {
