@@ -99,12 +99,12 @@ anychart.timelineModule.series.Range.prototype.createPositionProvider = function
   var height = /** @type {number} */(iterator.meta('height'));
   var stackLevel = /** @type {number} */(iterator.meta('stackLevel'));
   var zero = /** @type {number} */(iterator.meta('zero'));
+  var axisHeight = /** @type {number} */(iterator.meta('axisHeight'));
   var startX = /** @type {number} */(iterator.meta('startX'));
   var direction = /** @type {anychart.enums.EventMarkerDirection} */(this.getFinalDirection());
 
-  if (direction == anychart.enums.EventMarkerDirection.AUTO) {
-    direction = anychart.enums.EventMarkerDirection.UP;
-  }
+  var halfAxisHeight = axisHeight / 2;
+  zero += direction == anychart.enums.EventMarkerDirection.UP ? -halfAxisHeight : halfAxisHeight;
 
   var yOffset = height * (stackLevel - 1) + height / 2;
   x = startX;

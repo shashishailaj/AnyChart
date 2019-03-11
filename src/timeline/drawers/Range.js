@@ -77,6 +77,7 @@ anychart.timelineModule.drawers.Range.prototype.drawPointShape = function(point,
   var startX = /** @type {number}*/(point.meta('startX'));
   var endX = /** @type {number} */(point.meta('endX'));
   var zero = /** @type {number} */(point.meta('zero'));
+  var axisHeight = /** @type {number} */(point.meta('axisHeight'));
   var stackLevel = /** @type {number} */(point.meta('stackLevel'));
   var direction = /** @type {anychart.enums.EventMarkerDirection} */(point.meta('direction'));
 
@@ -89,9 +90,11 @@ anychart.timelineModule.drawers.Range.prototype.drawPointShape = function(point,
   // upper line is bottom line if direction is down
   var pointZero, pointUpperLine;
   if (direction == anychart.enums.EventMarkerDirection.UP) {
+    zero -= axisHeight / 2;
     pointZero = zero - pointZeroOffset;
     pointUpperLine = pointZero - height;
   } else {
+    zero += axisHeight / 2;
     pointZero = zero + pointZeroOffset;
     pointUpperLine = pointZero + height;
   }

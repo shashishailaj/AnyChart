@@ -97,10 +97,11 @@ anychart.timelineModule.series.Event.prototype.transformY = function(value, opt_
   var zero = bounds.top + bounds.height / 2;
   var length = /** @type {number|string} */(this.connector().getOption('length'));
   var directionUp = this.getFinalDirection() == anychart.enums.EventMarkerDirection.UP;
+  var halfAxisHeight = /** @type {number} */(iterator.meta('axisHeight')) / 2;
   length = anychart.utils.normalizeSize(length, this.parentBounds().height);
   if (length < minLength)
     length += minLength;
-  return directionUp ? zero - length : zero + length;
+  return directionUp ? zero - length - halfAxisHeight : zero + length + halfAxisHeight;
 };
 
 

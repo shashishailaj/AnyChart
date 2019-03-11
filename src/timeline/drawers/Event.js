@@ -78,8 +78,11 @@ anychart.timelineModule.drawers.Event.prototype.drawPointShape = function(point,
   var minLength = /** @type {number} */(point.meta('minLength'));
   var length = /** @type {number} */(point.meta('length'));
   var thickness = anychart.utils.extractThickness(/** @type {acgraph.vector.Stroke} */(path.stroke()));
+  var axisHeight = /** @type {number} */(point.meta('axisHeight'));
   // false - direction is down, it can't be auto
   var directionUp = /** @type {anychart.enums.EventMarkerDirection} */(point.meta('direction')) == anychart.enums.EventMarkerDirection.UP;
+
+  zero += directionUp ? -axisHeight / 2 : axisHeight / 2;
 
   if (length < minLength)
     length += minLength;

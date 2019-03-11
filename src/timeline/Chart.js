@@ -99,6 +99,11 @@ anychart.timelineModule.Chart.prototype.calculate = function() {
   this.eventSeriesList = [];
   this.rangeSeriesList = [];
 
+  var axisHeight = /** @type {number} */(this.axis().getOption('height'));
+  var zero = this.dataBounds.top + this.dataBounds.height / 2;
+  var upperZero = zero - axisHeight / 2;
+  var bottomZero = zero + axisHeight / 2;
+
   /**
    * Checks if given value is inside range min and max.
    * If range max is NaN, it's thought to be +Infinity.
@@ -217,6 +222,7 @@ anychart.timelineModule.Chart.prototype.calculate = function() {
           }
 
           point.meta['stackLevel'] = stack.stackLevel;
+          point.meta['axisHeight'] = axisHeight;
         }
       }
     }
@@ -248,6 +254,7 @@ anychart.timelineModule.Chart.prototype.calculate = function() {
           minLength = (range.height + range.base);
       }
       it.meta('minLength', minLength);
+      it.meta('axisHeight', axisHeight);
     }
   }
   //endregion
