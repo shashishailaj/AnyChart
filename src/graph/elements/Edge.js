@@ -188,6 +188,7 @@ anychart.graphModule.elements.Edge.prototype.updateLabelStyle = function(edge) {
   if (enabled && !edge.textElement) {
     edge.textElement = this.getText();
   }
+
   if (edge.textElement) {
     edge.textElement.resetComplexity();
     this.setupText_(edge);
@@ -233,6 +234,8 @@ anychart.graphModule.elements.Edge.prototype.rotateLabel = function(edge) {
 
     angle = goog.math.toDegrees(Math.atan(dy / dx));
   }
+
+
   var position = this.getLabelPosition(edge);
   var rotate = angle + ',' + position.x + ',' + position.y;
   var domElement = edge.textElement.getDomElement();

@@ -53,22 +53,22 @@ anychart.graphModule.elements.Base = function(chart) {
   anychart.core.settings.createDescriptorsMeta(normalDescriptorsMeta, [
     ['fill', 0, anychart.Signal.NEEDS_REDRAW_APPEARANCE],
     ['stroke', 0, anychart.Signal.NEEDS_REDRAW_APPEARANCE],
-    ['shape', 0, anychart.Signal.NEEDS_REDRAW_APPEARANCE], //todo
+    ['shape', 0, anychart.Signal.BOUNDS_CHANGED | anychart.Signal.NEEDS_REDRAW_APPEARANCE], //todo
     ['labels', 0, anychart.Signal.NEEDS_REDRAW_LABELS],
-    ['width', 0, anychart.Signal.NEEDS_REDRAW_APPEARANCE],
-    ['height', 0, anychart.Signal.NEEDS_REDRAW_APPEARANCE]
+    ['width', 0, anychart.Signal.BOUNDS_CHANGED | anychart.Signal.NEEDS_REDRAW_APPEARANCE],
+    ['height', 0, anychart.Signal.BOUNDS_CHANGED | anychart.Signal.NEEDS_REDRAW_APPEARANCE]
   ]);
 
   this.normal_ = new anychart.core.StateSettings(this, normalDescriptorsMeta, anychart.PointState.NORMAL);
 
   var descriptorsMeta = {};
   anychart.core.settings.createDescriptorsMeta(descriptorsMeta, [
-    ['fill', 0, anychart.Signal.NEEDS_REDRAW_APPEARANCE],
-    ['stroke', 0, anychart.Signal.NEEDS_REDRAW_APPEARANCE],
-    ['shape', 0, anychart.Signal.NEEDS_REDRAW_APPEARANCE], //todo
-    ['labels', 0, anychart.Signal.NEEDS_REDRAW_LABELS],
-    ['width', 0, anychart.Signal.NEEDS_REDRAW_APPEARANCE],
-    ['height', 0, anychart.Signal.NEEDS_REDRAW_APPEARANCE]
+    ['fill', 0, 0],
+    ['stroke', 0, 0],
+    ['shape', 0, 0],
+    ['labels', 0, 0],
+    ['width', 0, 0],
+    ['height', 0, 0]
   ]);
   this.hovered_ = new anychart.core.StateSettings(this, descriptorsMeta, anychart.PointState.HOVER);
   this.selected_ = new anychart.core.StateSettings(this, descriptorsMeta, anychart.PointState.SELECT);

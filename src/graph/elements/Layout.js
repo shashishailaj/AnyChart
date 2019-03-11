@@ -16,7 +16,6 @@ anychart.graphModule.elements.Layout = function(chart) {
 
   anychart.core.settings.createDescriptorsMeta(this.descriptorsMeta, [
     ['type', 0, anychart.Signal.NEEDS_REDRAW]
-    // ['edgeLength', 0, anychart.Signal.NEEDS_REDRAW]
   ]);
 
   this.func = {};
@@ -41,12 +40,18 @@ anychart.graphModule.elements.Layout.OWN_DESCRIPTORS = (function() {
   }
 
   anychart.core.settings.createDescriptors(map, [
-      [anychart.enums.PropertyHandlerType.SINGLE_ARG, 'type', layoutNormalizer]]
-    // [anychart.enums.PropertyHandlerType.SINGLE_ARG, 'edgeLength', anychart.core.settings.numberNormalizer]]
+    [anychart.enums.PropertyHandlerType.SINGLE_ARG, 'type', layoutNormalizer]]
   );
   return map;
 })();
 anychart.core.settings.populate(anychart.graphModule.elements.Layout, anychart.graphModule.elements.Layout.OWN_DESCRIPTORS);
+
+
+/**
+ * Supported signals.
+ * @type {number}
+ */
+anychart.graphModule.elements.Layout.prototype.SUPPORTED_SIGNALS = anychart.Signal.NEEDS_REDRAW;
 
 
 /**
@@ -78,8 +83,9 @@ anychart.graphModule.elements.Layout.prototype.explicitLayout_ = function() {
 
   for (var i = 0; i < nodes.length; i++) {
     var node = nodes[i];
-    var x = node.position.x;
-    var y = node.position.y;
+    var row = this.chart_.data()['nodes'].getRow(node.dataRow);
+    var x = row['x'];
+    var y = row['y'];
 
     if (!x) x = 0;
     if (!y) y = 0;

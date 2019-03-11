@@ -406,15 +406,7 @@ anychart.graphModule.elements.Node.prototype.getHeight = function(node) {
  * @return {number}
  * */
 anychart.graphModule.elements.Node.prototype.getWidth = function(node) {
-  return /**@type {number}*/(this.resolveSettings(node, 'height'));
-};
-
-
-/**
- * Get shape for node.
- * */
-anychart.graphModule.elements.Node.prototype.getSettings = function() {
-
+  return /**@type {number}*/(this.resolveSettings(node, 'width'));
 };
 
 
@@ -435,12 +427,12 @@ anychart.graphModule.elements.Node.prototype.labelsInvalidated_ = function(event
 
 /**
  * @param {anychart.graphModule.Chart.Node} node
- * @param {anychart.SettingsState} state
+ * @param {anychart.SettingsState=} opt_state
  * @return {anychart.graphModule.Chart.Node|anychart.SettingsState}
  * */
-anychart.graphModule.elements.Node.prototype.state = function(node, state) {
-  if (goog.isDefAndNotNull(state)) {
-    node.currentState = state;
+anychart.graphModule.elements.Node.prototype.state = function(node, opt_state) {
+  if (goog.isDefAndNotNull(opt_state)) {
+    node.currentState = opt_state;
     return node;
   }
   return node.currentState;
@@ -472,11 +464,11 @@ anychart.graphModule.elements.Node.prototype.getShapeDrawer = function(node) {
          * @param {!acgraph.vector.Path} path
          * @param {number} x
          * @param {number} y
-         * @param {number} width
          * @param {number} height
+         * @param {number} width
          * @return {!acgraph.vector.Path}
          */
-        (function(path, x, y, width, height) {
+        (function(path, x, y, height, width) {
           var left = x - width;
           var top = y - height;
           var right = x + width;
@@ -516,7 +508,7 @@ anychart.graphModule.elements.Node.prototype.updatePathShape = function(node) {
   width /= 2;
   height /= 2;
   var drawer = this.getShapeDrawer(node);
-  drawer(path, x, y, width, height);
+  drawer(path, x, y, height, width);
 };
 
 
