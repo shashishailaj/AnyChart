@@ -100,7 +100,7 @@ anychart.timelineModule.series.Event.prototype.transformY = function(value, opt_
   var halfAxisHeight = /** @type {number} */(iterator.meta('axisHeight')) / 2;
   length = anychart.utils.normalizeSize(length, this.parentBounds().height);
   if (length < minLength)
-    length += minLength;
+    length = minLength;
   return directionUp ? zero - length - halfAxisHeight : zero + length + halfAxisHeight;
 };
 

@@ -100,6 +100,7 @@ anychart.timelineModule.Chart.prototype.calculate = function() {
   this.rangeSeriesList = [];
 
   var axisHeight = /** @type {number} */(this.axis().getOption('height'));
+  var gap = 10;
 
   /**
    * Checks if given value is inside range min and max.
@@ -253,7 +254,7 @@ anychart.timelineModule.Chart.prototype.calculate = function() {
       for (var j = 0; j < intersectingRanges.length; j++) {
         var range = intersectingRanges[j];
         if (minLength < (range.height + range.base))
-          minLength = (range.height + range.base);
+          minLength = (range.height + range.base) + gap;
       }
       it.meta('minLength', minLength);
       it.meta('axisHeight', axisHeight);
@@ -287,7 +288,7 @@ anychart.timelineModule.Chart.prototype.calculate = function() {
         var secondPointIterator = secondPoint.series.getResetIterator();
         secondPointIterator.select(secondPoint.id);
         var length = secondPointIterator.meta('minLength');
-        secondPointIterator.meta('minLength', length + firstPoint.bounds.height);
+        secondPointIterator.meta('minLength', length + firstPoint.bounds.height + gap);
       }
     }
   }

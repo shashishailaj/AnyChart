@@ -85,7 +85,7 @@ anychart.timelineModule.drawers.Event.prototype.drawPointShape = function(point,
   zero += directionUp ? -axisHeight / 2 : axisHeight / 2;
 
   if (length < minLength)
-    length += minLength;
+    length = minLength;
 
   x = anychart.utils.applyPixelShift(x, thickness);
   anychart.core.drawers.move(path, this.isVertical, x, zero);
