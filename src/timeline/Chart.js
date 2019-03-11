@@ -100,9 +100,6 @@ anychart.timelineModule.Chart.prototype.calculate = function() {
   this.rangeSeriesList = [];
 
   var axisHeight = /** @type {number} */(this.axis().getOption('height'));
-  var zero = this.dataBounds.top + this.dataBounds.height / 2;
-  var upperZero = zero - axisHeight / 2;
-  var bottomZero = zero + axisHeight / 2;
 
   /**
    * Checks if given value is inside range min and max.

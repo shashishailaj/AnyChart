@@ -111,7 +111,7 @@ anychart.timelineModule.series.Event.prototype.resolveAutoAnchor = function(posi
 
   if (direction == anychart.enums.EventMarkerDirection.UP) {
     return anychart.enums.Anchor.CENTER_BOTTOM;
-  } else if (direction == anychart.enums.EventMarkerDirection.DOWN) {
+  } else {
     return anychart.enums.Anchor.CENTER_TOP;
   }
 };
