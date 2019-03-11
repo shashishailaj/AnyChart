@@ -224,6 +224,11 @@ anychart.timelineModule.Chart.prototype.calculate = function() {
 
   }
 
+  this.dateMin = dateMin;
+  this.dateMax = dateMax;
+  if (this.autoRange_)
+    this.scale().setRange(this.dateMin, this.dateMax);
+
   //region where event series length is calculated
   for (var i = 0; i < this.eventSeriesList.length; i++) {
     series = this.eventSeriesList[i];
@@ -236,7 +241,7 @@ anychart.timelineModule.Chart.prototype.calculate = function() {
           return valueInsideRange(date, value.start, value.end);
         return false;
       });
-      var minLength = 0;
+      var minLength = anychart.utils.normalizeSize(series.connector().getOption('length'), this.dataBounds.height);
       for (var j = 0; j < intersectingRanges.length; j++) {
         var range = intersectingRanges[j];
         if (minLength < (range.height + range.base))
@@ -253,7 +258,8 @@ anychart.timelineModule.Chart.prototype.calculate = function() {
     series = this.eventSeriesList[i];
     var factory = series.labels();
     var it = series.getResetIterator();
-    var needsCreateLabels = factory.getLabelsCount() == 0;
+    var needsCreateLabels = factory.labelsCount() == 0;
+    var direction = series.getFinalDirection();
     while (it.advance()) {
       var label;
       if (needsCreateLabels) {
@@ -267,13 +273,26 @@ anychart.timelineModule.Chart.prototype.calculate = function() {
 
       var bounds = label.getTextElement().getBounds();
       var date = it.get('x');
-      debugger;
-      points.push({bounds: bounds, date: date, series: series, id: it.getIndex()});
+      bounds.top = it.meta('minLength');
+      bounds.left = this.scale().transform(date) * this.dataBounds.width;
+      points.push({bounds: bounds, date: date, series: series, id: it.getIndex(), direction: direction});
+    }
+  }
+
+  points = points.sort(function(a, b) {return a.date - b.date;});
+  for (var i = 0; i < points.length; i++) {
+    var firstPoint = points[i];
+    for (var k = i + 1; k < points.length; k++) {
+      var secondPoint = points[k];
+      if (firstPoint.bounds.intersection(secondPoint.bounds) && firstPoint.direction == secondPoint.direction) {
+        var secondPointIterator = secondPoint.series.getResetIterator();
+        secondPointIterator.select(secondPoint.id);
+        var length = secondPointIterator.meta('minLength');
+        secondPointIterator.meta('minLength', length + firstPoint.bounds.height);
+      }
     }
   }
   //endregion
-  this.dateMin = dateMin;
-  this.dateMax = dateMax;
 };
 
 
@@ -298,8 +317,6 @@ anychart.timelineModule.Chart.prototype.drawContent = function(bounds) {
   }
 
   this.calculate();
-  if (this.autoRange_)
-    this.scale().setRange(this.dateMin, this.dateMax);
 
   var axis = this.getCreated('axis');
   if (this.hasInvalidationState(anychart.ConsistencyState.SCALE_CHART_SCALES)) {
