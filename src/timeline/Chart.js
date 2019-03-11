@@ -232,11 +232,16 @@ anychart.timelineModule.Chart.prototype.calculate = function() {
   if (this.autoRange_)
     this.scale().setRange(this.dateMin, this.dateMax);
 
-  //region where event series length is calculated
+  var points = [];
+  //region where event series length is calculated and labels overlap data prepared
   for (var i = 0; i < this.eventSeriesList.length; i++) {
     series = this.eventSeriesList[i];
     var direction = series.getFinalDirection();
     it = series.getResetIterator();
+
+    var factory = series.labels();
+    var needsCreateLabels = factory.labelsCount() == 0;
+
     while (it.advance()) {
       var date = anychart.utils.normalizeTimestamp(it.get('x'));
       var intersectingRanges = stacks.filter(function(value) {
@@ -252,19 +257,8 @@ anychart.timelineModule.Chart.prototype.calculate = function() {
       }
       it.meta('minLength', minLength);
       it.meta('axisHeight', axisHeight);
-    }
-  }
-  //endregion
 
-  //region with event labels overlap handling
-  var points = [];
-  for (var i = 0; i < this.eventSeriesList.length; i++) {
-    series = this.eventSeriesList[i];
-    var factory = series.labels();
-    var it = series.getResetIterator();
-    var needsCreateLabels = factory.labelsCount() == 0;
-    var direction = series.getFinalDirection();
-    while (it.advance()) {
+      //preparing data for labels overlap calculation
       var label;
       if (needsCreateLabels) {
         var formatProvider = series.createLabelsContextProvider();
@@ -276,13 +270,14 @@ anychart.timelineModule.Chart.prototype.calculate = function() {
       label.draw();
 
       var bounds = label.getTextElement().getBounds();
-      var date = it.get('x');
       bounds.top = it.meta('minLength');
       bounds.left = this.scale().transform(date) * this.dataBounds.width;
       points.push({bounds: bounds, date: date, series: series, id: it.getIndex(), direction: direction});
     }
   }
+  //endregion
 
+  //region with event labels overlap handling
   points = points.sort(function(a, b) {return a.date - b.date;});
   for (var i = 0; i < points.length; i++) {
     var firstPoint = points[i];
@@ -339,49 +334,6 @@ anychart.timelineModule.Chart.prototype.drawContent = function(bounds) {
       series.draw();
     }
 
-    // //region where really bad things happen
-    // debugger;
-    // var points = [];
-    // this.eventSeriesList.forEach(function(series) {
-    //   var labelsCount = series.labels().getLabelsCount();
-    //   for (var i = 0; i < labelsCount; i++) {
-    //     var point = {};
-    //     var it = series.getResetIterator();
-    //     it.select(i);
-    //     point.bounds = series.labels().getLabel(i).getTextElement().getBounds();
-    //     point.date = it.get('x');
-    //     point.series = series;
-    //     point.id = i;
-    //     points.push(point);
-    //   }
-    // });
-    //
-    // var spikedRedraw = false;
-    // points = points.sort((a, b) => a.date - b.date);
-    // for (var i = 0; i < points.length; i++) {
-    //   var firstPoint = points[i];
-    //   for (var k = i + 1; k < points.length; k++) {
-    //     var secondPoint = points[k];
-    //     if (firstPoint.bounds.intersection(secondPoint.bounds)) {
-    //       var secondPointIterator = secondPoint.series.getResetIterator();
-    //       secondPointIterator.select(secondPoint.id);
-    //       var length = Math.max(secondPointIterator.meta('length'), secondPointIterator.meta('minLength'));
-    //       secondPointIterator.meta('minLength', length + 15);
-    //       spikedRedraw = true;
-    //     }
-    //   }
-    // }
-    //
-    // if (spikedRedraw) {
-    //   for (var i = 0; i < this.eventSeriesList.length; i++) {
-    //     var series = this.eventSeriesList[i];
-    //     series.invalidate(anychart.ConsistencyState.ALL, anychart.Signal.NEEDS_REDRAW);
-    //     series.parentBounds(this.dataBounds);
-    //     series.container(this.rootElement);
-    //     series.draw();
-    //   }
-    // }
-    // //endregion
     this.markConsistent(anychart.ConsistencyState.SERIES_CHART_SERIES);
   }
 
