@@ -493,7 +493,8 @@ anychart.timelineModule.Chart.prototype.drawContent = function(bounds) {
       this.rootElement.translate(0, -this.dataBounds.height / 2);
     }
 
-    this.invalidate(anychart.ConsistencyState.AXES_CHART_AXES | anychart.ConsistencyState.SERIES_CHART_SERIES | anychart.ConsistencyState.AXES_CHART_AXES_MARKERS);
+    this.invalidate(anychart.ConsistencyState.AXES_CHART_AXES | anychart.ConsistencyState.SERIES_CHART_SERIES |
+        anychart.ConsistencyState.AXES_CHART_AXES_MARKERS);
     this.markConsistent(anychart.ConsistencyState.BOUNDS);
   }
 
@@ -504,7 +505,8 @@ anychart.timelineModule.Chart.prototype.drawContent = function(bounds) {
     if (axis) {
       axis.scale(this.scale());
     }
-    this.invalidate(anychart.ConsistencyState.SERIES_CHART_SERIES | anychart.ConsistencyState.AXES_CHART_AXES);
+    this.invalidate(anychart.ConsistencyState.SERIES_CHART_SERIES | anychart.ConsistencyState.AXES_CHART_AXES |
+        anychart.ConsistencyState.AXES_CHART_AXES_MARKERS);
     this.markConsistent(anychart.ConsistencyState.SCALE_CHART_SCALES);
   }
 
@@ -536,6 +538,11 @@ anychart.timelineModule.Chart.prototype.drawContent = function(bounds) {
 
     for (i = 0; i < markers.length; i++) {
       var axesMarker = markers[i];
+      /*
+      When scale range changes - markers (except from text marker) do not redraw themselves.
+      Invalidating their bounds fixes this problem.
+       */
+      axesMarker.invalidate(anychart.ConsistencyState.BOUNDS);
       if (axesMarker) {
         axesMarker.suspendSignalsDispatching();
         if (!axesMarker.scale())
