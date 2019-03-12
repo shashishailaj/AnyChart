@@ -398,10 +398,22 @@ anychart.timelineModule.Chart.prototype.onAxisSignal_ = function(event) {
 anychart.timelineModule.Chart.prototype.scale = function(opt_value) {
   if (goog.isDef(opt_value)) {
     this.xScale_.setup(opt_value);
+    this.xScale_.listenSignals(this.scaleInvalidated_, this);
     return this;
   }
 
   return this.xScale_;
+};
+
+
+/**
+ * @param {anychart.SignalEvent} event
+ * @private
+ */
+anychart.timelineModule.Chart.prototype.scaleInvalidated_ = function(event) {
+  this.suspendSignalsDispatching();
+  this.invalidate(anychart.ConsistencyState.SCALE_CHART_SCALES, anychart.Signal.NEEDS_REDRAW);
+  this.resumeSignalsDispatching(true);
 };
 
 

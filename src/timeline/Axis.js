@@ -114,7 +114,7 @@ anychart.timelineModule.Axis.prototype.scale = function(opt_value) {
  * @private
  */
 anychart.timelineModule.Axis.prototype.scaleInvalidated_ = function(event) {
-  this.invalidate(anychart.ConsistencyState.AXIS_TICKS, anychart.Signal.NEEDS_REDRAW);
+  this.invalidate(anychart.ConsistencyState.AXIS_TICKS | anychart.ConsistencyState.AXIS_LABELS, anychart.Signal.NEEDS_REDRAW);
 };
 
 
