@@ -36,7 +36,6 @@ anychart.graphModule.Chart = function(opt_data) {
     null,
     this.handleMouseDown);
 
-
   /**
    * @type {Object.<string, anychart.graphModule.Chart.Node>}
    * @private
@@ -357,14 +356,24 @@ anychart.graphModule.Chart.prototype.handleMouseOverAndMove = function(event) {
  * @private
  * */
 anychart.graphModule.Chart.prototype.handleMouseWheel_ = function(event) {
-  var scale;
-  if (event.deltaY > 0) {
-    scale = 0.9;
-  } else if (event.deltaY < 0) {
-    scale = 1.1;
-  }
-  this.rootLayer.scale(scale, scale, event.clientX, event.clientY);
+  var scale = 1;
+  
+  var dy = goog.clamp(event.deltaY, -5, 5);
 
+  if (this.interactivity().getOption('zoomOnMouseWheel')) {
+    var step = .3 / Math.abs(dy);
+    if (dy > 0) {
+      scale = 1 - step;
+    } else if (dy < 0) {
+      scale = 1 + step;
+    }
+  this.rootLayer.scale(scale, scale, event.clientX, event.clientY);
+  }
+
+  if (this.interactivity().getOption('scrollOnMouseWheel')) {
+    this.rootLayer.translate(0, dy);
+  }
+  event.preventDefault();
 };
 
 

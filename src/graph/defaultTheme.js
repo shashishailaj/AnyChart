@@ -81,7 +81,7 @@ goog.mixin(goog.global['anychart']['themes']['defaultTheme'], {
     'interactivity': {
       'enabled': true,
       'zoomOnMouseWheel': true,
-      'scrollOnMouseWheel': true,
+      'scrollOnMouseWheel': false,
       'node': true,
       'magnetize': true
     }
