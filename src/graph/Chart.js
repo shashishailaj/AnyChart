@@ -357,8 +357,7 @@ anychart.graphModule.Chart.prototype.handleMouseOverAndMove = function(event) {
  * */
 anychart.graphModule.Chart.prototype.handleMouseWheel_ = function(event) {
   var scale = 1;
-  
-  var dy = goog.clamp(event.deltaY, -5, 5);
+  var dy = goog.math.clamp(event.deltaY, -5, 5);
 
   if (this.interactivity().getOption('zoomOnMouseWheel')) {
     var step = .3 / Math.abs(dy);
@@ -367,7 +366,7 @@ anychart.graphModule.Chart.prototype.handleMouseWheel_ = function(event) {
     } else if (dy < 0) {
       scale = 1 + step;
     }
-  this.rootLayer.scale(scale, scale, event.clientX, event.clientY);
+    this.rootLayer.scale(scale, scale, event.clientX, event.clientY);
   }
 
   if (this.interactivity().getOption('scrollOnMouseWheel')) {
