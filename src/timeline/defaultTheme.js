@@ -2,6 +2,9 @@ goog.provide('anychart.timelineModule.defaultTheme');
 
 goog.mixin(goog.global['anychart']['themes']['defaultTheme'], {
   'timeline': {
+    'defaultLineMarkerSettings': {
+      'zIndex': 37
+    },
     'axis': {
       'enabled': true,
       'zIndex': 35,

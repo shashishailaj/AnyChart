@@ -1,3 +1,7 @@
+//endregion
+//region -- Descriptors.
+
+
 goog.provide('anychart.timelineModule.Chart');
 
 
@@ -6,6 +10,7 @@ goog.require('anychart.core.ChartWithSeries');
 goog.require('anychart.core.IChart');
 goog.require('anychart.core.IPlot');
 goog.require('anychart.core.StateSettings');
+goog.require('anychart.core.axisMarkers.Line');
 goog.require('anychart.core.settings');
 goog.require('anychart.scales.GanttDateTime');
 goog.require('anychart.scales.Linear');
@@ -48,6 +53,8 @@ anychart.timelineModule.Chart = function() {
    * @private
    */
   this.autoRange_ = true;
+
+  this.lineAxesMarkers_ = [];
 };
 goog.inherits(anychart.timelineModule.Chart, anychart.core.ChartWithSeries);
 
@@ -61,18 +68,16 @@ goog.inherits(anychart.timelineModule.Chart, anychart.core.ChartWithSeries);
 anychart.timelineModule.Chart.prototype.SUPPORTED_CONSISTENCY_STATES =
     anychart.core.ChartWithSeries.prototype.SUPPORTED_CONSISTENCY_STATES |
     anychart.ConsistencyState.AXES_CHART_AXES |
-    anychart.ConsistencyState.SCALE_CHART_SCALES;
+    anychart.ConsistencyState.SCALE_CHART_SCALES |
+    anychart.ConsistencyState.AXES_CHART_AXES_MARKERS;
 
 
 /**
  * Supported consistency states.
  * @type {number}
  */
-anychart.timelineModule.Chart.prototype.SUPPORTED_SIGNALS = anychart.core.SeparateChart.prototype.SUPPORTED_SIGNALS;
-
-
-//endregion
-//region -- Descriptors.
+anychart.timelineModule.Chart.prototype.SUPPORTED_SIGNALS =
+    anychart.core.SeparateChart.prototype.SUPPORTED_SIGNALS;
 
 
 //endregion
@@ -82,6 +87,61 @@ anychart.timelineModule.Chart.prototype.SUPPORTED_SIGNALS = anychart.core.Separa
  * @type {number}
  */
 anychart.timelineModule.Chart.RANGE_BASE_Z_INDEX = 32;
+
+
+/**
+ * @return {anychart.core.axisMarkers.Line}
+ */
+anychart.timelineModule.Chart.prototype.createLineMarkerInstance = function() {
+  return new anychart.core.axisMarkers.Line();
+};
+
+
+/**
+ * Getter/setter for lineMarker.
+ * @param {(Object|boolean|null|number)=} opt_indexOrValue Chart line marker settings to set.
+ * @param {(Object|boolean|null)=} opt_value Chart line marker settings to set.
+ * @return {!(anychart.core.axisMarkers.Line|anychart.timelineModule.Chart)} Line marker instance by index or itself for method chaining.
+ */
+anychart.timelineModule.Chart.prototype.lineMarker = function(opt_indexOrValue, opt_value) {
+  var index, value;
+  index = anychart.utils.toNumber(opt_indexOrValue);
+  if (isNaN(index)) {
+    index = 0;
+    value = opt_indexOrValue;
+  } else {
+    index = /** @type {number} */(opt_indexOrValue);
+    value = opt_value;
+  }
+  var lineMarker = this.lineAxesMarkers_[index];
+  if (!lineMarker) {
+    lineMarker = this.createLineMarkerInstance();
+
+    var extendedThemes = this.createExtendedThemes(this.getThemes(), 'defaultLineMarkerSettings');
+    lineMarker.addThemes(extendedThemes);
+
+    lineMarker.setChart(this);
+    lineMarker.setDefaultLayout(anychart.enums.Layout.VERTICAL);
+    this.lineAxesMarkers_[index] = lineMarker;
+    lineMarker.listenSignals(this.onMarkersSignal, this);
+    this.invalidate(anychart.ConsistencyState.AXES_CHART_AXES_MARKERS, anychart.Signal.NEEDS_REDRAW);
+  }
+
+  if (goog.isDef(value)) {
+    lineMarker.setup(value);
+    return this;
+  } else {
+    return lineMarker;
+  }
+};
+
+
+/**
+ * @param {anychart.SignalEvent} event
+ */
+anychart.timelineModule.Chart.prototype.onMarkersSignal = function(event) {
+  this.invalidate(anychart.ConsistencyState.AXES_CHART_AXES_MARKERS, anychart.Signal.NEEDS_REDRAW);
+};
 
 
 /** @inheritDoc */
@@ -312,7 +372,7 @@ anychart.timelineModule.Chart.prototype.drawContent = function(bounds) {
       this.rootElement.translate(0, -this.dataBounds.height / 2);
     }
 
-    this.invalidate(anychart.ConsistencyState.AXES_CHART_AXES | anychart.ConsistencyState.SERIES_CHART_SERIES);
+    this.invalidate(anychart.ConsistencyState.AXES_CHART_AXES | anychart.ConsistencyState.SERIES_CHART_SERIES | anychart.ConsistencyState.AXES_CHART_AXES_MARKERS);
     this.markConsistent(anychart.ConsistencyState.BOUNDS);
   }
 
@@ -345,6 +405,22 @@ anychart.timelineModule.Chart.prototype.drawContent = function(bounds) {
       axis.draw();
     }
     this.markConsistent(anychart.ConsistencyState.AXES_CHART_AXES);
+  }
+
+  if (this.hasInvalidationState(anychart.ConsistencyState.AXES_CHART_AXES_MARKERS)) {
+    for (i = 0; i < this.lineAxesMarkers_.length; i++) {
+      var axesMarker = this.lineAxesMarkers_[i];
+      if (axesMarker) {
+        axesMarker.suspendSignalsDispatching();
+        if (!axesMarker.scale())
+          axesMarker.autoScale(this.xScale_);
+        axesMarker.parentBounds(this.dataBounds);
+        axesMarker.container(this.rootElement);
+        axesMarker.draw();
+        axesMarker.resumeSignalsDispatching(false);
+      }
+    }
+    this.markConsistent(anychart.ConsistencyState.AXES_CHART_AXES_MARKERS);
   }
 };
 
@@ -589,6 +665,7 @@ anychart.timelineModule.Chart.prototype.disposeInternal = function() {
   proto['zoomTo'] = proto.zoomTo;
   proto['getSeriesAt'] = proto.getSeriesAt;
   proto['scroll'] = proto.scroll;
+  proto['lineMarker'] = proto.lineMarker;
 })();
 //exports
 
