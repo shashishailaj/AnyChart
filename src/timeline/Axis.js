@@ -467,3 +467,14 @@ anychart.timelineModule.Axis.prototype.prepareLabels = function() {
   this.provideMeasurements();
   this.applyLabelsStyle();
 };
+
+
+//region -- Exports
+//exports
+(function() {
+  var proto = anychart.timelineModule.Axis.prototype;
+  proto['ticks'] = proto.ticks;
+  proto['labels'] = proto.labels;
+})();
+//exports
+//endregion
