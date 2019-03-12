@@ -11,6 +11,7 @@ goog.require('anychart.core.IChart');
 goog.require('anychart.core.IPlot');
 goog.require('anychart.core.StateSettings');
 goog.require('anychart.core.axisMarkers.Line');
+goog.require('anychart.core.axisMarkers.Range');
 goog.require('anychart.core.axisMarkers.Text');
 goog.require('anychart.core.settings');
 goog.require('anychart.scales.GanttDateTime');
@@ -98,12 +99,54 @@ anychart.timelineModule.Chart.prototype.SUPPORTED_SIGNALS =
 
 
 //endregion
-//region -- Chart Infrastructure Overrides.
+//region -- Axis markers
 /**
- * Base z index of range series, used for z index calculation.
- * @type {number}
+ * Getter/setter for rangeMarker.
+ * @param {(Object|boolean|null|number)=} opt_indexOrValue Chart range marker settings to set.
+ * @param {(Object|boolean|null)=} opt_value Chart range marker settings to set.
+ * @return {!(anychart.core.axisMarkers.Range|anychart.timelineModule.Chart)} Range marker instance by index or itself for chaining call.
  */
-anychart.timelineModule.Chart.RANGE_BASE_Z_INDEX = 32;
+anychart.timelineModule.Chart.prototype.rangeMarker = function(opt_indexOrValue, opt_value) {
+  var index, value;
+  index = anychart.utils.toNumber(opt_indexOrValue);
+  if (isNaN(index)) {
+    index = 0;
+    value = opt_indexOrValue;
+  } else {
+    index = /** @type {number} */(opt_indexOrValue);
+    value = opt_value;
+  }
+  var rangeMarker = this.rangeAxesMarkers_[index];
+  if (!rangeMarker) {
+    rangeMarker = this.createRangeMarkerInstance();
+
+    var extendedThemes = this.createExtendedThemes(this.getThemes(), 'defaultRangeMarkerSettings');
+    rangeMarker.addThemes(extendedThemes);
+
+    rangeMarker.setChart(this);
+    rangeMarker.setDefaultLayout(anychart.enums.Layout.VERTICAL);
+    this.rangeAxesMarkers_[index] = rangeMarker;
+    rangeMarker.listenSignals(this.onMarkersSignal, this);
+    this.invalidate(anychart.ConsistencyState.AXES_CHART_AXES_MARKERS | anychart.ConsistencyState.SCALE_CHART_SCALES_STATISTICS, anychart.Signal.NEEDS_REDRAW);
+  }
+
+  if (goog.isDef(value)) {
+    rangeMarker.setup(value);
+    return this;
+  } else {
+    return rangeMarker;
+  }
+};
+
+
+/**
+ * Create rangeMarker instance.
+ * @return {!(anychart.core.axisMarkers.Range)}
+ * @protected
+ */
+anychart.timelineModule.Chart.prototype.createRangeMarkerInstance = function() {
+  return new anychart.core.axisMarkers.Range();
+};
 
 
 /**
@@ -209,6 +252,15 @@ anychart.timelineModule.Chart.prototype.createLineMarkerInstance = function() {
 anychart.timelineModule.Chart.prototype.onMarkersSignal = function(event) {
   this.invalidate(anychart.ConsistencyState.AXES_CHART_AXES_MARKERS, anychart.Signal.NEEDS_REDRAW);
 };
+
+
+//endregion
+//region -- Chart Infrastructure Overrides.
+/**
+ * Base z index of range series, used for z index calculation.
+ * @type {number}
+ */
+anychart.timelineModule.Chart.RANGE_BASE_Z_INDEX = 32;
 
 
 /** @inheritDoc */
@@ -738,6 +790,8 @@ anychart.timelineModule.Chart.prototype.disposeInternal = function() {
   proto['getSeriesAt'] = proto.getSeriesAt;
   proto['scroll'] = proto.scroll;
   proto['lineMarker'] = proto.lineMarker;
+  proto['textMarker'] = proto.textMarker;
+  proto['rangeMarker'] = proto.rangeMarker;
 })();
 //exports
 
