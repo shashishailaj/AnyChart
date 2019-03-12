@@ -295,183 +295,185 @@ anychart.timelineModule.Chart.prototype.calculate = function() {
   var stacked = true;
   var stacks = [];
 
-  for (var i = 0; i < this.seriesList.length; i++) {
-    var series = this.seriesList[i];
-    var seriesType = series.seriesType();
+  if (this.hasInvalidationState(anychart.ConsistencyState.SERIES_CHART_SERIES | anychart.ConsistencyState.SCALE_CHART_SCALES)) {
+    for (var i = 0; i < this.seriesList.length; i++) {
+      var series = this.seriesList[i];
+      var seriesType = series.seriesType();
 
-    switch (seriesType) {
-      case anychart.enums.TimelineSeriesType.EVENT:
-        this.eventSeriesList.push(series);
-        break;
-      case anychart.enums.TimelineSeriesType.RANGE:
-        this.rangeSeriesList.push(series);
-        break;
-    }
-
-    //region searching min/max values
-    var it = series.getResetIterator();
-    if (seriesType == anychart.enums.TimelineSeriesType.EVENT) {
-      while (it.advance()) {
-        var date = anychart.utils.normalizeTimestamp(it.get('x'));
-        dateMin = Math.min(dateMin, date);
-        dateMax = Math.max(dateMax, date);
+      switch (seriesType) {
+        case anychart.enums.TimelineSeriesType.EVENT:
+          this.eventSeriesList.push(series);
+          break;
+        case anychart.enums.TimelineSeriesType.RANGE:
+          this.rangeSeriesList.push(series);
+          break;
       }
-    } else if (seriesType == anychart.enums.TimelineSeriesType.RANGE) {
-      while (it.advance()) {
-        var start = anychart.utils.normalizeTimestamp(it.get('start'));
-        var end = anychart.utils.normalizeTimestamp(it.get('end'));
-        if (!isNaN(end)) {
-          dateMin = Math.min(dateMin, end);
-          dateMax = Math.max(dateMax, end);
+
+      //region searching min/max values
+      var it = series.getResetIterator();
+      if (seriesType == anychart.enums.TimelineSeriesType.EVENT) {
+        while (it.advance()) {
+          var date = anychart.utils.normalizeTimestamp(it.get('x'));
+          dateMin = Math.min(dateMin, date);
+          dateMax = Math.max(dateMax, date);
         }
-
-        dateMin = Math.min(dateMin, start);
-        dateMax = Math.max(dateMax, start);
-      }
-    }
-    //endregion
-
-    //region setting auto directions for series if needed
-    if (series.getOption('direction') == anychart.enums.EventMarkerDirection.AUTO) {
-      if (series.seriesType() == anychart.enums.TimelineSeriesType.RANGE) {
-        series.autoDirection(directions[rangeNum & 1]);
-        rangeNum++;
-      } else if (series.seriesType() == anychart.enums.TimelineSeriesType.EVENT) {
-        series.autoDirection(directions[eventNum & 1]);
-        eventNum++;
-      }
-    }
-    //endregion
-
-    //region obtaining drawing plan for series
-    var drawingPlan = series.getScatterDrawingPlan(false, true);
-    this.drawingPlans.push(drawingPlan);
-    if (drawingPlan.series.getType() == anychart.enums.TimelineSeriesType.RANGE) {
-      this.drawingPlansRange.push(drawingPlan);
-    }
-    //endregion
-
-    //region stacking ranges
-    if (drawingPlan.series.getType() == anychart.enums.TimelineSeriesType.RANGE) {
-      drawingPlan.series.zIndex(anychart.timelineModule.Chart.RANGE_BASE_Z_INDEX - (i / 100));
-      var data = drawingPlan.data;
-      if (stacked) {
-        for (var k = 0; k < data.length; k++) {
-          var point = data[k];
-          var stack = {};
-          stack.start = point.data['start'];
-          stack.end = point.data['end'];
-          stack.direction = /** @type {anychart.enums.EventMarkerDirection} */(drawingPlan.series.getFinalDirection());
-
-          // find in already stacked ranges all of those, that contain current range start or end value
-          var intersectingStacks = stacks.filter(function(value) {
-            if (stack.direction == value.direction)
-              return valueInsideRange(stack.start, value.start, value.end) ||
-                     valueInsideRange(stack.end, value.start, value.end) ||
-                     valueInsideRange(value.start, stack.start, stack.end) ||
-                     valueInsideRange(value.end, stack.start, stack.end);
-            return false;
-          });
-
-          var seriesHeight = /** @type {number} */(series.getOption('height'));
-          seriesHeight = anychart.utils.normalizeSize(seriesHeight, this.dataBounds.height);
-          // no intersections, so it's placed on the first level
-          if (intersectingStacks.length == 0) {
-            stack.height = seriesHeight;
-            stack.base = 0;
-            stack.stackLevel = 1;
-            stacks.push(stack);
-          } else {// if there are intersections - find range that is stacked the highest, so that we stack above it
-            var stackLevel = 0;
-            var baseHeight = 0;
-            for (var j = 0; j < intersectingStacks.length; j++) {
-              if (intersectingStacks[j].stackLevel > stackLevel) {
-                stackLevel = intersectingStacks[j].stackLevel;
-                baseHeight = intersectingStacks[j].base + intersectingStacks[j].height;
-              }
-            }
-            stackLevel++;
-
-            stack.base = baseHeight;
-            stack.height = seriesHeight;
-            stack.stackLevel = stackLevel;
-            stacks.push(stack);
+      } else if (seriesType == anychart.enums.TimelineSeriesType.RANGE) {
+        while (it.advance()) {
+          var start = anychart.utils.normalizeTimestamp(it.get('start'));
+          var end = anychart.utils.normalizeTimestamp(it.get('end'));
+          if (!isNaN(end)) {
+            dateMin = Math.min(dateMin, end);
+            dateMax = Math.max(dateMax, end);
           }
 
-          point.meta['stackLevel'] = stack.stackLevel;
-          point.meta['axisHeight'] = axisHeight;
+          dateMin = Math.min(dateMin, start);
+          dateMax = Math.max(dateMax, start);
         }
+      }
+      //endregion
+
+      //region setting auto directions for series if needed
+      if (series.getOption('direction') == anychart.enums.EventMarkerDirection.AUTO) {
+        if (series.seriesType() == anychart.enums.TimelineSeriesType.RANGE) {
+          series.autoDirection(directions[rangeNum & 1]);
+          rangeNum++;
+        } else if (series.seriesType() == anychart.enums.TimelineSeriesType.EVENT) {
+          series.autoDirection(directions[eventNum & 1]);
+          eventNum++;
+        }
+      }
+      //endregion
+
+      //region obtaining drawing plan for series
+      var drawingPlan = series.getScatterDrawingPlan(false, true);
+      this.drawingPlans.push(drawingPlan);
+      if (drawingPlan.series.getType() == anychart.enums.TimelineSeriesType.RANGE) {
+        this.drawingPlansRange.push(drawingPlan);
+      }
+      //endregion
+
+      //region stacking ranges
+      if (drawingPlan.series.getType() == anychart.enums.TimelineSeriesType.RANGE) {
+        drawingPlan.series.zIndex(anychart.timelineModule.Chart.RANGE_BASE_Z_INDEX - (i / 100));
+        var data = drawingPlan.data;
+        if (stacked) {
+          for (var k = 0; k < data.length; k++) {
+            var point = data[k];
+            var stack = {};
+            stack.start = point.data['start'];
+            stack.end = point.data['end'];
+            stack.direction = /** @type {anychart.enums.EventMarkerDirection} */(drawingPlan.series.getFinalDirection());
+
+            // find in already stacked ranges all of those, that contain current range start or end value
+            var intersectingStacks = stacks.filter(function(value) {
+              if (stack.direction == value.direction)
+                return valueInsideRange(stack.start, value.start, value.end) ||
+                    valueInsideRange(stack.end, value.start, value.end) ||
+                    valueInsideRange(value.start, stack.start, stack.end) ||
+                    valueInsideRange(value.end, stack.start, stack.end);
+              return false;
+            });
+
+            var seriesHeight = /** @type {number} */(series.getOption('height'));
+            seriesHeight = anychart.utils.normalizeSize(seriesHeight, this.dataBounds.height);
+            // no intersections, so it's placed on the first level
+            if (intersectingStacks.length == 0) {
+              stack.height = seriesHeight;
+              stack.base = 0;
+              stack.stackLevel = 1;
+              stacks.push(stack);
+            } else {// if there are intersections - find range that is stacked the highest, so that we stack above it
+              var stackLevel = 0;
+              var baseHeight = 0;
+              for (var j = 0; j < intersectingStacks.length; j++) {
+                if (intersectingStacks[j].stackLevel > stackLevel) {
+                  stackLevel = intersectingStacks[j].stackLevel;
+                  baseHeight = intersectingStacks[j].base + intersectingStacks[j].height;
+                }
+              }
+              stackLevel++;
+
+              stack.base = baseHeight;
+              stack.height = seriesHeight;
+              stack.stackLevel = stackLevel;
+              stacks.push(stack);
+            }
+
+            point.meta['stackLevel'] = stack.stackLevel;
+            point.meta['axisHeight'] = axisHeight;
+          }
+        }
+      }
+      //endregion
+
+    }
+
+    this.dateMin = dateMin;
+    this.dateMax = dateMax;
+    if (this.autoRange_)
+      this.scale().setRange(this.dateMin, this.dateMax);
+
+    var points = [];
+    //region where event series length is calculated and labels overlap data prepared
+    for (var i = 0; i < this.eventSeriesList.length; i++) {
+      series = this.eventSeriesList[i];
+      var direction = series.getFinalDirection();
+      it = series.getResetIterator();
+
+      var factory = series.labels();
+      var needsCreateLabels = factory.labelsCount() == 0;
+
+      while (it.advance()) {
+        var date = anychart.utils.normalizeTimestamp(it.get('x'));
+        var intersectingRanges = stacks.filter(function(value) {
+          if (direction == value.direction)
+            return valueInsideRange(date, value.start, value.end);
+          return false;
+        });
+        var minLength = anychart.utils.normalizeSize(series.connector().getOption('length'), this.dataBounds.height);
+        for (var j = 0; j < intersectingRanges.length; j++) {
+          var range = intersectingRanges[j];
+          if (minLength < (range.height + range.base))
+            minLength = (range.height + range.base) + gap;
+        }
+        it.meta('minLength', minLength);
+        it.meta('axisHeight', axisHeight);
+
+        //preparing data for labels overlap calculation
+        var label;
+        if (needsCreateLabels) {
+          var formatProvider = series.createLabelsContextProvider();
+          var positionProvider = series.createPositionProvider(anychart.enums.Position.CENTER);
+          label = factory.add(formatProvider, positionProvider);
+        } else {
+          label = factory.getLabel(it.getIndex());
+        }
+        label.draw();
+
+        var bounds = label.getTextElement().getBounds();
+        bounds.top = it.meta('minLength');
+        bounds.left = this.scale().transform(date) * this.dataBounds.width;
+        points.push({bounds: bounds, date: date, series: series, id: it.getIndex(), direction: direction});
       }
     }
     //endregion
 
-  }
-
-  this.dateMin = dateMin;
-  this.dateMax = dateMax;
-  if (this.autoRange_)
-    this.scale().setRange(this.dateMin, this.dateMax);
-
-  var points = [];
-  //region where event series length is calculated and labels overlap data prepared
-  for (var i = 0; i < this.eventSeriesList.length; i++) {
-    series = this.eventSeriesList[i];
-    var direction = series.getFinalDirection();
-    it = series.getResetIterator();
-
-    var factory = series.labels();
-    var needsCreateLabels = factory.labelsCount() == 0;
-
-    while (it.advance()) {
-      var date = anychart.utils.normalizeTimestamp(it.get('x'));
-      var intersectingRanges = stacks.filter(function(value) {
-        if (direction == value.direction)
-          return valueInsideRange(date, value.start, value.end);
-        return false;
-      });
-      var minLength = anychart.utils.normalizeSize(series.connector().getOption('length'), this.dataBounds.height);
-      for (var j = 0; j < intersectingRanges.length; j++) {
-        var range = intersectingRanges[j];
-        if (minLength < (range.height + range.base))
-          minLength = (range.height + range.base) + gap;
-      }
-      it.meta('minLength', minLength);
-      it.meta('axisHeight', axisHeight);
-
-      //preparing data for labels overlap calculation
-      var label;
-      if (needsCreateLabels) {
-        var formatProvider = series.createLabelsContextProvider();
-        var positionProvider = series.createPositionProvider(anychart.enums.Position.CENTER);
-        label = factory.add(formatProvider, positionProvider);
-      } else {
-        label = factory.getLabel(it.getIndex());
-      }
-      label.draw();
-
-      var bounds = label.getTextElement().getBounds();
-      bounds.top = it.meta('minLength');
-      bounds.left = this.scale().transform(date) * this.dataBounds.width;
-      points.push({bounds: bounds, date: date, series: series, id: it.getIndex(), direction: direction});
-    }
-  }
-  //endregion
-
-  //region with event labels overlap handling
-  points = points.sort(function(a, b) {return a.date - b.date;});
-  for (var i = 0; i < points.length; i++) {
-    var firstPoint = points[i];
-    for (var k = i + 1; k < points.length; k++) {
-      var secondPoint = points[k];
-      if (firstPoint.bounds.intersection(secondPoint.bounds) && firstPoint.direction == secondPoint.direction) {
-        var secondPointIterator = secondPoint.series.getResetIterator();
-        secondPointIterator.select(secondPoint.id);
-        var length = secondPointIterator.meta('minLength');
-        secondPointIterator.meta('minLength', length + firstPoint.bounds.height + gap);
+    //region with event labels overlap handling
+    points = points.sort(function(a, b) {return a.date - b.date;});
+    for (var i = 0; i < points.length; i++) {
+      var firstPoint = points[i];
+      for (var k = i + 1; k < points.length; k++) {
+        var secondPoint = points[k];
+        if (firstPoint.bounds.intersection(secondPoint.bounds) && firstPoint.direction == secondPoint.direction) {
+          var secondPointIterator = secondPoint.series.getResetIterator();
+          secondPointIterator.select(secondPoint.id);
+          var length = secondPointIterator.meta('minLength');
+          secondPointIterator.meta('minLength', length + firstPoint.bounds.height + gap);
+        }
       }
     }
+    //endregion
   }
-  //endregion
 };
 
 
