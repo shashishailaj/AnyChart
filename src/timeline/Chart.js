@@ -11,6 +11,7 @@ goog.require('anychart.core.IChart');
 goog.require('anychart.core.IPlot');
 goog.require('anychart.core.StateSettings');
 goog.require('anychart.core.axisMarkers.Line');
+goog.require('anychart.core.axisMarkers.Text');
 goog.require('anychart.core.settings');
 goog.require('anychart.scales.GanttDateTime');
 goog.require('anychart.scales.Linear');
@@ -54,7 +55,23 @@ anychart.timelineModule.Chart = function() {
    */
   this.autoRange_ = true;
 
+  /**
+   * @type {Array.<anychart.core.axisMarkers.Line>}
+   * @private
+   */
   this.lineAxesMarkers_ = [];
+
+  /**
+   * @type {Array.<anychart.core.axisMarkers.Text>}
+   * @private
+   */
+  this.textAxesMarkers_ = [];
+
+  /**
+   * @type {Array.<anychart.core.axisMarkers.Range>}
+   * @private
+   */
+  this.rangeAxesMarkers_ = [];
 };
 goog.inherits(anychart.timelineModule.Chart, anychart.core.ChartWithSeries);
 
@@ -90,10 +107,52 @@ anychart.timelineModule.Chart.RANGE_BASE_Z_INDEX = 32;
 
 
 /**
- * @return {anychart.core.axisMarkers.Line}
+ * Getter/setter for textMarker.
+ * @param {(Object|boolean|null|number)=} opt_indexOrValue Chart line marker settings to set.
+ * @param {(Object|boolean|null)=} opt_value Chart line marker settings to set.
+ * @return {!(anychart.core.axisMarkers.Text|anychart.timelineModule.Chart)} Text marker instance by index or itself for chaining call.
  */
-anychart.timelineModule.Chart.prototype.createLineMarkerInstance = function() {
-  return new anychart.core.axisMarkers.Line();
+anychart.timelineModule.Chart.prototype.textMarker = function(opt_indexOrValue, opt_value) {
+  var index, value;
+  index = anychart.utils.toNumber(opt_indexOrValue);
+  if (isNaN(index)) {
+    index = 0;
+    value = opt_indexOrValue;
+  } else {
+    index = /** @type {number} */(opt_indexOrValue);
+    value = opt_value;
+  }
+  var textMarker = this.textAxesMarkers_[index];
+  if (!textMarker) {
+    textMarker = this.createTextMarkerInstance();
+
+    // textMarker.addThemes('cartesianBase.defaultTextMarkerSettings');
+    var extendedThemes = this.createExtendedThemes(this.getThemes(), 'defaultTextMarkerSettings');
+    textMarker.addThemes(extendedThemes);
+
+    textMarker.setChart(this);
+    textMarker.setDefaultLayout(anychart.enums.Layout.VERTICAL);
+    this.textAxesMarkers_[index] = textMarker;
+    textMarker.listenSignals(this.onMarkersSignal, this);
+    this.invalidate(anychart.ConsistencyState.AXES_CHART_AXES_MARKERS, anychart.Signal.NEEDS_REDRAW);
+  }
+
+  if (goog.isDef(value)) {
+    textMarker.setup(value);
+    return this;
+  } else {
+    return textMarker;
+  }
+};
+
+
+/**
+ * Create textMarker instance.
+ * @return {anychart.core.axisMarkers.Text}
+ * @protected
+ */
+anychart.timelineModule.Chart.prototype.createTextMarkerInstance = function() {
+  return new anychart.core.axisMarkers.Text();
 };
 
 
@@ -133,6 +192,14 @@ anychart.timelineModule.Chart.prototype.lineMarker = function(opt_indexOrValue, 
   } else {
     return lineMarker;
   }
+};
+
+
+/**
+ * @return {anychart.core.axisMarkers.Line}
+ */
+anychart.timelineModule.Chart.prototype.createLineMarkerInstance = function() {
+  return new anychart.core.axisMarkers.Line();
 };
 
 
@@ -408,8 +475,13 @@ anychart.timelineModule.Chart.prototype.drawContent = function(bounds) {
   }
 
   if (this.hasInvalidationState(anychart.ConsistencyState.AXES_CHART_AXES_MARKERS)) {
-    for (i = 0; i < this.lineAxesMarkers_.length; i++) {
-      var axesMarker = this.lineAxesMarkers_[i];
+    var markers = goog.array.concat(
+        this.lineAxesMarkers_,
+        this.rangeAxesMarkers_,
+        this.textAxesMarkers_);
+
+    for (i = 0; i < markers.length; i++) {
+      var axesMarker = markers[i];
       if (axesMarker) {
         axesMarker.suspendSignalsDispatching();
         if (!axesMarker.scale())

@@ -2,8 +2,15 @@ goog.provide('anychart.timelineModule.defaultTheme');
 
 goog.mixin(goog.global['anychart']['themes']['defaultTheme'], {
   'timeline': {
+    'defaultRangeMarkerSettings': {
+      'zIndex': 37.1
+    },
     'defaultLineMarkerSettings': {
-      'zIndex': 37
+      'zIndex': 37.2
+    },
+    'defaultTextMarkerSettings': {
+      'zIndex': 37.3,
+      'align': anychart.enums.Align.TOP
     },
     'axis': {
       'enabled': true,
