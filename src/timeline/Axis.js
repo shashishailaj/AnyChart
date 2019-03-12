@@ -450,10 +450,9 @@ anychart.timelineModule.Axis.prototype.applyLabelsStyle = function() {
   var labelsSettings = this.labels();
   var ticksArray = this.getTicks();
   for (var i = 0; i < this.texts_.length; i++) {
-    // var date = new Date(ticksArray[i]).toLocaleDateString("en-US");
-    var date = anychart.format.date(ticksArray[i]);
+    var dateString = anychart.format.date(ticksArray[i]);
     var text = this.texts_[i];
-    text.text(date);
+    text.text(dateString);
     text.style(labelsSettings.flatten());
     text.prepareComplexity();
     text.applySettings();

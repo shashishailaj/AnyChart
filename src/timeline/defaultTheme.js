@@ -37,8 +37,7 @@ goog.mixin(goog.global['anychart']['themes']['defaultTheme'], {
            * @return {string}
            */
           'titleFormat': function() {
-            var date = anychart.format.parseDateTime(this['x']);
-            return anychart.format.date(date);
+            return this['x'];
           }
         }
       },
@@ -60,7 +59,7 @@ goog.mixin(goog.global['anychart']['themes']['defaultTheme'], {
           'format': function() {
             var start = this['start'];
             var end = this['end'];
-            return 'Start: ' + anychart.format.date(start) + '\nEnd: ' + (isNaN(end) ? 'no end date' : anychart.format.date(end));
+            return 'Start: ' + start + '\nEnd: ' + (isNaN(end) ? 'no end date' : end);
           }
         }
       }
