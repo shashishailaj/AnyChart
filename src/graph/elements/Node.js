@@ -358,6 +358,7 @@ anychart.graphModule.elements.Node.prototype.createFormatProvider = function(nod
   }
   var values = {};
   values['id'] = {value: node.nodeId, type: anychart.enums.TokenType.STRING};
+  values['type'] = {value: anychart.graphModule.Chart.Element.NODE, type: anychart.enums.TokenType.STRING};
 
   return /** @type {anychart.format.Context} */(this.formatProvider_.propagate(values));
 };

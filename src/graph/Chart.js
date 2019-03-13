@@ -10,6 +10,7 @@ goog.require('anychart.graphModule.elements.Layout');
 goog.require('anychart.graphModule.elements.Node');
 goog.require('goog.events.MouseWheelHandler');
 goog.require('goog.fx.Dragger');
+goog.require('goog.math.Coordinate');
 goog.require('goog.structs.Set');
 
 
@@ -75,14 +76,6 @@ anychart.graphModule.Chart = function(opt_data) {
   this.edges_ = {};
 
   /**
-   * Interactivity settings object.
-   * @type {?anychart.graphModule.elements.Interactivity}
-   * @private
-   * */
-  this.interactivity_ = null;
-
-
-  /**
    * Layer for edge's labels
    * */
   this.edgesLabelsLayer = this.edges().getLabelsLayer();
@@ -140,13 +133,13 @@ anychart.consistency.supportStates(anychart.graphModule.Chart, anychart.enums.St
  *  domElement: (acgraph.vector.Path|undefined),
  *  textElement: (anychart.core.ui.OptimizedText|undefined),
  *  connectedEdges: Array.<string>,
- *  coulumbX: (number|undefined),
- *  coulumbY: (number|undefined),
+ *  coulombX: (number|undefined),
+ *  coulombY: (number|undefined),
  *  harmonicX: (number|undefined),
  *  harmonicY: (number|undefined),
  *  velocityY: (number|undefined),
  *  velocityX: (number|undefined),
- *  coloumGroup: number,
+ *  subGraphId: (number|undefined),
  *  siblings: Array
  * }}
  * */
@@ -456,7 +449,6 @@ anychart.graphModule.Chart.prototype.setOffset = function() {
 
   var i;
 
-
   for (i = 0; i < length; i++) {
     var x = nodes[i].position.x;
     var y = nodes[i].position.y;
@@ -476,9 +468,7 @@ anychart.graphModule.Chart.prototype.setOffset = function() {
 
   mostBottom += -mostTop;
   for (i = 0; i < length; i++) {
-    y = nodes[i].position.y;
-    y += -mostTop;
-    nodes[i].position.y = y;
+    nodes[i].position.y += -mostTop;
   }
 
   mostRight += -mostLeft;
@@ -486,9 +476,19 @@ anychart.graphModule.Chart.prototype.setOffset = function() {
     nodes[i].position.x += -mostLeft;
   }
 
-  var mlt = Math.max(mostRight, mostBottom);
+  var maxSide;
+  var mlt;
 
-  var maxSide = this.contentBounds.width < this.contentBounds.height ? this.contentBounds.width : this.contentBounds.height;
+  if (mostRight > mostBottom) {
+    //horizontal chart
+    mlt = mostRight;
+    maxSide = this.contentBounds.width / 2 > this.contentBounds.height ? this.contentBounds.height : this.contentBounds.width;
+  } else {
+    //vertical
+    mlt = mostBottom;
+    maxSide = this.contentBounds.height > this.contentBounds.width ? this.contentBounds.width : this.contentBounds.height;
+  }
+
   var gap = maxSide * 0.1;
   mlt = (maxSide - gap) / (mlt ? mlt : 1);//zero division
 
@@ -743,7 +743,6 @@ anychart.graphModule.Chart.prototype.proceedNode_ = function(dataRow, i) {
     nodeObj.dataRow = i;
     nodeObj.connectedEdges = [];
     nodeObj.siblings = [];
-    nodeObj.coloumGroup = -1;
     nodeObj.currentState = anychart.SettingsState.NORMAL;
     nodeObj.position = {
       x: dataRow['x'],
@@ -786,6 +785,23 @@ anychart.graphModule.Chart.prototype.proceedEdge_ = function(edgeRow, i) {
     edge.dataRow = i;
     edge.currentState = anychart.SettingsState.NORMAL;
 
+    var sibling;
+    //check if two node already connected
+    for (i = 0; i < from.siblings.length; i++) {
+      sibling = from.siblings[i];
+      if (sibling == from.nodeId || sibling == to.nodeId) {
+        console.log('nodes already connected');
+        return;
+      }
+    }
+    for (i = 0; i < to.siblings.length; i++) {
+      sibling = from.siblings[i];
+      if (sibling == from.nodeId || sibling == to.nodeId) {
+        console.log('nodes already connected');
+        return;
+      }
+    }
+    //
     from.connectedEdges.push(edge.id);
     to.connectedEdges.push(edge.id);
     from.siblings.push(to.nodeId);
@@ -799,12 +815,13 @@ anychart.graphModule.Chart.prototype.proceedEdge_ = function(edgeRow, i) {
 /**
  * Setup group number for nodes.
  * If graph contains two or more unconnected nodes.
+ * @private
  * @suppress {deprecated}
  * */
-anychart.graphModule.Chart.prototype.setupGroupsForChart = function() {
+anychart.graphModule.Chart.prototype.setupGroupsForChart_ = function() {
   var nodes = this.getNodesArray();
 
-  function getSet (node) {//todo name!?
+  function getElementsSubgraph (node) {
     return [node.nodeId].concat(node.siblings);
   }
 
@@ -812,11 +829,11 @@ anychart.graphModule.Chart.prototype.setupGroupsForChart = function() {
    * @type {Array.<goog.structs.Set>}
 
    * */
-  var allNodes = [new goog.structs.Set(getSet(nodes[0]))];
+  var allNodes = [new goog.structs.Set(getElementsSubgraph(nodes[0]))];
 
   for (var i = 1, length = nodes.length; i < length; i++) {
     var currentNode = nodes[i];
-    var siblings = getSet(currentNode);
+    var siblings = getElementsSubgraph(currentNode);
     var isSubSet = false;
     var set = 0;
     for (var setLength = allNodes.length; set < setLength; set++) {
@@ -842,13 +859,12 @@ anychart.graphModule.Chart.prototype.setupGroupsForChart = function() {
     for (var groupElement = 0; groupElement < groupElements.length; groupElement++) {
       var nodeId = groupElements[groupElement];
       var node = this.getNodeById(nodeId);
-      var group = groupElements.length != 1 ? groupNumber : -1;
-      node.coloumGroup = group;
+      node.subGraphId = groupElements.length;
 
-      if (!(group in this.subGraphGroups_)) {
-        this.subGraphGroups_[group] = [];
+      if (!(groupNumber in this.subGraphGroups_)) {
+        this.subGraphGroups_[groupNumber] = [];
       }
-      this.subGraphGroups_[group].push(node.nodeId);
+      this.subGraphGroups_[groupNumber].push(node.nodeId);
     }
   }
 
@@ -856,14 +872,15 @@ anychart.graphModule.Chart.prototype.setupGroupsForChart = function() {
 
 
 /**
+ * Create node and edge object for manipulation
  * @private
  * */
 anychart.graphModule.Chart.prototype.proceedNewDataBeforeSetup_ = function() {
   var edges = this.data_['edges'],
     nodes = this.data_['nodes'],
+    dataRow,
     length,
-    i,
-    dataRow;
+    i;
 
   for (i = 0, length = nodes.getRowsCount(); i < length; i++) {
     dataRow = /**@type {Object}*/(nodes.getRow(i));
@@ -943,6 +960,9 @@ anychart.graphModule.Chart.prototype.onEdgeSignal_ = function(event) {
   ) {
     this.labelsSettingsInvalidated_(event);
   }
+  if (event.hasSignal(anychart.Signal.NEEDS_REDRAW_APPEARANCE)) {
+    this.invalidateState(anychart.enums.Store.GRAPH, anychart.enums.State.APPEARANCE, anychart.Signal.NEEDS_REDRAW_APPEARANCE);
+  }
 };
 
 
@@ -952,7 +972,7 @@ anychart.graphModule.Chart.prototype.onEdgeSignal_ = function(event) {
  * @private
  * */
 anychart.graphModule.Chart.prototype.onGroupSignal_ = function(event) {
-  console.log('signal');
+
   if (event.hasSignal(anychart.Signal.NEEDS_REDRAW |
     anychart.Signal.BOUNDS_CHANGED |
     anychart.Signal.NEEDS_REAPPLICATION |
@@ -1001,7 +1021,7 @@ anychart.graphModule.Chart.prototype.dataInvalidated_ = function(event) {
   ];
   this.proceedCurrentDataBeforeRemove_();
   this.proceedNewDataBeforeSetup_();
-  this.setupGroupsForChart();
+  this.setupGroupsForChart_();
   this.invalidateMultiState(anychart.enums.Store.GRAPH, statesForInvalidate, anychart.Signal.NEEDS_REDRAW);
 };
 
@@ -1017,17 +1037,17 @@ anychart.graphModule.Chart.prototype.dataInvalidated_ = function(event) {
  * @return {(anychart.graphModule.Chart|anychart.graphModule.elements.Node)}
  * */
 anychart.graphModule.Chart.prototype.nodes = function(opt_value) {
-  if (!this.nds_) {//todo rename
-    this.nds_ = new anychart.graphModule.elements.Node(this);
-    this.setupCreated('nodes', this.nds_);
-    this.nds_.setupElements();
-    this.nds_.listenSignals(this.onNodeSignal_, this);
+  if (!this.nodesSettingObject) {//todo rename
+    this.nodesSettingObject = new anychart.graphModule.elements.Node(this);
+    this.setupCreated('nodes', this.nodesSettingObject);
+    this.nodesSettingObject.setupElements();
+    this.nodesSettingObject.listenSignals(this.onNodeSignal_, this);
   }
   if (opt_value) {
-    this.nds_.setup(opt_value);
+    this.nodesSettingObject.setup(opt_value);
     return this;
   }
-  return this.nds_;
+  return this.nodesSettingObject;
 };
 
 
@@ -1037,14 +1057,14 @@ anychart.graphModule.Chart.prototype.nodes = function(opt_value) {
  * @suppress {checkTypes}
  * */
 anychart.graphModule.Chart.prototype.interactivity = function(opt_value) {
-  if (!this.interactivity_) {
-    this.interactivity_ = new anychart.graphModule.elements.Interactivity();
-    this.setupCreated('interactivity', this.interactivity_);
+  if (!this.interactivitySettingsObject_) {
+    this.interactivitySettingsObject_ = new anychart.graphModule.elements.Interactivity();
+    this.setupCreated('interactivity', this.interactivitySettingsObject_);
   }
   if (opt_value) {
     return this;
   }
-  return this.interactivity_;
+  return this.interactivitySettingsObject_;
 };
 
 
@@ -1056,20 +1076,22 @@ anychart.graphModule.Chart.prototype.interactivity = function(opt_value) {
  * */
 anychart.graphModule.Chart.prototype.groups = function(id, opt_value) {
   if (goog.isDefAndNotNull(id)) {
-    if (goog.isNull(this.groups_[id])) {
-      var group = new anychart.graphModule.elements.Group(this);
-      // group.setupElements();
-      group.listenSignals(this.onNodeSignal_, this);
-      this.groups_[id] = group;
+    if (goog.isDef(this.groups_[id])) {
+      if (goog.isNull(this.groups_[id])) {
+        var group = new anychart.graphModule.elements.Group(this);
+        // group.setupElements();
+        group.listenSignals(this.onNodeSignal_, this);
+        this.groups_[id] = group;
+      }
+      if (opt_value) {
+        this.groups_[id].setup(opt_value);
+        return this;
+      }
+      return this.groups_[id];
     } else {
       //todo warn no group
       return this;
     }
-    if (opt_value) {
-      this.groups_[id].setup(opt_value);
-      return this;
-    }
-    return this.groups_[id];
   }
   return this;
 };
@@ -1097,16 +1119,16 @@ anychart.graphModule.Chart.prototype.layout = function(opt_value) {
  * @return {(anychart.graphModule.Chart|anychart.graphModule.elements.Edge)}
  * */
 anychart.graphModule.Chart.prototype.edges = function(opt_value) {
-  if (!this.edge_) {
-    this.edge_ = new anychart.graphModule.elements.Edge(this);
-    this.setupCreated('edges', this.edge_);
-    this.edge_.setupElements();
-    this.edge_.listenSignals(this.onEdgeSignal_, this);
+  if (!this.edgeSettingsObject_) {
+    this.edgeSettingsObject_ = new anychart.graphModule.elements.Edge(this);
+    this.setupCreated('edges', this.edgeSettingsObject_);
+    this.edgeSettingsObject_.setupElements();
+    this.edgeSettingsObject_.listenSignals(this.onEdgeSignal_, this);
   }
   if (opt_value) {
     return this;
   }
-  return this.edge_;
+  return this.edgeSettingsObject_;
 };
 
 
@@ -1144,7 +1166,6 @@ anychart.graphModule.Chart.prototype.labels = function(opt_value) {
   if (!this.labelsSettings_) {
     this.labelsSettings_ = new anychart.core.ui.LabelsSettings();
     this.setupCreated('labels', this.labelsSettings_);
-    // this.labelsSettings_.listenSignals(this.labelsSettingsInvalidated_, this);
   }
 
   if (goog.isDef(opt_value)) {
@@ -1328,7 +1349,6 @@ anychart.graphModule.Chart.prototype.drawContent = function(bounds) {
   }
 
   if (this.hasStateInvalidation(anychart.enums.Store.GRAPH, anychart.graphModule.Chart.States.LAYOUT)) {
-    console.log('here');
     this.layout().getCoordinatesForCurrentLayout();
     this.markStateConsistent(anychart.enums.Store.GRAPH, anychart.graphModule.Chart.States.LAYOUT);
   }
@@ -1421,8 +1441,23 @@ anychart.graphModule.Chart.prototype.fit = function() {
  * @param {number} degree
  * */
 anychart.graphModule.Chart.prototype.rotate = function(degree) {
-  var coordinate = (/**@type {goog.math.Rect}*/(this.contentBounds)).getCenter();
-  this.rootLayer.rotate(degree, coordinate.getX(), coordinate.getY());
+  if (degree) {
+    var nodes = this.getNodesArray();
+    var center = this.contentBounds.getCenter();
+    for (var i = 0; i < nodes.length; i++) {
+      var node = nodes[i];
+      var coordinate = new goog.math.Coordinate(node.position.x, node.position.y);
+      coordinate.rotateDegrees(degree, center);
+      node.position.x = coordinate.getX();
+      node.position.y = coordinate.getY();
+    }
+    var states = [
+      anychart.graphModule.Chart.States.LABELS_STYLE,
+      anychart.enums.State.APPEARANCE
+    ];
+    this.invalidate(anychart.ConsistencyState.BOUNDS);
+    this.invalidateMultiState(anychart.enums.Store.GRAPH, states, anychart.Signal.NEEDS_REDRAW);
+  }
 };
 
 
@@ -1477,7 +1512,7 @@ anychart.graphModule.Chart.prototype.data = function(opt_value) {
     this.proceedCurrentDataBeforeRemove_();
     this.data_ = data;
     this.proceedNewDataBeforeSetup_();
-    this.setupGroupsForChart();
+    this.setupGroupsForChart_();
 
     var statesForInvalidate = [
       anychart.enums.State.DATA,
@@ -1519,7 +1554,15 @@ anychart.graphModule.Chart.prototype.serialize = function() {
 
   json['nodes'] = this.nodes().serialize();
   json['edges'] = this.edges().serialize();
-  // json['groups'] = this.groups().serialize();
+  json['groups'] = [];
+
+  for (i in this.groups_) {
+    var group = {};
+    group['id'] = i;
+    group['settings'] = this.groups(i).serialize();
+    json['groups'].push(group);
+  }
+
   json['interactivity'] = this.interactivity().serialize();
   //config['zoom'] = this.interactivity().serialize();
   return {'chart': json};
@@ -1537,8 +1580,14 @@ anychart.graphModule.Chart.prototype.setupByJSON = function(config, opt_default)
     this.edges().setupInternal(config['edges']);
   if ('nodes' in config)
     this.nodes().setupInternal(config['nodes']);
-  // if ('groups' in config)
-  //   this.nodes().setupInternal(config['groups']);
+
+  if ('groups' in config) {
+    var groups = config['groups'];
+      for (var i = 0; i < groups.length; i++) {
+        var group = groups[i];
+        this.groups(group['id'], group['settings']);
+      }
+  }
   if ('interactivity' in config)
     this.nodes().setupInternal(config['interactivity']);
   //zoom

@@ -292,6 +292,31 @@ anychart.graphModule.elements.Base.prototype.resolveLabelSettings = function(ele
 
 
 /** @inheritDoc */
+anychart.graphModule.elements.Base.prototype.setupByJSON = function(config, opt_default) {
+  anychart.graphModule.elements.Base.base(this, 'setupByJSON', config, opt_default);
+  if ('tooltip' in config) {
+    this.tooltip().setupInternal(config['tooltip'], opt_default);
+  }
+  this.normal_.setupInternal(config['normal'], opt_default);
+  this.hovered_.setupInternal(config['hovered'], opt_default);
+  this.selected_.setupInternal(config['selected'], opt_default);
+};
+
+
+/** @inheritDoc */
+anychart.graphModule.elements.Base.prototype.serialize = function() {
+  var json = anychart.graphModule.elements.Base.base(this, 'serialize');
+  if (this.tooltip)
+    json['tooltip'] = this.tooltip().serialize();
+  json['normal'] = this.normal_.serialize();
+  json['hovered'] = this.hovered_.serialize();
+  json['selected'] = this.selected_.serialize();
+
+  return json;
+};
+
+
+/** @inheritDoc */
 anychart.graphModule.elements.Base.prototype.disposeInternal = function() {
   goog.disposeAll(this.textPool_);
   goog.disposeAll(this.pathPool_);

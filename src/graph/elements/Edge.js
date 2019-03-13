@@ -142,6 +142,7 @@ anychart.graphModule.elements.Edge.prototype.createFormatProvider = function(edg
   this.formatProvider_.dataSource(iterator);
   values['id'] = {value: edge.id, type: anychart.enums.TokenType.STRING};
   values['to'] = {value: edge.to, type: anychart.enums.TokenType.STRING};
+  values['type'] = {value: anychart.graphModule.Chart.Element.EDGE, type: anychart.enums.TokenType.STRING};
   values['from'] = {value: edge.from, type: anychart.enums.TokenType.STRING};
   return /** @type {anychart.format.Context} */(this.formatProvider_.propagate(values));
 };

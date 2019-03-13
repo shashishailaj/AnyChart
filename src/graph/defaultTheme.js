@@ -5,6 +5,7 @@ goog.mixin(goog.global['anychart']['themes']['defaultTheme'], {
   'graph': {
 
     'labels': {
+      'enabled': false,
       'format': '{%id}',
       'fontSize': 8,
       'anchor': 'middle'
@@ -18,7 +19,13 @@ goog.mixin(goog.global['anychart']['themes']['defaultTheme'], {
       },
       'separator': {'enabled': true},
       'titleFormat': '',
-      'format': '{%id}'
+      /**
+       * @this{*}
+       * @return {*}
+       * */
+      'format': function() {
+        return this['type'];
+      }
     },
     'nodes': {
       'width': 15,

@@ -18,9 +18,13 @@ anychart.graphModule.elements.Layout = function(chart) {
     ['type', 0, anychart.Signal.NEEDS_REDRAW]
   ]);
 
-  this.func = {};
-  this.func[anychart.graphModule.elements.LayoutType.FORCE] = anychart.graphModule.elements.Layout.prototype.forceLayout_;
-  this.func[anychart.graphModule.elements.LayoutType.EXPLICIT] = anychart.graphModule.elements.Layout.prototype.explicitLayout_;
+  /**
+   * Object with layout functions.
+   * @type {Object.<anychart.graphModule.elements.LayoutType, Function>}
+   * */
+  this.layoutFunction = {};
+  this.layoutFunction[anychart.graphModule.elements.LayoutType.FORCE] = anychart.graphModule.elements.Layout.prototype.forceLayout_;
+  this.layoutFunction[anychart.graphModule.elements.LayoutType.EXPLICIT] = anychart.graphModule.elements.Layout.prototype.explicitLayout_;
 
   this.chart_ = chart;
 
@@ -68,8 +72,8 @@ anychart.graphModule.elements.LayoutType = {
  * Call layout function for current layout type.
  * */
 anychart.graphModule.elements.Layout.prototype.getCoordinatesForCurrentLayout = function() {
-  var type = this.getOption('type');
-  var layout = this.func[type];
+  var type = /**@type {anychart.graphModule.elements.LayoutType}*/(this.getOption('type'));
+  var layout = this.layoutFunction[type];
   layout.call(this);
 };
 
@@ -100,14 +104,11 @@ anychart.graphModule.elements.Layout.prototype.explicitLayout_ = function() {
  * @private
  * */
 anychart.graphModule.elements.Layout.prototype.forceLayout_ = function() {
-  //todo place randomly
-
-
-  var MAXIMUM_VELOCITY = 0.040;
+  var MAXIMUM_VELOCITY = 0.150;
   var MINIMUM_VELOCITY = -MAXIMUM_VELOCITY;
   var INITIAL_POSITION_FACTOR = 10;
-  var COULOMB_FORCE_FACTOR = 0.1;
-  var HARMONIC_FORCE_FACTOR = 1;
+  var COULOMB_FORCE_FACTOR = 0.9;
+  var HARMONIC_FORCE_FACTOR = 10;
   var ITERATION = 500;
 
   var nodes = this.chart_.getNodesArray();
@@ -126,21 +127,21 @@ anychart.graphModule.elements.Layout.prototype.forceLayout_ = function() {
 
 
   //repel two coordinates
-  function coulumb(x1, y1, x2, y2) {
-    var coulumbX, coulumbY;
+  function coulomb(x1, y1, x2, y2) {
+    var coulombX, coulombY;
     var distanceX = x1 - x2;
     var distanceY = y1 - y2;
     var distance = Math.sqrt(distanceX * distanceX + distanceY * distanceY);
     if (distance != 0) {
       var directX = distanceX / distance;
       var directY = distanceY / distance;
-      coulumbX = directX / distance * COULOMB_FORCE_FACTOR;
-      coulumbY = directY / distance * COULOMB_FORCE_FACTOR;
+      coulombX = directX / distance * COULOMB_FORCE_FACTOR;
+      coulombY = directY / distance * COULOMB_FORCE_FACTOR;
     } else {
-      coulumbX = Math.random() - 0.5;
-      coulumbY = Math.random() - 0.5;
+      coulombX = Math.random() - 0.5;
+      coulombY = Math.random() - 0.5;
     }
-    return [coulumbX, coulumbY];
+    return [coulombX, coulombY];
   }
 
   //pull two coordinates
@@ -166,14 +167,14 @@ anychart.graphModule.elements.Layout.prototype.forceLayout_ = function() {
 
     for (i = 0, length = nodes.length; i < length; i++) {
       node = nodes[i];
-      node.coulumbX = 0;
-      node.coulumbY = 0;
+      node.coulombX = 0;
+      node.coulombY = 0;
       for (j = 0; j < length; j++) {
         node2 = nodes[j];
-        if (node != node2 && node.coloumGroup == node2.coloumGroup) { //
-          force = coulumb(node.position.x, node.position.y, node2.position.x, node2.position.y);
-          node.coulumbX += force[0];
-          node.coulumbY += force[1];
+        if (node != node2 && node.subGraphId == node2.subGraphId) { //
+          force = coulomb(node.position.x, node.position.y, node2.position.x, node2.position.y);
+          node.coulombX += force[0];
+          node.coulombY += force[1];
         }
       }
     }
@@ -182,12 +183,6 @@ anychart.graphModule.elements.Layout.prototype.forceLayout_ = function() {
       node.harmonicX = 0;
       node.harmonicY = 0;
       var neighbour = node.siblings;
-
-      if (!neighbour.length) {
-        neighbour = subgraphs[node.coloumGroup];
-      }
-      var harmonicX;
-      var harmonicY;
       for (j = 0; j < neighbour.length; j++) {
         node2 = this.chart_.getNodeById(neighbour[j]);
         force = harmonic(node.position.x, node.position.y, node2.position.x, node2.position.y);
@@ -195,11 +190,11 @@ anychart.graphModule.elements.Layout.prototype.forceLayout_ = function() {
         node.harmonicY += force[1];
       }
     }
+
     for (i = 0, length = nodes.length; i < length; i++) {
       node = nodes[i];
-      node.velocityX += (node.coulumbX + node.harmonicX);
-      node.velocityY += (node.coulumbY + node.harmonicY);
-
+      node.velocityX += (node.coulombX + node.harmonicX);
+      node.velocityY += (node.coulombY + node.harmonicY);
 
       if (node.velocityX > MAXIMUM_VELOCITY) {
         node.velocityX = MAXIMUM_VELOCITY;
@@ -214,133 +209,78 @@ anychart.graphModule.elements.Layout.prototype.forceLayout_ = function() {
 
       node.position.x += node.velocityX;
       node.position.y += node.velocityY;
-
     }
   }
 
-  // var rects = [];
-  // if (goog.object.getKeys(this.chart_.groups_).length > 1) {
-  //   for (var key in this.chart_.groups_) {
-  //     var elementsOfGroup = this.chart_.groups_[key];
-  //     var top = Infinity;
-  //     var bottom = -Infinity;
-  //     var left = Infinity;
-  //     var right = -Infinity;
-  //
-  //     for (var i = 0, length = elementsOfGroup.length; i < length; i++) {
-  //       var node = this.chart_.getNodeById(elementsOfGroup[i]);
-  //       if (node.position.y < top) {
-  //         top = node.position.y;
-  //       }
-  //       if (node.position.y > bottom) {
-  //         bottom = node.position.y;
-  //       }
-  //       if (node.position.x > right) {
-  //         right = node.position.x;
-  //       }
-  //       if (node.position.x < left) {
-  //         left = node.position.x;
-  //       }
-  //     }
-  //     var width = Math.abs(left - right);
-  //     var height = Math.abs(bottom - top);
-  //
-  //     rects.push(
-  //       {
-  //         id: elementsOfGroup,
-  //         rect: new goog.math.Rect(left, top, width, height),
-  //         initialX: left,
-  //         initialY: top,
-  //         hx: 0,
-  //         hy: 0,
-  //         cx: 0,
-  //         cy: 0
-  //       }
-  //     );
-  //   }
-  //
-  //
-  //   for (var i = 0; i < 100; i++) {
-  //
-  //     for (var g1 = 0; g1 < rects.length; g1++) {
-  //       var rect1 = rects[g1];
-  //       rect1.cx = 0;
-  //       rect1.cy = 0;
-  //       for (var g2 = 0; g2 < rects.length; g2++) {
-  //         var rect2 = rects[g2];
-  //         if (rect1 != rect2 && rect1.rect.intersection(rect2.rect)) {
-  //           var pos = rect1.rect.getCenter();
-  //           var pos2 = rect2.rect.getCenter();
-  //           var force = coulumb(pos.x, pos.y, pos2.x, pos2.y);
-  //           rect1.cx += force[0];
-  //           rect1.cy += force[1];
-  //         } else {
-  //           console.log('intersec');
-  //         }
-  //
-  //       }
-  //     }
-  //
-  //     for (var g1 = 0; g1 < rects.length; g1++) {
-  //       var rect1 = rects[g1];
-  //       rect1.hx = 0;
-  //       rect1.hy = 0;
-  //
-  //       for (var g2 = 0; g2 < rects.length; g2++) {
-  //         var rect2 = rects[g2];
-  //         if (rect1 != rect2) {
-  //           var pos = rect1.rect.getCenter();
-  //           var pos2 = rect2.rect.getCenter();
-  //
-  //           if (!(rect1.rect.intersection(rect2.rect))) {
-  //
-  //             var force = harmonic(pos.x, pos.y, pos2.x, pos2.y);
-  //             rect1.hx += force[0];
-  //             rect1.hy += force[1];
-  //           } else {
-  //             console.log('inte');
-  //           }
-  //
-  //         }
-  //
-  //       }
-  //     }
-  //     // debugger
-  //     for (var j = 0; j < rects.length; j++) {
-  //       var r = /**@type {goog.math.Rect}*/(rects[j]);
-  //       var velx = r.hx + r.cx;
-  //       var vely = r.hy + r.cy;
-  //       var x = r.rect.getTopLeft().getX();
-  //       var y = r.rect.getTopLeft().getY();
-  //
-  //       if (velx > MAXIMUM_VELOCITY) {
-  //         velx = MAXIMUM_VELOCITY;
-  //       } else if (velx < MINIMUM_VELOCITY) {
-  //         velx = MINIMUM_VELOCITY;
-  //       }
-  //       if (vely > MAXIMUM_VELOCITY) {
-  //         vely = MAXIMUM_VELOCITY;
-  //       } else if (vely < MINIMUM_VELOCITY) {
-  //         vely = MINIMUM_VELOCITY;
-  //       }
-  //
-  //       x += velx;
-  //       y += vely;
-  //       rects[j].rect.left = x;
-  //       rects[j].rect.top = y;
-  //     }
-  //   }
-  //   for (var j = 0; j < rects.length; j++) {
-  //     var obj = rects[j];
-  //     var arrayOfNodeIds = obj.id;
-  //     var dx = obj.rect.getTopLeft().getX() - obj.initialX;
-  //     var dy = obj.rect.getTopLeft().getY() - obj.initialY;
-  //     for (i = 0; i < arrayOfNodeIds.length; i++) {
-  //       node = this.chart_.getNodeById(arrayOfNodeIds[i]);
-  //       node.position.x += dx;
-  //       node.position.y += dy;
-  //     }
-  //   }
-  // }
-};
+  if (goog.object.getKeys(subgraphs).length > 1) {
+    var gap = 0.5; //offset between graphs
+    var rectangles = [];
 
+    for (var key in subgraphs) {
+      var elementsOfSubgraphs = subgraphs[key];
+      var top = Infinity;
+      var bottom = -Infinity;
+      var left = Infinity;
+      var right = -Infinity;
+      length = elementsOfSubgraphs.length;
+      if (length == 1) {
+        node = this.chart_.getNodeById(elementsOfSubgraphs[0]);
+        top = node.position.y - gap;
+        left = node.position.x - gap;
+        bottom = node.position.y + gap;
+        right = node.position.x + gap;
+      }
+      else {
+        for (i = 0; i < length; i++) {
+          node = this.chart_.getNodeById(elementsOfSubgraphs[i]);
+          if (node.position.y < top) {
+            top = node.position.y;
+          }
+          if (node.position.y > bottom) {
+            bottom = node.position.y;
+          }
+          if (node.position.x > right) {
+            right = node.position.x;
+          }
+          if (node.position.x < left) {
+            left = node.position.x;
+          }
+        }
+        left -= gap;
+        right += gap;
+        top -= gap;
+        bottom += gap;
+      }
+      var width = Math.abs(left - right);
+      var height = Math.abs(bottom - top);
+
+      var e = {
+        id: key,
+        rectangle: new goog.math.Rect(left, top, width, height)
+      };
+      rectangles.push(e);
+
+    }
+
+    var x = 0;
+    var y = 0;
+
+    for (i = 0; i < rectangles.length; i++) {
+      left = rectangles[i].rectangle.getTopLeft().getX();
+      width = rectangles[i].rectangle.getWidth();
+      var dx = x - left;
+      rectangles[i].dx = dx;
+      x += width + gap;
+      rectangles[i].dy = -rectangles[i].rectangle.getCenter().getY();
+    }
+
+    for (i = 0; i < rectangles.length; i++) {
+      var nodesOfCurrentSubGraph = subgraphs[rectangles[i].id];
+      for (j = 0; j < nodesOfCurrentSubGraph.length; j++) {
+        node = this.chart_.getNodeById(nodesOfCurrentSubGraph[j]);
+        node.position.x += rectangles[i].dx;
+        node.position.y += rectangles[i].dy;
+      }
+    }
+  }
+};
