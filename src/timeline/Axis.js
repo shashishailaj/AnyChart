@@ -449,10 +449,18 @@ anychart.timelineModule.Axis.prototype.provideMeasurements = function() {
 anychart.timelineModule.Axis.prototype.applyLabelsStyle = function() {
   var labelsSettings = this.labels();
   var ticksArray = this.getTicks();
+  if (!this.formatProvider_)
+    this.formatProvider_ = new anychart.format.Context();
+
   for (var i = 0; i < this.texts_.length; i++) {
-    var dateString = anychart.format.date(ticksArray[i]);
+    var textString = this.labels().getText(this.formatProvider_.propagate({
+      'value': {
+        value: ticksArray[i],
+        type: anychart.enums.TokenType.NUMBER
+      }
+    }));
     var text = this.texts_[i];
-    text.text(dateString);
+    text.text(textString);
     text.style(labelsSettings.flatten());
     text.prepareComplexity();
     text.applySettings();
