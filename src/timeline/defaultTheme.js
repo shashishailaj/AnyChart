@@ -12,6 +12,9 @@ goog.mixin(goog.global['anychart']['themes']['defaultTheme'], {
       'zIndex': 37.3,
       'align': anychart.enums.Align.TOP
     },
+    'legend': {
+      'enabled': false
+    },
     'axis': {
       'enabled': true,
       'zIndex': 35,
