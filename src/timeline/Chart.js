@@ -41,6 +41,7 @@ anychart.timelineModule.Chart = function() {
    */
   this.xScale_ = new anychart.scales.GanttDateTime();
   this.setupCreated('scale', this.xScale_);
+  this.xScale_.listenSignals(this.scaleInvalidated_, this);
 
   /**
    * Base transformation matrix without any transformations/translations.
@@ -410,8 +411,7 @@ anychart.timelineModule.Chart.prototype.calculate = function() {
 
     this.dateMin = dateMin;
     this.dateMax = dateMax;
-    if (this.autoRange_)
-      this.scale().setRange(this.dateMin, this.dateMax);
+    this.scale().setDataRange(this.dateMin, this.dateMax);
 
     var points = [];
     //region where event series length is calculated and labels overlap data prepared
@@ -607,7 +607,6 @@ anychart.timelineModule.Chart.prototype.onAxisSignal_ = function(event) {
 anychart.timelineModule.Chart.prototype.scale = function(opt_value) {
   if (goog.isDef(opt_value)) {
     this.xScale_.setup(opt_value);
-    this.xScale_.listenSignals(this.scaleInvalidated_, this);
     return this;
   }
 
@@ -683,7 +682,7 @@ anychart.timelineModule.Chart.prototype.zoomTo = function(startDate, endDate) {
  * Reset zoom/scroll manipulations.
  */
 anychart.timelineModule.Chart.prototype.fit = function() {
-  this.autoRange_ = true;
+  this.scale().fitAll();
   this.scroll(0);
   this.invalidate(anychart.ConsistencyState.SCALE_CHART_SCALES, anychart.Signal.NEEDS_REDRAW);
 };
@@ -702,6 +701,10 @@ anychart.timelineModule.Chart.prototype.scroll = function(value) {
 };
 
 
+/** @inheritDoc */
+anychart.timelineModule.Chart.prototype.getType = function() {
+  return anychart.enums.ChartTypes.TIMELINE;
+};
 //endregion
 //region -- Generating Series.
 /**
@@ -758,8 +761,46 @@ anychart.core.ChartWithSeries.generateSeriesConstructors(anychart.timelineModule
  */
 anychart.timelineModule.Chart.prototype.setupByJSON = function(config, opt_default) {
   anychart.timelineModule.Chart.base(this, 'setupByJSON', config, opt_default);
+  if (config['scale']) {
+    this.scale(config['scale']);
+  }
 
-  //TODO (A.Kudryavtsev): TBA.
+  if (config['axis']) {
+    this.axis(config['axis']);
+  }
+
+  this.setupElements(config['lineAxesMarkers'], this.lineMarker);
+  this.setupElements(config['textAxesMarkers'], this.textMarker);
+  this.setupElements(config['rangeAxesMarkers'], this.rangeMarker);
+
+  this.setupSeriesByJSON(config);
+};
+
+
+anychart.timelineModule.Chart.prototype.setupSeriesByJSON = function(config) {
+  var json;
+  var series = config['series'];
+  for (var i = 0; i < series.length; i++) {
+    json = series[i];
+    var seriesType = json['seriesType'] || this.getOption('defaultSeriesType');
+    var data = json['data'];
+    var seriesInstance = this.createSeriesByType(seriesType, json);
+    if (seriesInstance) {
+      seriesInstance.setup(json);
+    }
+  }
+};
+
+
+/**
+ * @param {Object} config
+ * @param {Function} itemConstructor
+ */
+anychart.timelineModule.Chart.prototype.setupElements = function(config, itemConstructor) {
+  for (var i = 0; i < config.length; i++) {
+    var item = itemConstructor.call(this, i);
+    item.setup(config[i]);
+  }
 };
 
 
@@ -769,9 +810,47 @@ anychart.timelineModule.Chart.prototype.setupByJSON = function(config, opt_defau
 anychart.timelineModule.Chart.prototype.serialize = function() {
   var json = anychart.timelineModule.Chart.base(this, 'serialize');
 
-  //TODO (A.Kudryavtsev): TBA.
+  json['scale'] = this.scale().serialize();
+  json['axis'] = this.axis().serialize();
+
+  var i;
+  json['lineAxesMarkers'] = [];
+  for (i = 0; i < this.lineAxesMarkers_.length; i++) {
+    json['lineAxesMarkers'].push(this.lineAxesMarkers_[i].serialize());
+  }
+
+  json['textAxesMarkers'] = [];
+  for (i = 0; i < this.textAxesMarkers_.length; i++) {
+    json['textAxesMarkers'].push(this.textAxesMarkers_[i].serialize());
+  }
+
+  json['rangeAxesMarkers'] = [];
+  for (i = 0; i < this.rangeAxesMarkers_.length; i++) {
+    json['rangeAxesMarkers'].push(this.rangeAxesMarkers_[i].serialize());
+  }
+
+  this.serializeSeries(json);
+
+  json['type'] = this.getType();
 
   return {'chart': json};
+};
+
+
+/**
+ * @param {!Object} json
+ */
+anychart.timelineModule.Chart.prototype.serializeSeries = function(json) {
+  var i;
+  var config;
+  var seriesList = [];
+  for (i = 0; i < this.seriesList.length; i++) {
+    var series = this.seriesList[i];
+    config = series.serialize();
+    seriesList.push(config);
+  }
+  if (seriesList.length)
+    json['series'] = seriesList;
 };
 
 
