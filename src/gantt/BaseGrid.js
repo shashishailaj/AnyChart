@@ -359,6 +359,7 @@ anychart.ganttModule.BaseGrid = function(opt_controller, opt_isResource) {
     this.setOption('rowOddFill', null);
     this.setOption('rowEvenFill', null);
   }
+
   anychart.core.settings.createDescriptorsMeta(this.descriptorsMeta, [
     ['backgroundFill', anychart.ConsistencyState.APPEARANCE, anychart.Signal.NEEDS_REDRAW],
     ['rowFill', anychart.ConsistencyState.APPEARANCE, anychart.Signal.NEEDS_REDRAW, void 0, beforeRowFillInvalidation],
@@ -562,12 +563,27 @@ anychart.ganttModule.BaseGrid.prototype.createFormatProvider = function(item, op
           item.getMeta(anychart.enums.GanttDataFields.PERIODS, opt_periodIndex, anychart.enums.GanttDataFields.END) :
           void 0, type: anychart.enums.TokenType.DATE_TIME
     };
-    values['start'] = {value: values['periodStart'].value || values['minPeriodDate'].value, type: anychart.enums.TokenType.DATE_TIME};
-    values['end'] = {value: values['periodEnd'].value || values['maxPeriodDate'].value, type: anychart.enums.TokenType.DATE_TIME};
-    values['barBounds'] = {value: item.getMeta('periodBounds', opt_periodIndex), type: anychart.enums.TokenType.UNKNOWN};
+    values['start'] = {
+      value: values['periodStart'].value || values['minPeriodDate'].value,
+      type: anychart.enums.TokenType.DATE_TIME
+    };
+    values['end'] = {
+      value: values['periodEnd'].value || values['maxPeriodDate'].value,
+      type: anychart.enums.TokenType.DATE_TIME
+    };
+    values['barBounds'] = {
+      value: item.getMeta('periodBounds', opt_periodIndex),
+      type: anychart.enums.TokenType.UNKNOWN
+    };
   } else {
-    values['actualStart'] = {value: item.meta(anychart.enums.GanttDataFields.ACTUAL_START), type: anychart.enums.TokenType.DATE_TIME};
-    values['actualEnd'] = {value: item.meta(anychart.enums.GanttDataFields.ACTUAL_END), type: anychart.enums.TokenType.DATE_TIME};
+    values['actualStart'] = {
+      value: item.meta(anychart.enums.GanttDataFields.ACTUAL_START),
+      type: anychart.enums.TokenType.DATE_TIME
+    };
+    values['actualEnd'] = {
+      value: item.meta(anychart.enums.GanttDataFields.ACTUAL_END),
+      type: anychart.enums.TokenType.DATE_TIME
+    };
 
     var isParent = !!item.numChildren();
     var progressValue = isParent ?
@@ -577,7 +593,10 @@ anychart.ganttModule.BaseGrid.prototype.createFormatProvider = function(item, op
     values['progressValue'] = {value: progressValue, type: anychart.enums.TokenType.PERCENT};
     values['autoStart'] = {value: isParent ? item.meta('autoStart') : void 0, type: anychart.enums.TokenType.DATE_TIME};
     values['autoEnd'] = {value: isParent ? item.meta('autoEnd') : void 0, type: anychart.enums.TokenType.DATE_TIME};
-    values['autoProgress'] = {value: isParent ? item.meta('autoProgress') : void 0, type: anychart.enums.TokenType.PERCENT};
+    values['autoProgress'] = {
+      value: isParent ? item.meta('autoProgress') : void 0,
+      type: anychart.enums.TokenType.PERCENT
+    };
     values['barBounds'] = {value: item.meta('relBounds'), type: anychart.enums.TokenType.UNKNOWN};
 
     var progress = item.meta(anychart.enums.GanttDataFields.PROGRESS_VALUE);
@@ -589,9 +608,15 @@ anychart.ganttModule.BaseGrid.prototype.createFormatProvider = function(item, op
     values['progress'] = {value: resultProgress, type: anychart.enums.TokenType.PERCENT};
 
     if (goog.isDef(item.get(anychart.enums.GanttDataFields.BASELINE_START)))
-      values['baselineStart'] = {value: item.get(anychart.enums.GanttDataFields.BASELINE_START), type: anychart.enums.TokenType.DATE_TIME};
+      values['baselineStart'] = {
+        value: item.get(anychart.enums.GanttDataFields.BASELINE_START),
+        type: anychart.enums.TokenType.DATE_TIME
+      };
     if (goog.isDef(item.get(anychart.enums.GanttDataFields.BASELINE_END)))
-      values['baselineEnd'] = {value: item.get(anychart.enums.GanttDataFields.BASELINE_END), type: anychart.enums.TokenType.DATE_TIME};
+      values['baselineEnd'] = {
+        value: item.get(anychart.enums.GanttDataFields.BASELINE_END),
+        type: anychart.enums.TokenType.DATE_TIME
+      };
   }
 
   if (goog.isDef(opt_type))
@@ -1349,7 +1374,7 @@ anychart.ganttModule.BaseGrid.getColorResolver = function(colorName, colorType, 
  * @return {acgraph.vector.Fill|acgraph.vector.Stroke|acgraph.vector.PatternFill}
  * @private
  */
-anychart.ganttModule.BaseGrid.getColor_ = function(colorName, normalizer, isHatchFill, canBeHoveredSelected, baseGrid, state, opt_dataItem,  opt_dataItemTo, opt_connType, opt_periodIndex, opt_periodIndexTo) {
+anychart.ganttModule.BaseGrid.getColor_ = function(colorName, normalizer, isHatchFill, canBeHoveredSelected, baseGrid, state, opt_dataItem, opt_dataItemTo, opt_connType, opt_periodIndex, opt_periodIndexTo) {
   var stateColor, context;
   state = anychart.core.utils.InteractivityState.clarifyState(state);
   if (canBeHoveredSelected && (state != anychart.PointState.NORMAL)) {
@@ -2847,7 +2872,7 @@ anychart.ganttModule.BaseGrid.prototype.setupByJSON = function(config, opt_defau
     this.tooltip().setupInternal(!!opt_default, config['tooltip']);
 
   this.headerHeight(config['headerHeight']);
-  
+
   if ('edit' in config)
     /** @type {anychart.ganttModule.edit.StructureEdit} */ (this.edit()).setupInternal(!!opt_default, config['edit']);
   // this.editStructurePreviewFill(config['editStructurePreviewFill']);

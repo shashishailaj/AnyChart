@@ -815,17 +815,23 @@ anychart.ganttModule.Chart.prototype.rowMouseOut = function(event) {
  */
 anychart.ganttModule.Chart.prototype.rowSelect = function(event) {
   if (!this.tl_.checkRowSelection(event)) {
-    this.tl_.connectorUnselect(event);
     var item = event['item'];
-    var period = event['period'];
-    var periodId = period ? period[anychart.enums.GanttDataFields.ID] : void 0;
-    if (item && ((!item.meta('selected') && this.dg_.selectRow(item)) | this.tl_.selectTimelineRow(item, periodId))) {
+
+    if (item && this.dg_.selectedItem != item) {
+      var period = event['period'];
+      var periodId = period ? period[anychart.enums.GanttDataFields.ID] : void 0;
       var eventObj = {
         'type': anychart.enums.EventType.ROW_SELECT,
-        'item': item
+        'item': item,
+        'prevItem': this.dg_.selectedItem
       };
       if (goog.isDef(period)) eventObj['period'] = period;
-      this.dispatchEvent(eventObj);
+
+      if (this.dispatchEvent(eventObj)) {
+        this.tl_.connectorUnselect(event);
+        this.dg_.selectRow(item);
+        this.tl_.selectTimelineRow(item, periodId);
+      }
     }
   }
 };
@@ -866,19 +872,18 @@ anychart.ganttModule.Chart.prototype.rowMouseDown = function(event) {
  * @inheritDoc
  */
 anychart.ganttModule.Chart.prototype.rowUnselect = function(event) {
-  if (this.dg_.selectedItem || this.tl_.selectedItem) {
+  //NOTE: this event will not be dispatched by dg_ or tl_ because their interactivity handler is chart but not they are.
+  var newEvent = {
+    'type': anychart.enums.EventType.ROW_SELECT,
+    'actualTarget': event ? event.target : this,
+    'target': this,
+    'originalEvent': event,
+    'item': null //This is a real difference between 'select' and 'unselect' events.
+  };
+
+  if (this.dispatchEvent(newEvent)) {
     this.dg_.rowUnselect(event);
     this.tl_.rowUnselect(event);
-
-    //NOTE: this event will not be dispatched by dg_ or tl_ because their interactivity handler is chart but not they are.
-    var newEvent = {
-      'type': anychart.enums.EventType.ROW_SELECT,
-      'actualTarget': event ? event.target : this,
-      'target': this,
-      'originalEvent': event,
-      'item': null //This is a real difference between 'select' and 'unselect' events.
-    };
-    this.dispatchEvent(newEvent);
   }
 };
 
