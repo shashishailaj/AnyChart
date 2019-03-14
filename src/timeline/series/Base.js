@@ -3,6 +3,7 @@ goog.require('anychart.core.series.Cartesian');
 
 
 
+//region --- Constructor
 /**
  * @param {!anychart.core.IChart} chart
  * @param {!anychart.core.IPlot} plot
@@ -23,6 +24,8 @@ anychart.timelineModule.series.Base = function(chart, plot, type, config, sorted
 goog.inherits(anychart.timelineModule.series.Base, anychart.core.series.Cartesian);
 
 
+//endregion
+//region --- Consistency states and descriptors
 /**
  * Timeline base series supported consistency states.
  * @type {number}
@@ -48,6 +51,8 @@ anychart.timelineModule.series.Base.PROPERTY_DESCRIPTORS = (function() {
 anychart.core.settings.populate(anychart.timelineModule.series.Base, anychart.timelineModule.series.Base.PROPERTY_DESCRIPTORS);
 
 
+//endregion
+//region --- Infrastructure and overrides
 /**
  * @param {anychart.enums.EventMarkerDirection=} opt_value
  * @return {anychart.enums.EventMarkerDirection|anychart.timelineModule.series.Base}
@@ -97,34 +102,9 @@ anychart.timelineModule.series.Base.prototype.isPointVisible = function(point) {
 };
 
 
-/**
- * Meta maker for timeline.
- * @param {anychart.data.IRowInfo} rowInfo
- * @param {Array.<string>} yNames
- * @param {Array.<string|number>} yColumns
- * @param {number} pointMissing
- * @param {number} xRatio
- */
-anychart.timelineModule.series.Base.prototype.makeTimelineMeta = function(rowInfo, yNames, yColumns, pointMissing, xRatio) {
-  var direction = /** @type {anychart.enums.EventMarkerDirection} */(this.getOption('direction'));
-  if (direction == anychart.enums.EventMarkerDirection.AUTO) {
-    direction = this.autoDirection();
-  }
-  rowInfo.meta('direction', direction);
-  var bounds = this.parentBounds();
-  rowInfo.meta('zero', bounds.top + bounds.height / 2);
-};
-
-
 /** @inheritDoc */
 anychart.timelineModule.series.Base.prototype.planIsStacked = function() {
   return false;
-};
-
-
-/** @inheritDoc */
-anychart.timelineModule.series.Base.prototype.prepareMetaMakers = function(yNames, yColumns) {
-  this.metaMakers.push(this.makeTimelineMeta);
 };
 
 
@@ -193,3 +173,31 @@ anychart.timelineModule.series.Base.prototype.getDrawingData = function(data, da
 
   return this.drawingPlan;
 };
+
+
+//endregion
+//region --- Meta
+/**
+ * Meta maker for timeline.
+ * @param {anychart.data.IRowInfo} rowInfo
+ * @param {Array.<string>} yNames
+ * @param {Array.<string|number>} yColumns
+ * @param {number} pointMissing
+ * @param {number} xRatio
+ */
+anychart.timelineModule.series.Base.prototype.makeTimelineMeta = function(rowInfo, yNames, yColumns, pointMissing, xRatio) {
+  var direction = /** @type {anychart.enums.EventMarkerDirection} */(this.getOption('direction'));
+  if (direction == anychart.enums.EventMarkerDirection.AUTO) {
+    direction = this.autoDirection();
+  }
+  rowInfo.meta('direction', direction);
+  var bounds = this.parentBounds();
+  rowInfo.meta('zero', bounds.top + bounds.height / 2);
+};
+
+
+/** @inheritDoc */
+anychart.timelineModule.series.Base.prototype.prepareMetaMakers = function(yNames, yColumns) {
+  this.metaMakers.push(this.makeTimelineMeta);
+};
+//endregion

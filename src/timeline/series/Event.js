@@ -6,6 +6,7 @@ goog.require('anychart.timelineModule.series.Base');
 
 
 
+//region --- Constructor
 /**
  * @param {!anychart.core.IChart} chart
  * @param {!anychart.core.IPlot} plot
@@ -21,6 +22,8 @@ anychart.timelineModule.series.Event = function(chart, plot, type, config, sorte
 goog.inherits(anychart.timelineModule.series.Event, anychart.timelineModule.series.Base);
 
 
+//endregion
+//region --- Meta
 /** @inheritDoc */
 anychart.timelineModule.series.Event.prototype.makeTimelineMeta = function(rowInfo, yNames, yColumns, pointMissing, xRatio) {
   anychart.timelineModule.series.Event.base(this, 'makeTimelineMeta', rowInfo, yNames, yColumns, pointMissing, xRatio);
@@ -41,6 +44,8 @@ anychart.timelineModule.series.Event.prototype.makePointMeta = function(rowInfo,
 };
 
 
+//endregion
+//region --- Infrastructure
 /**
  * Event connector getter\setter.
  * @param {Object=} opt_config
@@ -63,6 +68,16 @@ anychart.timelineModule.series.Event.prototype.connector = function(opt_config) 
 };
 
 
+/**
+ * Listens connector invalidation.
+ * @param {anychart.SignalEvent} event
+ * @private
+ */
+anychart.timelineModule.series.Event.prototype.onConnectorSignal_ = function(event) {
+  this.invalidate(anychart.ConsistencyState.SERIES_COLOR, anychart.Signal.NEEDS_REDRAW);
+};
+
+
 /** @inheritDoc */
 anychart.timelineModule.series.Event.prototype.pushSeriesBasedPointData = function(data, dataPusher, xNormalizer) {
   var dataSource = /** @type {anychart.data.IView} */(this.data());
@@ -76,16 +91,6 @@ anychart.timelineModule.series.Event.prototype.pushSeriesBasedPointData = functi
     meta['rawIndex'] = iterator.getIndex();
     dataPusher(data, {data: pointData, meta: meta});
   }
-};
-
-
-/**
- * Listens connector invalidation.
- * @param {anychart.SignalEvent} event
- * @private
- */
-anychart.timelineModule.series.Event.prototype.onConnectorSignal_ = function(event) {
-  this.invalidate(anychart.ConsistencyState.SERIES_COLOR, anychart.Signal.NEEDS_REDRAW);
 };
 
 
@@ -115,3 +120,4 @@ anychart.timelineModule.series.Event.prototype.resolveAutoAnchor = function(posi
     return anychart.enums.Anchor.CENTER_TOP;
   }
 };
+//endregion

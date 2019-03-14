@@ -76,6 +76,10 @@ anychart.timelineModule.Axis.prototype.SUPPORTED_CONSISTENCY_STATES =
         anychart.ConsistencyState.AXIS_TICKS;
 
 
+/**
+ * Supported signals.
+ * @type {number}
+ */
 anychart.timelineModule.Axis.prototype.SUPPORTED_SIGNALS =
     anychart.core.VisualBase.prototype.SUPPORTED_SIGNALS |
         anychart.Signal.NEEDS_RECALCULATION;

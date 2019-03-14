@@ -6,6 +6,7 @@ goog.require('anychart.timelineModule.series.Base');
 
 
 
+//region --- Constructor
 /**
  * @param {!anychart.core.IChart} chart
  * @param {!anychart.core.IPlot} plot
@@ -25,6 +26,8 @@ anychart.timelineModule.series.Range = function(chart, plot, type, config, sorte
 goog.inherits(anychart.timelineModule.series.Range, anychart.timelineModule.series.Base);
 
 
+//endregion
+//region --- Descriptors
 /**
  * Range series property descriptors.
  * @type {!Object<string, anychart.core.settings.PropertyDescriptor>}
@@ -43,24 +46,8 @@ anychart.timelineModule.series.Range.PROPERTY_DESCRIPTORS = (function() {
 anychart.core.settings.populate(anychart.timelineModule.series.Range, anychart.timelineModule.series.Range.PROPERTY_DESCRIPTORS);
 
 
-/** @inheritDoc */
-anychart.timelineModule.series.Range.prototype.pushSeriesBasedPointData = function(data, dataPusher, xNormalizer) {
-  var dataSource = /** @type {anychart.data.IView} */(this.data());
-  var iterator = dataSource.getIterator();
-
-  while (iterator.advance()) {
-    var start = xNormalizer(iterator.get('start'));
-    var end = xNormalizer(iterator.get('end'));
-    var pointData = {};
-    var meta = {};
-    pointData['start'] = start;
-    pointData['end'] = end;
-    meta['rawIndex'] = iterator.getIndex();
-    dataPusher(data, {data: pointData, meta: meta});
-  }
-};
-
-
+//endregion
+//region --- Meta
 /** @inheritDoc */
 anychart.timelineModule.series.Range.prototype.makePointMeta = function(rowInfo, yNames, yColumns) {
   var startXRatio = this.getXScale().transform(rowInfo.get('start'));
@@ -89,6 +76,26 @@ anychart.timelineModule.series.Range.prototype.makeTimelineMeta = function(rowIn
 
   var height = anychart.utils.normalizeSize(/** @type {number} */(this.getOption('height')), bounds.height);
   rowInfo.meta('height', height);
+};
+
+
+//endregion
+//region --- Infrastructure
+/** @inheritDoc */
+anychart.timelineModule.series.Range.prototype.pushSeriesBasedPointData = function(data, dataPusher, xNormalizer) {
+  var dataSource = /** @type {anychart.data.IView} */(this.data());
+  var iterator = dataSource.getIterator();
+
+  while (iterator.advance()) {
+    var start = xNormalizer(iterator.get('start'));
+    var end = xNormalizer(iterator.get('end'));
+    var pointData = {};
+    var meta = {};
+    pointData['start'] = start;
+    pointData['end'] = end;
+    meta['rawIndex'] = iterator.getIndex();
+    dataPusher(data, {data: pointData, meta: meta});
+  }
 };
 
 
@@ -128,3 +135,4 @@ anychart.timelineModule.series.Range.prototype.getContextProviderValues = functi
   };
   return values;
 };
+//endregion

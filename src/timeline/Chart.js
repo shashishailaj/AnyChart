@@ -1,7 +1,3 @@
-//endregion
-//region -- Descriptors.
-
-
 goog.provide('anychart.timelineModule.Chart');
 
 

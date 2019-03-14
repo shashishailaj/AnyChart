@@ -21,7 +21,12 @@ anychart.timelineModule.ConnectorSettings = function() {
 goog.inherits(anychart.timelineModule.ConnectorSettings, anychart.core.Base);
 
 
-anychart.timelineModule.ConnectorSettings.prototype.SUPPORTED_SIGNALS |= anychart.Signal.NEEDS_REDRAW;
+/**
+ * Supported signals.
+ * @type {number}
+ */
+anychart.timelineModule.ConnectorSettings.prototype.SUPPORTED_SIGNALS = anychart.core.Base.prototype.SUPPORTED_SIGNALS |
+    anychart.Signal.NEEDS_REDRAW;
 
 
 /**
