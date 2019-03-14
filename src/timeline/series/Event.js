@@ -120,4 +120,15 @@ anychart.timelineModule.series.Event.prototype.resolveAutoAnchor = function(posi
     return anychart.enums.Anchor.CENTER_TOP;
   }
 };
+
+
+/** @inheritDoc */
+anychart.timelineModule.series.Event.prototype.getContextProviderValues = function(provider, rowInfo) {
+  var values = anychart.timelineModule.series.Event.base(this, 'getContextProviderValues', provider, rowInfo);
+  values['date'] = {
+    value: rowInfo.get('x'),
+    type: anychart.enums.TokenType.DATE
+  };
+  return values;
+};
 //endregion

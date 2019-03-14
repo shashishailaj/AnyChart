@@ -456,7 +456,7 @@ anychart.timelineModule.Axis.prototype.applyLabelsStyle = function() {
     var textString = this.labels().getText(this.formatProvider_.propagate({
       'value': {
         value: ticksArray[i],
-        type: anychart.enums.TokenType.NUMBER
+        type: anychart.enums.TokenType.DATE
       }
     }));
     var text = this.texts_[i];

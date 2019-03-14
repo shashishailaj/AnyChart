@@ -29,7 +29,7 @@ goog.mixin(goog.global['anychart']['themes']['defaultTheme'], {
       'labels': {
         'fontSize': '10px',
         'textOverflow': true,
-        'format': "{%Value}{dateTimeFormat:MMM/yy/dd}"
+        'format': '{%Value}'
       }
     },
     'defaultSeriesSettings': {

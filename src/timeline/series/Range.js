@@ -126,12 +126,12 @@ anychart.timelineModule.series.Range.prototype.getContextProviderValues = functi
   var values = anychart.timelineModule.series.Range.base(this, 'getContextProviderValues', provider, rowInfo);
   values['start'] = {
     value: rowInfo.get('start'),
-    type: anychart.enums.TokenType.NUMBER
+    type: anychart.enums.TokenType.DATE
   };
 
   values['end'] = {
     value: rowInfo.get('end'),
-    type: anychart.enums.TokenType.NUMBER
+    type: anychart.enums.TokenType.DATE
   };
   return values;
 };
