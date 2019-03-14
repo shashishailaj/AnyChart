@@ -130,7 +130,7 @@ anychart.timelineModule.Chart.prototype.rangeMarker = function(opt_indexOrValue,
     rangeMarker.setChart(this);
     rangeMarker.setDefaultLayout(anychart.enums.Layout.VERTICAL);
     this.rangeAxesMarkers_[index] = rangeMarker;
-    rangeMarker.listenSignals(this.onMarkersSignal, this);
+    rangeMarker.listenSignals(this.markerInvalidated_, this);
     this.invalidate(anychart.ConsistencyState.AXES_CHART_AXES_MARKERS, anychart.Signal.NEEDS_REDRAW);
   }
 
@@ -180,7 +180,7 @@ anychart.timelineModule.Chart.prototype.textMarker = function(opt_indexOrValue, 
     textMarker.setChart(this);
     textMarker.setDefaultLayout(anychart.enums.Layout.VERTICAL);
     this.textAxesMarkers_[index] = textMarker;
-    textMarker.listenSignals(this.onMarkersSignal, this);
+    textMarker.listenSignals(this.markerInvalidated_, this);
     this.invalidate(anychart.ConsistencyState.AXES_CHART_AXES_MARKERS, anychart.Signal.NEEDS_REDRAW);
   }
 
@@ -229,7 +229,7 @@ anychart.timelineModule.Chart.prototype.lineMarker = function(opt_indexOrValue, 
     lineMarker.setChart(this);
     lineMarker.setDefaultLayout(anychart.enums.Layout.VERTICAL);
     this.lineAxesMarkers_[index] = lineMarker;
-    lineMarker.listenSignals(this.onMarkersSignal, this);
+    lineMarker.listenSignals(this.markerInvalidated_, this);
     this.invalidate(anychart.ConsistencyState.AXES_CHART_AXES_MARKERS, anychart.Signal.NEEDS_REDRAW);
   }
 
@@ -252,8 +252,9 @@ anychart.timelineModule.Chart.prototype.createLineMarkerInstance = function() {
 
 /**
  * @param {anychart.SignalEvent} event
+ * @private
  */
-anychart.timelineModule.Chart.prototype.onMarkersSignal = function(event) {
+anychart.timelineModule.Chart.prototype.markerInvalidated_ = function(event) {
   this.invalidate(anychart.ConsistencyState.AXES_CHART_AXES_MARKERS, anychart.Signal.NEEDS_REDRAW);
 };
 
@@ -574,7 +575,7 @@ anychart.timelineModule.Chart.prototype.drawContent = function(bounds) {
 anychart.timelineModule.Chart.prototype.axis = function(opt_value) {
   if (!this.axis_) {
     this.axis_ = new anychart.timelineModule.Axis();
-    this.axis_.listenSignals(this.onAxisSignal_, this);
+    this.axis_.listenSignals(this.axisInvalidated_, this);
     anychart.measuriator.register(this.axis_);
     this.setupCreated('axis', this.axis_);
   }
@@ -598,7 +599,7 @@ anychart.timelineModule.Chart.prototype.xScale = function() {
  * @param {anychart.SignalEvent} event
  * @private
  */
-anychart.timelineModule.Chart.prototype.onAxisSignal_ = function(event) {
+anychart.timelineModule.Chart.prototype.axisInvalidated_ = function(event) {
   var consistency = anychart.ConsistencyState.AXES_CHART_AXES;
   if (event.hasSignal(anychart.Signal.ENABLED_STATE_CHANGED | anychart.Signal.NEEDS_RECALCULATION)) {
     consistency |= anychart.ConsistencyState.SERIES_CHART_SERIES | anychart.ConsistencyState.BOUNDS;
@@ -886,8 +887,16 @@ anychart.timelineModule.Chart.prototype.serializeSeries = function(json) {
  * @inheritDoc
  */
 anychart.timelineModule.Chart.prototype.disposeInternal = function() {
-  goog.disposeAll(this.axis_);
+  this.xScale_.unlistenSignals(this.scaleInvalidated_, this);
+  this.axis_.unlistenSignals(this.axisInvalidated_, this);
+
+  goog.disposeAll(this.axis_, this.xScale_, this.yScale_, this.lineAxesMarkers_, this.textAxesMarkers_, this.rangeAxesMarkers_);
   this.axis_ = null;
+  this.xScale_ = null;
+  this.yScale_ = null;
+  this.lineAxesMarkers_.length = 0;
+  this.textAxesMarkers_.length = 0;
+  this.rangeAxesMarkers_.length = 0;
   anychart.timelineModule.Chart.base(this, 'disposeInternal');
 };
 

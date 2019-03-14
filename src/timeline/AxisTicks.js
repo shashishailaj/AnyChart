@@ -14,7 +14,7 @@ anychart.timelineModule.AxisTicks = function() {
 
   /**
    * Ticks path.
-   * @type {!acgraph.vector.Path}
+   * @type {?acgraph.vector.Path}
    */
   this.path = acgraph.path();
 
@@ -83,4 +83,12 @@ anychart.timelineModule.AxisTicks.prototype.drawTick = function(ratio, bounds) {
 /** @inheritDoc */
 anychart.timelineModule.AxisTicks.prototype.remove = function() {
   if (this.path) this.path.parent(null);
+};
+
+
+/** @inheritDoc */
+anychart.timelineModule.AxisTicks.prototype.disposeInternal = function() {
+  goog.disposeAll(this.path);
+  this.path = null;
+  anychart.timelineModule.AxisTicks.base(this, 'disposeInternal');
 };

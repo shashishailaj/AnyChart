@@ -28,12 +28,6 @@ anychart.timelineModule.Axis = function() {
   this.zero_ = 0;
 
   /**
-   * Array of text elements for testing purpose.
-   * @type {Array.<acgraph.vector.Text>}
-   */
-  this.testLabelsArray = [];
-
-  /**
    *
    * @type {Array.<anychart.core.ui.OptimizedText>}
    * @private
@@ -415,10 +409,11 @@ anychart.timelineModule.Axis.prototype.remove = function() {
 
 /** @inheritDoc */
 anychart.timelineModule.Axis.prototype.disposeInternal = function() {
-  goog.disposeAll(this.ticks_, this.line_, this.testLabelsArray);
+  goog.disposeAll(this.ticks_, this.line_, this.labelsSettings_, this.texts_);
   this.ticks_ = null;
   this.line_ = null;
-  this.testLabelsArray.length = 0;
+  this.labelsSettings_ = null;
+  this.texts_.length = 0;
   anychart.timelineModule.Axis.base(this, 'disposeInternal');
 };
 
