@@ -452,7 +452,7 @@ anychart.timelineModule.Chart.prototype.calculate = function() {
 
         var bounds = label.getTextElement().getBounds();
         bounds.top = it.meta('minLength');
-        bounds.left = this.scale().transform(date) * this.dataBounds.width;
+        bounds.left = this.scale().transform(date) * this.dataBounds.width - bounds.width / 2;
         points.push({bounds: bounds, date: date, series: series, id: it.getIndex(), direction: direction});
       }
     }
@@ -468,7 +468,9 @@ anychart.timelineModule.Chart.prototype.calculate = function() {
           var secondPointIterator = secondPoint.series.getResetIterator();
           secondPointIterator.select(secondPoint.id);
           var length = secondPointIterator.meta('minLength');
-          secondPointIterator.meta('minLength', length + firstPoint.bounds.height + gap);
+          var newLength = length + firstPoint.bounds.height + gap;
+          secondPointIterator.meta('minLength', newLength);
+          secondPoint.bounds.top = newLength;
         }
       }
     }
