@@ -488,6 +488,7 @@ anychart.timelineModule.Chart.prototype.drawContent = function(bounds) {
     this.dataBounds = bounds.clone();
     this.invalidate(anychart.ConsistencyState.AXES_CHART_AXES | anychart.ConsistencyState.SERIES_CHART_SERIES |
         anychart.ConsistencyState.AXES_CHART_AXES_MARKERS);
+    this.invalidateState(anychart.enums.Store.TIMELINE_CHART, anychart.timelineModule.Chart.States.SCROLL);
     this.markConsistent(anychart.ConsistencyState.BOUNDS);
   }
 
