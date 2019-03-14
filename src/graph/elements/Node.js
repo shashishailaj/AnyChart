@@ -336,6 +336,7 @@ anychart.graphModule.elements.Node.prototype.drawLabels = function() {
 
 /**
  * Reset complexity for all drawn nodes.
+ * Remove all temp text was create for measure.
  * */
 anychart.graphModule.elements.Node.prototype.resetComplexityForTexts = function() {
   for (var node in this.chart_.getNodesMap()) {

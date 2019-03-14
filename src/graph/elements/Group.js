@@ -23,5 +23,6 @@ goog.inherits(anychart.graphModule.elements.Group, anychart.graphModule.elements
  * @private
  * */
 anychart.graphModule.elements.Group.prototype.labelsInvalidated_ = function(event) {
+
   this.dispatchSignal(event.signals);
 };

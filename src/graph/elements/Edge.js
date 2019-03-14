@@ -227,7 +227,7 @@ anychart.graphModule.elements.Edge.prototype.rotateLabel = function(edge) {
   fromX = from.position.x;
   fromY = from.position.y;
 
-  if (fromX == toY) {
+  if (fromX == toY && fromY != toY) {
     angle = 270;
   } else {
     var dx = toX - fromX;

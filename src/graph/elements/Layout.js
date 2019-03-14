@@ -212,11 +212,14 @@ anychart.graphModule.elements.Layout.prototype.forceLayout_ = function() {
     }
   }
 
-  if (goog.object.getKeys(subgraphs).length > 1) {
+  var keys = goog.object.getKeys(subgraphs);
+  length = keys.length;
+  if (length > 1) {
     var gap = 0.5; //offset between graphs
     var rectangles = [];
 
-    for (var key in subgraphs) {
+    for (i = 0; i < length; i++) {
+      var key = keys[i];
       var elementsOfSubgraphs = subgraphs[key];
       var top = Infinity;
       var bottom = -Infinity;

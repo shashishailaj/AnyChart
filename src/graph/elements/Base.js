@@ -284,9 +284,10 @@ anychart.graphModule.elements.Base.prototype.resolveLabelSettings = function(ele
     if (specificLblSettings) {
       finalLblSetting = specificLblSettings.parent(finalLblSetting);
     }
+    finalLblSetting.resolutionChainCache(null);
     this.settingsForLabels[stringState][id] = finalLblSetting;
   }
-
+  this.settingsForLabels[stringState][id].resetFlatSettings();
   return /**@type {anychart.core.ui.LabelsSettings}*/(this.settingsForLabels[stringState][id]);
 };
 
@@ -345,4 +346,3 @@ anychart.graphModule.elements.Base.prototype.disposeInternal = function() {
   proto['hovered'] = proto.hovered;
   proto['selected'] = proto.selected;
 })();
-
