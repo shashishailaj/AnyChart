@@ -682,9 +682,11 @@ anychart.timelineModule.Chart.prototype.zoomTo = function(startDate, endDate) {
  * Reset zoom/scroll manipulations.
  */
 anychart.timelineModule.Chart.prototype.fit = function() {
+  this.suspendSignalsDispatching();
   this.scale().fitAll();
   this.scroll(0);
   this.invalidate(anychart.ConsistencyState.SCALE_CHART_SCALES, anychart.Signal.NEEDS_REDRAW);
+  this.resumeSignalsDispatching(true);
 };
 
 
@@ -777,6 +779,10 @@ anychart.timelineModule.Chart.prototype.setupByJSON = function(config, opt_defau
 };
 
 
+/**
+ * Creates series from passed json config.
+ * @param {Object} config
+ */
 anychart.timelineModule.Chart.prototype.setupSeriesByJSON = function(config) {
   var json;
   var series = config['series'];

@@ -3,6 +3,7 @@ goog.provide('anychart.timelineModule.Axis');
 goog.require('anychart.core.VisualBase');
 goog.require('anychart.core.ui.LabelsSettings');
 goog.require('anychart.core.ui.OptimizedText');
+goog.require('anychart.format.Context');
 goog.require('anychart.math.Rect');
 goog.require('anychart.reflow.IMeasurementsTargetProvider');
 goog.require('anychart.timelineModule.AxisTicks');
