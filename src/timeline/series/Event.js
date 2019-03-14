@@ -55,7 +55,7 @@ anychart.timelineModule.series.Event.prototype.connector = function(opt_config) 
   if (!this.connector_) {
     this.connector_ = new anychart.timelineModule.ConnectorSettings();
     this.connector_.setParentEventTarget(this);
-    this.connector_.listenSignals(this.onConnectorSignal_, this);
+    this.connector_.listenSignals(this.connectorInvalidated_, this);
     this.setupCreated('connector', this.connector_);
   }
 
@@ -73,7 +73,7 @@ anychart.timelineModule.series.Event.prototype.connector = function(opt_config) 
  * @param {anychart.SignalEvent} event
  * @private
  */
-anychart.timelineModule.series.Event.prototype.onConnectorSignal_ = function(event) {
+anychart.timelineModule.series.Event.prototype.connectorInvalidated_ = function(event) {
   this.invalidate(anychart.ConsistencyState.SERIES_COLOR, anychart.Signal.NEEDS_REDRAW);
 };
 
@@ -130,5 +130,16 @@ anychart.timelineModule.series.Event.prototype.getContextProviderValues = functi
     type: anychart.enums.TokenType.DATE
   };
   return values;
+};
+
+
+//endregion
+//region --- Disposing
+/** @inheritDoc */
+anychart.timelineModule.series.Event.prototype.disposeInternal = function() {
+  this.connector_.unlistenSignals(this.connectorInvalidated_, this);
+  goog.disposeAll(this.connector_);
+  this.connector_ = null;
+  anychart.timelineModule.series.Event.base(this, 'disposeInternal');
 };
 //endregion
