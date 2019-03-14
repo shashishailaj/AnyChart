@@ -50,14 +50,6 @@ anychart.timelineModule.Chart = function() {
   this.baseTransform = [1, 0, 0, 1, 0, 0];
 
   /**
-   * Whether scale range should be auto calculated.
-   * When it is - it covers all dates in series.
-   * @type {boolean}
-   * @private
-   */
-  this.autoRange_ = true;
-
-  /**
    * @type {Array.<anychart.core.axisMarkers.Line>}
    * @private
    */
@@ -97,6 +89,17 @@ anychart.timelineModule.Chart.prototype.SUPPORTED_CONSISTENCY_STATES =
  */
 anychart.timelineModule.Chart.prototype.SUPPORTED_SIGNALS =
     anychart.core.SeparateChart.prototype.SUPPORTED_SIGNALS;
+
+
+/**
+ * Timeline chart states
+ * @enum {string}
+ */
+anychart.timelineModule.Chart.States = {
+  SCROLL: 'scroll'
+};
+anychart.consistency.supportStates(anychart.timelineModule.Chart, anychart.enums.Store.TIMELINE_CHART, [
+      anychart.timelineModule.Chart.States.SCROLL]);
 
 
 //endregion
@@ -484,9 +487,17 @@ anychart.timelineModule.Chart.prototype.drawContent = function(bounds) {
   if (this.isConsistent())
     return;
 
-
   if (this.hasInvalidationState(anychart.ConsistencyState.BOUNDS)) {
     this.dataBounds = bounds.clone();
+    this.invalidate(anychart.ConsistencyState.AXES_CHART_AXES | anychart.ConsistencyState.SERIES_CHART_SERIES |
+        anychart.ConsistencyState.AXES_CHART_AXES_MARKERS);
+    this.markConsistent(anychart.ConsistencyState.BOUNDS);
+  }
+
+  // calculate needs data bounds populated for event series overlap processing
+  this.calculate();
+
+  if (this.hasStateInvalidation(anychart.enums.Store.TIMELINE_CHART, anychart.timelineModule.Chart.States.SCROLL)) {
     this.rootElement.setTransformationMatrix.apply(this.rootElement, this.baseTransform);// cleaning up transformations
 
     if (this.scroll_ < 0) {
@@ -494,13 +505,8 @@ anychart.timelineModule.Chart.prototype.drawContent = function(bounds) {
     } else if (this.scroll_ > 0) {
       this.rootElement.translate(0, -this.dataBounds.height / 2);
     }
-
-    this.invalidate(anychart.ConsistencyState.AXES_CHART_AXES | anychart.ConsistencyState.SERIES_CHART_SERIES |
-        anychart.ConsistencyState.AXES_CHART_AXES_MARKERS);
-    this.markConsistent(anychart.ConsistencyState.BOUNDS);
+    this.markStateConsistent(anychart.enums.Store.TIMELINE_CHART, anychart.timelineModule.Chart.States.SCROLL);
   }
-
-  this.calculate();
 
   var axis = this.getCreated('axis');
   if (this.hasInvalidationState(anychart.ConsistencyState.SCALE_CHART_SCALES)) {
@@ -694,14 +700,21 @@ anychart.timelineModule.Chart.prototype.fit = function() {
 
 /**
  * Scrolls chart vertically.
- * @param {number} value
+ * @param {number=} opt_value scroll value, negative means showing upper half of chart, positive - lower half,
+ * zero - center chart.
+ * @return {number|anychart.timelineModule.Chart}
  */
-anychart.timelineModule.Chart.prototype.scroll = function(value) {
-  if (this.scroll_ != value) {
-    this.scroll_ = value;
-    // TODO(Ilya): Invalidating bounds is a bit too much. Consider another consistency state.
-    this.invalidate(anychart.ConsistencyState.BOUNDS, anychart.Signal.NEEDS_REDRAW);
+anychart.timelineModule.Chart.prototype.scroll = function(opt_value) {
+  if (goog.isDef(opt_value)) {
+    opt_value = +opt_value;
+    if (this.scroll_ != opt_value) {
+      this.scroll_ = opt_value;
+      this.invalidateState(anychart.enums.Store.TIMELINE_CHART, anychart.timelineModule.Chart.States.SCROLL, anychart.Signal.NEEDS_REDRAW);
+      return this;
+    }
   }
+
+  return this.scroll_;
 };
 
 
@@ -709,6 +722,8 @@ anychart.timelineModule.Chart.prototype.scroll = function(value) {
 anychart.timelineModule.Chart.prototype.getType = function() {
   return anychart.enums.ChartTypes.TIMELINE;
 };
+
+
 //endregion
 //region -- Generating Series.
 /**
@@ -772,6 +787,8 @@ anychart.timelineModule.Chart.prototype.setupByJSON = function(config, opt_defau
   if (config['axis']) {
     this.axis(config['axis']);
   }
+
+  this.scroll(config['scroll']);
 
   this.setupElements(config['lineAxesMarkers'], this.lineMarker);
   this.setupElements(config['textAxesMarkers'], this.textMarker);
@@ -840,6 +857,7 @@ anychart.timelineModule.Chart.prototype.serialize = function() {
   this.serializeSeries(json);
 
   json['type'] = this.getType();
+  json['scroll'] = this.scroll();
 
   return {'chart': json};
 };
