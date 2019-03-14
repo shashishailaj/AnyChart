@@ -273,7 +273,7 @@ anychart.timelineModule.Axis.prototype.getTicks = function() {
   var ticksArray = [];
   for (var interval in anychart.enums.Interval) {
     ticksArray = this.scale().getSimpleTicks(anychart.enums.Interval[interval], 1);
-    if (ticksArray.length >= 3) break;
+    if (ticksArray.length >= 5) break;
   }
   return ticksArray;
 };

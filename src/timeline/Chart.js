@@ -10,6 +10,7 @@ goog.require('anychart.core.axisMarkers.Line');
 goog.require('anychart.core.axisMarkers.Range');
 goog.require('anychart.core.axisMarkers.Text');
 goog.require('anychart.core.settings');
+goog.require('anychart.core.ui.ChartScroller');
 goog.require('anychart.scales.GanttDateTime');
 goog.require('anychart.scales.Linear');
 goog.require('anychart.timelineModule.Axis');
@@ -76,7 +77,8 @@ anychart.timelineModule.Chart.prototype.SUPPORTED_CONSISTENCY_STATES =
     anychart.core.ChartWithSeries.prototype.SUPPORTED_CONSISTENCY_STATES |
     anychart.ConsistencyState.AXES_CHART_AXES |
     anychart.ConsistencyState.SCALE_CHART_SCALES |
-    anychart.ConsistencyState.AXES_CHART_AXES_MARKERS;
+    anychart.ConsistencyState.AXES_CHART_AXES_MARKERS |
+    anychart.ConsistencyState.CARTESIAN_X_SCROLLER;
 
 
 /**
@@ -487,9 +489,15 @@ anychart.timelineModule.Chart.prototype.drawContent = function(bounds) {
   if (this.hasInvalidationState(anychart.ConsistencyState.BOUNDS)) {
     this.dataBounds = bounds.clone();
     this.invalidate(anychart.ConsistencyState.AXES_CHART_AXES | anychart.ConsistencyState.SERIES_CHART_SERIES |
-        anychart.ConsistencyState.AXES_CHART_AXES_MARKERS);
+        anychart.ConsistencyState.AXES_CHART_AXES_MARKERS | anychart.ConsistencyState.CARTESIAN_X_SCROLLER);
     this.invalidateState(anychart.enums.Store.TIMELINE_CHART, anychart.timelineModule.Chart.States.SCROLL);
     this.markConsistent(anychart.ConsistencyState.BOUNDS);
+  }
+
+  if (this.hasInvalidationState(anychart.ConsistencyState.CARTESIAN_X_SCROLLER)) {
+    this.scroller().container(this.rootElement);
+    this.scroller().draw();
+    this.markConsistent(anychart.ConsistencyState.CARTESIAN_X_SCROLLER);
   }
 
   // calculate needs data bounds populated for event series overlap processing
@@ -719,6 +727,58 @@ anychart.timelineModule.Chart.prototype.scroll = function(opt_value) {
 /** @inheritDoc */
 anychart.timelineModule.Chart.prototype.getType = function() {
   return anychart.enums.ChartTypes.TIMELINE;
+};
+
+
+/**
+ * Scroller getter/setter.
+ * @param {(Object|boolean|null)=} opt_value
+ * @return {anychart.core.ui.ChartScroller|anychart.timelineModule.Chart}
+ */
+anychart.timelineModule.Chart.prototype.scroller = function(opt_value) {
+  if (!this.scroller_) {
+    this.scroller_ = new anychart.core.ui.ChartScroller();
+    this.scroller_.setParentEventTarget(this);
+    this.scroller_.listenSignals(this.scrollerInvalidated_, this);
+    this.eventsHandler.listen(this.scroller_, anychart.enums.EventType.SCROLLER_CHANGE, this.scrollerChangeHandler);
+    this.eventsHandler.listen(this.scroller_, anychart.enums.EventType.SCROLLER_CHANGE_FINISH, this.scrollerChangeHandler);
+    this.invalidate(
+        anychart.ConsistencyState.CARTESIAN_X_SCROLLER |
+        anychart.ConsistencyState.BOUNDS,
+        anychart.Signal.NEEDS_REDRAW);
+
+    this.setupCreated('scroller', this.scroller_);
+  }
+
+  if (goog.isDef(opt_value)) {
+    this.scroller_.setup(opt_value);
+    return this;
+  } else {
+    return this.scroller_;
+  }
+};
+
+
+/**
+ * Scroller invalidation handler.
+ * @param {anychart.SignalEvent} event
+ * @private
+ */
+anychart.timelineModule.Chart.prototype.scrollerInvalidated_ = function(event) {
+  this.invalidate(anychart.ConsistencyState.CARTESIAN_X_SCROLLER, anychart.Signal.NEEDS_REDRAW);
+};
+
+
+/**
+ * Scroller zoom change handler.
+ * @param {anychart.core.ui.Scroller.ScrollerChangeEvent} event
+ */
+anychart.timelineModule.Chart.prototype.scrollerChangeHandler = function(event) {
+  var totalRange = this.scale().getTotalRange();
+  var rangeDelta = totalRange['max'] - totalRange['min'];
+  var startRatio = event['startRatio'];
+  var endRatio = event['endRatio'];
+  this.zoomTo(totalRange['min'] + startRatio * rangeDelta, totalRange['min'] + endRatio * rangeDelta);
 };
 
 
