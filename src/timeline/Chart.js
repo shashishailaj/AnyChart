@@ -358,7 +358,8 @@ anychart.timelineModule.Chart.prototype.calculate = function() {
 
       //region stacking ranges
       if (drawingPlan.series.getType() == anychart.enums.TimelineSeriesType.RANGE) {
-        drawingPlan.series.zIndex(anychart.timelineModule.Chart.RANGE_BASE_Z_INDEX - (i / 100));
+        var seriesZIndex = anychart.timelineModule.Chart.RANGE_BASE_Z_INDEX - (i / 100);
+        drawingPlan.series.zIndex(seriesZIndex);
         var data = drawingPlan.data;
         if (stacked) {
           for (var k = 0; k < data.length; k++) {
@@ -405,6 +406,10 @@ anychart.timelineModule.Chart.prototype.calculate = function() {
 
             point.meta['stackLevel'] = stack.stackLevel;
             point.meta['axisHeight'] = axisHeight;
+            /*
+            Individual zIndexes for points, so that intersecting points from same series correctly overlap.
+             */
+            point.meta['stateZIndex'] = 0.01 - stack.stackLevel / 1000;
           }
         }
       }
