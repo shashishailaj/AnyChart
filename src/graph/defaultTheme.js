@@ -3,12 +3,17 @@ goog.provide('anychart.graphModule.defaultTheme');
 
 goog.mixin(goog.global['anychart']['themes']['defaultTheme'], {
   'graph': {
-
     'labels': {
       'enabled': false,
-      'format': '{%id}',
       'fontSize': 8,
-      'anchor': 'middle'
+      'fontColor': '#7c868e',
+      'anchor': anychart.enums.Anchor.CENTER,
+      'padding' : {
+        'top' : 0,
+        'left' : 0,
+        'right' : 0,
+        'bottom' : 0
+      }
     },
 
     'tooltip': {
@@ -17,69 +22,47 @@ goog.mixin(goog.global['anychart']['themes']['defaultTheme'], {
       'title': {
         'enabled': true
       },
-      'separator': {'enabled': true},
-      'titleFormat': '',
-      /**
-       * @this{*}
-       * @return {*}
-       * */
-      'format': function() {
-        return this['type'];
-      }
+      'separator': {
+        'enabled': true
+      },
+      'titleFormat': '{%type}',
+      'format': 'Id: {%id}'
     },
     'nodes': {
       'width': 15,
       'height': 15,
-      'shape': 'rectangle',
+      'shape': 'circle',
       'labels': {
+        'format': '{%id}',
         'enabled': false
       },
       'normal': {
-        'fill': {
-          'opacity': 0.4,
-          'color': '#ccc'
-        },
+        'fill': '#64B5F6',
         'stroke': {
-          'color': 'yellow'
-        },
-        'shape': 'rect'
+          'color': '#FFD54F'
+        }
       },
       'hovered': {
-        'fill': 'red',
-        'stroke': 'blue',
-        'shape': 'rec',
-        'width': 15,
-        'height': 30,
-        'labels': {
-          'enabled': true,
-          'fontColor': 'red',
-          'fontSize': 24
-        }
+        'width': 20,
+        'height': 20
       },
       'selected': {
-        'fill': 'brown',
-        'stroke': 'pink',
-        'labels': {
-          'enabled': false,
-          'fontColor': 'black'
-        }
+        'fill': '#1976D2',
+        'stroke': '#EF6C00',
+        'width': 21,
+        'height': 21
       }
     },
     'edges': {
-      'stroke': '1.5 #ccc',
+      'stroke': '1 #ccc',
+      'hovered': {
+        'stroke': '1.5 #B8B8B8'
+      },
       'labels': {
-        'enabled': false,
-        'format': 'from {%from} to {%to}',
-        'fontSize': 12,
-        'vAlign': 'middle',
-        'height': '100%',
-        'padding': {
-          'left': 4,
-          'top': 0,
-          'right': 4,
-          'bottom': 0
-        },
-        'textAnchor': 'middle'
+        'format': 'from {%from} to {%to}'
+      },
+      'tooltip': {
+        'format': 'from: {%from}\nto: {%to}'
       }
     },
     'layout': {

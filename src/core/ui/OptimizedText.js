@@ -1052,7 +1052,18 @@ anychart.core.ui.OptimizedText.prototype.applySettings = function() {
       }
 
       if ('anchor' in style) {
-        dom.setAttribute('text-anchor', style['anchor']);
+        var anchor = style['anchor'];
+        if (anchor == anychart.enums.Anchor.CENTER) {
+          anchor = 'middle';
+        } else if (anchor == anychart.enums.Anchor.RIGHT_CENTER) {
+          anchor = 'end';
+        } else if (anchor == anychart.enums.Anchor.LEFT_CENTER) {
+          anchor = 'start';
+        } else {
+          //We need implement top and bottom position.
+          anchor = 'start';
+        }
+        dom.setAttribute('text-anchor', anchor);
       } else {
         dom.removeAttribute('text-anchor');
       }

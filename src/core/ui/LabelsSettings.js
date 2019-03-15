@@ -147,30 +147,6 @@ goog.inherits(anychart.core.ui.LabelsSettings, anychart.core.Base);
 anychart.core.ui.LabelsSettings.CSS_CLASS_PREFIX = 'anychart-labels-settings-';
 
 
-/**
- * Text anchor enum.
- * @enum {string}
- * */
-anychart.core.ui.LabelsSettings.TEXT_ANCHOR = {
-  START: 'start',
-  MIDDLE: 'middle',
-  END: 'end'
-};
-
-
-/**
- * Normalize text anchor value.
- * @param {string} value
- * @return {anychart.core.ui.LabelsSettings.TEXT_ANCHOR} normalized anchor value.
- * */
-anychart.core.ui.LabelsSettings.textAnchorNormalizer = function(value) {
-  return /** @type {anychart.core.ui.LabelsSettings.TEXT_ANCHOR} */(anychart.enums.normalize(anychart.core.ui.LabelsSettings.TEXT_ANCHOR,
-      value,
-      anychart.core.ui.LabelsSettings.TEXT_ANCHOR.START
-      ));
-};
-
-
 //endregion
 //region -- Signals.
 /**
@@ -252,8 +228,7 @@ anychart.core.ui.LabelsSettings.DESCRIPTORS = (function() {
     [anychart.enums.PropertyHandlerType.SINGLE_ARG, 'zIndex', anychart.core.settings.numberNormalizer],
     [anychart.enums.PropertyHandlerType.SINGLE_ARG, 'allowMultiline', anychart.core.settings.boolOrNullNormalizer],
     [anychart.enums.PropertyHandlerType.SINGLE_ARG, 'clip', anychart.core.settings.asIsNormalizer],
-    [anychart.enums.PropertyHandlerType.SINGLE_ARG, 'enabled', anychart.core.settings.boolOrNullNormalizer],
-    [anychart.enums.PropertyHandlerType.SINGLE_ARG, 'textAnchor', anychart.core.ui.LabelsSettings.textAnchorNormalizer]
+    [anychart.enums.PropertyHandlerType.SINGLE_ARG, 'enabled', anychart.core.settings.boolOrNullNormalizer]
   ]);
 
   return map;

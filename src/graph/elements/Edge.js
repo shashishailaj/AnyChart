@@ -414,10 +414,25 @@ anychart.graphModule.elements.Edge.prototype.drawLabel = function(edge) {
   if (textElement) {
     if (labelSettings.enabled()) {
       var position = this.getLabelPosition(edge);
+      var padding = labelSettings.padding();
       var stroke = this.getStroke(edge);
       var edgeThickness = anychart.utils.extractThickness(stroke);
-      edgeThickness += edgeThickness * .1;
-      var cellBounds = anychart.math.rect(position.x, position.y, this.getLength(edge), edgeThickness);
+
+      var top, right, bottom, left, x, y, width, height;
+
+      width = this.getLength(edge);
+      height = 10;
+      left = /**@type {number}*/(padding.getOption('left'));
+      right = /**@type {number}*/(padding.getOption('right'));
+      top = /**@type {number}*/(padding.getOption('top'));
+      bottom = /**@type {number}*/(padding.getOption('bottom'));
+
+      width = left + width + right;
+      height = top + height + bottom + edgeThickness;
+      y = position.y + top - bottom + edgeThickness;
+      x = position.x + left - right;
+
+      var cellBounds = anychart.math.rect(x, y, width, height);
       textElement.renderTo(this.labelsLayerEl_);
       textElement.putAt(cellBounds);
       textElement.finalizeComplexity();
@@ -438,6 +453,7 @@ anychart.graphModule.elements.Edge.prototype.drawLabels = function() {
     edge = this.chart_.getEdgeById(edge);
     this.drawLabel(edge);
   }
+  this.dispatchSignal(anychart.Signal.MEASURE_COLLECT | anychart.Signal.MEASURE_BOUNDS);
 };
 
 
@@ -449,7 +465,7 @@ anychart.graphModule.elements.Edge.prototype.drawLabels = function() {
  * */
 anychart.graphModule.elements.Edge.prototype.labelsInvalidated_ = function(event) {
   if (event.hasSignal(anychart.Signal.BOUNDS_CHANGED)) {
-    this.dispatchSignal(anychart.Signal.MEASURE_COLLECT | anychart.Signal.MEASURE_BOUNDS);
+    event.signals |= anychart.Signal.MEASURE_COLLECT | anychart.Signal.MEASURE_BOUNDS;
   }
   this.dispatchSignal(event.signals);
 };
