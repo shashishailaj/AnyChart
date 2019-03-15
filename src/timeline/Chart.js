@@ -587,9 +587,10 @@ anychart.timelineModule.Chart.prototype.handleMouseWheel_ = function(event) {
   var ratio = 0.1;//how much of current range we want to cut after zoom
   var range = this.scale().getRange();
   var totalRange = this.scale().getTotalRange();
-  if (event['shiftKey'] && this.interactivity().getOption('zoomOnMouseWheel')) {//start zooming
+  if (event['shiftKey'] && this.interactivity().getOption('zoomOnMouseWheel')) {//zooming
     var zoomIn = event['deltaY'] < 0;
 
+    //don't do anything if there's nowhere to zoom out
     if ((range['min']) <= totalRange['min'] && (range['max']) >= totalRange['max'] && !zoomIn)
       return;
 
