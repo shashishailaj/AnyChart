@@ -5110,15 +5110,30 @@ anychart.ganttModule.TimeLine.prototype.deleteKeyHandler = function(e) {
     var toItem = visibleItems[toItemIndex];
     var i = 0;
 
+    var removeEvent = {
+      'type': anychart.enums.EventType.BEFORE_REMOVE_CONNECTOR,
+      'fromItem': fromItem,
+      'toItem': toItem,
+      'fromItemIndex': fromItemIndex,
+      'toItemIndex': toItemIndex,
+      'connectorType': connType
+    };
+
     if (this.controller.isResources()) {
       var fromPeriodIndex = this.selectedConnectorData_['fromPeriodIndex'];
       var fromPeriods = fromItem.get(anychart.enums.GanttDataFields.PERIODS);
       var fromPeriod = fromPeriods[fromPeriodIndex];
       var fromPeriodConnectors = fromPeriod[anychart.enums.GanttDataFields.CONNECTOR];
 
+      var toPeriodIndex = this.selectedConnectorData_['toPeriodIndex'];
       var toPeriods = toItem.get(anychart.enums.GanttDataFields.PERIODS);
-      var toPeriod = toPeriods[this.selectedConnectorData_['toPeriodIndex']];
+      var toPeriod = toPeriods[toPeriodIndex];
       var toPeriodId = toPeriod[anychart.enums.GanttDataFields.ID];
+
+      removeEvent['fromPeriodIndex'] = fromPeriodIndex;
+      removeEvent['fromPeriod'] = fromPeriod;
+      removeEvent['toPeriodIndex'] = toPeriodIndex;
+      removeEvent['toPeriod'] = toPeriod;
 
       if (goog.isArray(fromPeriodConnectors)) {
         for (i = 0; i < fromPeriodConnectors.length; i++) {//New behaviour.
@@ -5128,14 +5143,20 @@ anychart.ganttModule.TimeLine.prototype.deleteKeyHandler = function(e) {
             var perConnType = perConn[anychart.enums.GanttDataFields.CONNECTOR_TYPE] ||
                 anychart.enums.ConnectorType.FINISH_START;
             if (perId == toPeriodId && perConnType == connType) {
-              fromItem.del(anychart.enums.GanttDataFields.PERIODS, fromPeriodIndex, anychart.enums.GanttDataFields.CONNECTOR, i);
+              if (this.interactivityHandler.dispatchEvent(removeEvent)) {
+                fromItem.del(anychart.enums.GanttDataFields.PERIODS, fromPeriodIndex, anychart.enums.GanttDataFields.CONNECTOR, i);
+                this.selectedConnectorData_ = null;
+              }
             }
           }
         }
       } else { //Old behaviour.
-        fromItem.del(anychart.enums.GanttDataFields.PERIODS, fromPeriodIndex, anychart.enums.GanttDataFields.CONNECTOR);
-        fromItem.del(anychart.enums.GanttDataFields.PERIODS, fromPeriodIndex, anychart.enums.GanttDataFields.CONNECTOR_TYPE);
-        fromItem.del(anychart.enums.GanttDataFields.PERIODS, fromPeriodIndex, anychart.enums.GanttDataFields.CONNECT_TO);
+        if (this.interactivityHandler.dispatchEvent(removeEvent)) {
+          fromItem.del(anychart.enums.GanttDataFields.PERIODS, fromPeriodIndex, anychart.enums.GanttDataFields.CONNECTOR);
+          fromItem.del(anychart.enums.GanttDataFields.PERIODS, fromPeriodIndex, anychart.enums.GanttDataFields.CONNECTOR_TYPE);
+          fromItem.del(anychart.enums.GanttDataFields.PERIODS, fromPeriodIndex, anychart.enums.GanttDataFields.CONNECT_TO);
+          this.selectedConnectorData_ = null;
+        }
       }
     } else {
       var toItemId = toItem.get(anychart.enums.GanttDataFields.ID);
@@ -5147,18 +5168,22 @@ anychart.ganttModule.TimeLine.prototype.deleteKeyHandler = function(e) {
             var currentConnType = connector[anychart.enums.GanttDataFields.CONNECTOR_TYPE] ||
                 anychart.enums.ConnectorType.FINISH_START;
             if (toItemId == connector[anychart.enums.GanttDataFields.CONNECT_TO] && currentConnType == connType) {
-              fromItem.del(anychart.enums.GanttDataFields.CONNECTOR, i);
+              if (this.interactivityHandler.dispatchEvent(removeEvent)) {
+                fromItem.del(anychart.enums.GanttDataFields.CONNECTOR, i);
+                this.selectedConnectorData_ = null;
+              }
             }
           }
         }
       } else { //Old behaviour.
-        fromItem.del(anychart.enums.GanttDataFields.CONNECTOR);
-        fromItem.del(anychart.enums.GanttDataFields.CONNECTOR_TYPE);
-        fromItem.del(anychart.enums.GanttDataFields.CONNECT_TO);
+        if (this.interactivityHandler.dispatchEvent(removeEvent)) {
+          fromItem.del(anychart.enums.GanttDataFields.CONNECTOR);
+          fromItem.del(anychart.enums.GanttDataFields.CONNECTOR_TYPE);
+          fromItem.del(anychart.enums.GanttDataFields.CONNECT_TO);
+          this.selectedConnectorData_ = null;
+        }
       }
     }
-
-    this.selectedConnectorData_ = null;
   }
 };
 

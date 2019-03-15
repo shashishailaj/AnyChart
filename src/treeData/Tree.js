@@ -1396,7 +1396,8 @@ anychart.treeDataModule.Tree.DataItem.prototype.del = function(var_args) {
                   'item': this,
                   'path': path,
                   'field': path[0],
-                  'value': itemToBeDeleted
+                  'value': itemToBeDeleted,
+                  'deleted': itemToBeDeleted
                 };
 
                 this.tree_.dispatchEvent(event);
