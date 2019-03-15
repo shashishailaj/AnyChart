@@ -405,7 +405,6 @@ anychart.polarModule.Axis.prototype.dropBoundsCache_ = function() {
 anychart.polarModule.Axis.prototype.calculateAxisBounds_ = function() {
   var points;
   if (this.hasInvalidationState(anychart.ConsistencyState.BOUNDS)) {
-    var maxAttempts = 10;
     this.dropBoundsCache_();
     var scale = /** @type {anychart.scales.Ordinal|anychart.scales.ScatterBase} */(this.scale());
 
@@ -452,11 +451,11 @@ anychart.polarModule.Axis.prototype.calculateAxisBounds_ = function() {
       var majorAffectsRadiusTicksLength = parseFloat(anychart.utils.getAffectBoundsTickLength(ticks, majorLabelsSidePosition));
       var minorTicks = /** @type {!anychart.radarPolarBaseModule.RadialAxisTicks} */(this.minorTicks());
       // var majorLabelsOffsetByTicks = isOrdinal ? 0 : majorTicksLength;
-      var minorTicksLength = isOrdinal ? 0 : anychart.utils.getAffectBoundsTickLength(minorTicks) ;
+      var minorTicksLength = isOrdinal ? 0 : anychart.utils.getAffectBoundsTickLength(minorTicks);
       if (anychart.utils.isPercent(minorTicksLength)) {
         minorTicksLength = parseFloat(minorTicksLength);
       }
-      var minorAffectsRadiusTicksLength = isOrdinal ? 0 : parseFloat(anychart.utils.getAffectBoundsTickLength(minorTicks, minorLabelsSidePosition)) ;
+      var minorAffectsRadiusTicksLength = isOrdinal ? 0 : parseFloat(anychart.utils.getAffectBoundsTickLength(minorTicks, minorLabelsSidePosition));
 
       var majorTicksArr = (majorTicksLength || majorLabelsEnabled) ? scale.ticks().get() : [];
       var minorTicksArr = (!isOrdinal && (minorTicksLength || minorLabelsEnabled)) ? scale.minorTicks().get() : [];
@@ -485,6 +484,8 @@ anychart.polarModule.Axis.prototype.calculateAxisBounds_ = function() {
       var padding, commonIndex, radiusChanged, labelsOriginRadius;
       var changerIndex = NaN;
       var iterateStep = 0;
+
+      var maxAttempts = 10;
       do {
         radiusChanged = false;
         i = j = 0;
@@ -531,7 +532,7 @@ anychart.polarModule.Axis.prototype.calculateAxisBounds_ = function() {
             label = labels.getLabel(index);
 
             /*
-              iterateStep > 10 condition fixes DVF-4218.
+              iterateStep > maxAttempts condition fixes DVF-4218.
               This method is undebuggable shit without any comments, that why
               we just break the endless cycle here.
              */
