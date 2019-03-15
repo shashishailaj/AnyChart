@@ -63,7 +63,6 @@ anychart.core.settings.populate(anychart.core.utils.Interactivity, anychart.core
 anychart.core.utils.Interactivity.prototype.SUPPORTED_SIGNALS = anychart.Signal.NEEDS_REAPPLICATION;
 
 
-
 /**
  * @inheritDoc
  */
