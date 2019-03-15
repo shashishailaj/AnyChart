@@ -405,6 +405,7 @@ anychart.polarModule.Axis.prototype.dropBoundsCache_ = function() {
 anychart.polarModule.Axis.prototype.calculateAxisBounds_ = function() {
   var points;
   if (this.hasInvalidationState(anychart.ConsistencyState.BOUNDS)) {
+    var maxAttempts = 10;
     this.dropBoundsCache_();
     var scale = /** @type {anychart.scales.Ordinal|anychart.scales.ScatterBase} */(this.scale());
 
@@ -534,7 +535,7 @@ anychart.polarModule.Axis.prototype.calculateAxisBounds_ = function() {
               This method is undebuggable shit without any comments, that why
               we just break the endless cycle here.
              */
-            if (label.getFinalSettings('position') == 'normal' || iterateStep > 25) {
+            if (label.getFinalSettings('position') == 'normal' || iterateStep > maxAttempts) {
               points = labels.measureWithTransform(label);
               boundsCache[index] = points;
               radiusDelta = Math.max(boundsChecker.call(this, angle, dx, dy, points), radiusDelta);
@@ -622,7 +623,7 @@ anychart.polarModule.Axis.prototype.calculateAxisBounds_ = function() {
         }
 
         iterateStep++;
-        if (iterateStep > 25) { // DVF-4218.
+        if (iterateStep > maxAttempts) { // DVF-4218.
           radiusChanged = false;
         }
 
