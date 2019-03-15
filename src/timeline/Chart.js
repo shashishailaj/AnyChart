@@ -750,6 +750,12 @@ anychart.timelineModule.Chart.prototype.zoomTo = function(startDate, endDate) {
   startDate = anychart.utils.normalizeTimestamp(startDate);
   endDate = anychart.utils.normalizeTimestamp(endDate);
   this.scale().zoomTo(startDate, endDate);
+  var scroller = this.getCreated('scroller');
+  if (scroller) {
+    var totalRange = this.scale().getTotalRange();
+    var delta = totalRange['max'] - totalRange['min'];
+    scroller.setRangeInternal((startDate - totalRange['min']) / delta, (endDate - totalRange['min']) / delta);
+  }
   this.invalidate(anychart.ConsistencyState.SCALE_CHART_SCALES, anychart.Signal.NEEDS_REDRAW);
   return this;
 };
