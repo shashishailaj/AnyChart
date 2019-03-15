@@ -1009,8 +1009,9 @@ def __compile_project(*args, **kwargs):
         #                             {'name': 'graphics.js'},
         #                             {'name': 'graphics.min.js'} ]
 
-        # with open(os.path.join(output, 'resources.json'), 'w') as f:
-        #     f.write(json.dumps(resource_json))
+        # todo(anton.kagakin): remove file dist/resource.json
+        with open(os.path.join(output, 'resources.json'), 'w') as f:
+            f.write(json.dumps(resource_json))
 
     print ''
     print compile_errors
