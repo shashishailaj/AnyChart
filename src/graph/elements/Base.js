@@ -98,7 +98,6 @@ anychart.graphModule.elements.Base.prototype.setupElements = function() {
   normalLabels.parent(/**@type {anychart.core.ui.LabelsSettings}*/(this.chart_.labels()));
   this.hovered_.labels().parent(normalLabels);
   this.selected_.labels().parent(normalLabels);
-
 };
 
 

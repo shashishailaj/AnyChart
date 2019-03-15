@@ -213,12 +213,11 @@ anychart.graphModule.elements.Layout.prototype.forceLayout_ = function() {
   }
 
   var keys = goog.object.getKeys(subgraphs);
-  length = keys.length;
-  if (length > 1) {
+  if (keys.length > 1) {
     var gap = 0.5; //offset between graphs
     var rectangles = [];
 
-    for (i = 0; i < length; i++) {
+    for (i = 0; i < keys.length; i++) {
       var key = keys[i];
       var elementsOfSubgraphs = subgraphs[key];
       var top = Infinity;
@@ -234,8 +233,8 @@ anychart.graphModule.elements.Layout.prototype.forceLayout_ = function() {
         right = node.position.x + gap;
       }
       else {
-        for (i = 0; i < length; i++) {
-          node = this.chart_.getNodeById(elementsOfSubgraphs[i]);
+        for (j = 0; j < length; j++) {
+          node = this.chart_.getNodeById(elementsOfSubgraphs[j]);
           if (node.position.y < top) {
             top = node.position.y;
           }
@@ -271,8 +270,7 @@ anychart.graphModule.elements.Layout.prototype.forceLayout_ = function() {
     for (i = 0; i < rectangles.length; i++) {
       left = rectangles[i].rectangle.getTopLeft().getX();
       width = rectangles[i].rectangle.getWidth();
-      var dx = x - left;
-      rectangles[i].dx = dx;
+      rectangles[i].dx = x - left;
       x += width + gap;
       rectangles[i].dy = -rectangles[i].rectangle.getCenter().getY();
     }

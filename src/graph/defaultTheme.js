@@ -61,7 +61,7 @@ goog.mixin(goog.global['anychart']['themes']['defaultTheme'], {
         'stroke': 'pink',
         'labels': {
           'enabled': false,
-          'fontColor':'black'
+          'fontColor': 'black'
         }
       }
     },
