@@ -16,6 +16,7 @@ goog.require('anychart.scales.Linear');
 goog.require('anychart.timelineModule.Axis');
 goog.require('anychart.timelineModule.series.Event');
 goog.require('anychart.timelineModule.series.Range');
+goog.require('goog.events.MouseWheelHandler');
 
 
 
@@ -568,6 +569,68 @@ anychart.timelineModule.Chart.prototype.drawContent = function(bounds) {
       }
     }
     this.markConsistent(anychart.ConsistencyState.AXES_CHART_AXES_MARKERS);
+  }
+
+  if (!this.mouseWheelHandler_) {
+    this.mouseWheelHandler_ = new goog.events.MouseWheelHandler(
+        this.container().getStage().getDomWrapper(), false);
+    this.mouseWheelHandler_.listen('mousewheel', this.handleMouseWheel_, false, this);
+  }
+};
+
+
+/**
+ * @param {goog.events.MouseWheelEvent} event
+ * @private
+ */
+anychart.timelineModule.Chart.prototype.handleMouseWheel_ = function(event) {
+  var ratio = 0.1;//how much of current range we want to cut after zoom
+  var range = this.scale().getRange();
+  var totalRange = this.scale().getTotalRange();
+  if (event['shiftKey'] && this.interactivity().getOption('zoomOnMouseWheel')) {//start zooming
+    var zoomIn = event['deltaY'] < 0;
+
+    if ((range['min']) <= totalRange['min'] && (range['max']) >= totalRange['max'] && !zoomIn)
+      return;
+
+    var cutOutPart = (range['max'] - range['min']) * ratio;
+    var mouseX = event['clientX'];
+    mouseX -= this.dataBounds.left;
+    var currentDate = this.scale().inverseTransform(mouseX / this.dataBounds.width);
+
+    var leftDelta, rightDelta;
+    if (currentDate - range['min'] !== range['max'] - currentDate) {
+      leftDelta = cutOutPart * ((currentDate - range['min']) / (range['max'] - range['min']));
+      rightDelta = cutOutPart - leftDelta;
+    } else {
+      leftDelta = rightDelta = cutOutPart / 2;
+    }
+    rightDelta = -rightDelta;
+    if (event['deltaY'] > 0) {
+      leftDelta = -leftDelta;
+      rightDelta = -rightDelta;
+    }
+    this.zoomTo(range['min'] + leftDelta, range['max'] + rightDelta);
+    // debugger;
+  } else if (!event['shiftKey'] && this.interactivity().getOption('scrollOnMouseWheel')) {//scrolling
+    var movement = (range['max'] - range['min']) * ratio;
+    var scrollForward = event['deltaY'] < 0;
+    if (scrollForward) {
+      if (totalRange['max'] < (range['max'] + movement)) {
+        movement = totalRange['max'] - range['max'];
+      }
+    } else {
+      if (totalRange['min'] > (range['min'] - movement)) {
+        movement = range['min'] - totalRange['min'];
+      }
+    }
+
+    if (!movement)
+      return;
+
+    var newMin = scrollForward ? range['min'] + movement : range['min'] - movement;
+    var newMax = scrollForward ? range['max'] + movement : range['max'] - movement;
+    this.zoomTo(newMin, newMax);
   }
 };
 

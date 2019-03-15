@@ -2,6 +2,10 @@ goog.provide('anychart.timelineModule.defaultTheme');
 
 goog.mixin(goog.global['anychart']['themes']['defaultTheme'], {
   'timeline': {
+    'interactivity': {
+      'zoomOnMouseWheel': true,
+      'scrollOnMouseWheel': true
+    },
     'defaultRangeMarkerSettings': {
       'zIndex': 37.1
     },
