@@ -91,11 +91,11 @@ anychart.graphModule.elements.Layout.prototype.explicitLayout_ = function() {
     var x = row['x'];
     var y = row['y'];
 
-    if (!x) {
+    if (!goog.isDefAndNotNull(x)) {
       x = 0;
       anychart.core.reporting.warning(anychart.enums.WarningCode.GRAPH_NO_COORDINATE_FOR_FIXED_MODE, null, [node.nodeId, 'x'], true);
     }
-    if (!y) {
+    if (!goog.isDefAndNotNull(y)) {
       y = 0;
       anychart.core.reporting.warning(anychart.enums.WarningCode.GRAPH_NO_COORDINATE_FOR_FIXED_MODE, null, [node.nodeId, 'y'], true);
     }
@@ -290,4 +290,19 @@ anychart.graphModule.elements.Layout.prototype.forceLayout_ = function() {
       }
     }
   }
+};
+
+
+/** @inheritDoc */
+anychart.graphModule.elements.Layout.prototype.setupByJSON = function(config, opt_default) {
+  anychart.graphModule.elements.Layout.base(this, 'setupByJSON', config, opt_default);
+  anychart.core.settings.deserialize(this, anychart.graphModule.elements.Layout.OWN_DESCRIPTORS, config, opt_default);
+};
+
+
+/** @inheritDoc */
+anychart.graphModule.elements.Layout.prototype.serialize = function() {
+  var json = anychart.graphModule.elements.Layout.base(this, 'serialize');
+  anychart.core.settings.serialize(this, anychart.graphModule.elements.Layout.OWN_DESCRIPTORS, json);
+  return json;
 };

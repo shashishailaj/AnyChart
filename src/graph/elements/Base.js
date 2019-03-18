@@ -295,22 +295,43 @@ anychart.graphModule.elements.Base.prototype.resolveLabelSettings = function(ele
 anychart.graphModule.elements.Base.prototype.setupByJSON = function(config, opt_default) {
   anychart.graphModule.elements.Base.base(this, 'setupByJSON', config, opt_default);
   if ('tooltip' in config) {
-    this.tooltip().setupInternal(config['tooltip'], opt_default);
+    this.tooltip().setup(config['tooltip']);
   }
-  this.normal_.setupInternal(config['normal'], opt_default);
-  this.hovered_.setupInternal(config['hovered'], opt_default);
-  this.selected_.setupInternal(config['selected'], opt_default);
+
+  this.normal_.setup(config['normal']);
+  this.hovered_.setup(config['hovered']);
+  this.selected_.setup(config['selected']);
 };
 
 
 /** @inheritDoc */
 anychart.graphModule.elements.Base.prototype.serialize = function() {
   var json = anychart.graphModule.elements.Base.base(this, 'serialize');
+  var normal, hovered, selected;
   if (this.tooltip)
     json['tooltip'] = this.tooltip().serialize();
-  json['normal'] = this.normal_.serialize();
-  json['hovered'] = this.hovered_.serialize();
-  json['selected'] = this.selected_.serialize();
+  normal = this.normal_.serialize();
+  hovered = this.hovered_.serialize();
+  selected = this.selected_.serialize();
+
+  var labels = normal.labels;
+  if (labels && goog.object.isEmpty(labels)) {
+    delete normal['labels'];
+  }
+
+  labels = hovered.labels;
+  if (labels && goog.object.isEmpty(labels)) {
+    delete hovered['labels'];
+  }
+
+  labels = selected.labels;
+  if (labels && goog.object.isEmpty(labels)) {
+    delete selected['labels'];
+  }
+
+  json['normal'] = normal;
+  json['hovered'] = hovered;
+  json['selected'] = selected;
 
   return json;
 };

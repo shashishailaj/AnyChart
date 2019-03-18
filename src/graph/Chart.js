@@ -95,7 +95,8 @@ anychart.graphModule.Chart = function(opt_data) {
 
   this.zoom_ = [1];
   this.move_ = [0, 0];
-
+  this.rotateDegree_ = 0;
+  this.chartRotation_ = 0;
   anychart.core.settings.createDescriptorsMeta(this.descriptorsMeta, []);
   this.data(opt_data);
 };
@@ -111,7 +112,8 @@ anychart.graphModule.Chart.States = {
   LABELS_ENABLED: 'labelsEnabled',
   LABELS_BOUNDS: 'labelsBounds',
   LAYOUT: 'layout',
-  TRANSFORM: 'transform'
+  TRANSFORM: 'transform',
+  ROTATE: 'rotate'
 };
 
 
@@ -122,7 +124,9 @@ anychart.consistency.supportStates(anychart.graphModule.Chart, anychart.enums.St
   anychart.graphModule.Chart.States.LABELS_ENABLED,
   anychart.graphModule.Chart.States.LABELS_STYLE,
   anychart.graphModule.Chart.States.LAYOUT,
-  anychart.graphModule.Chart.States.TRANSFORM]);
+  anychart.graphModule.Chart.States.TRANSFORM,
+  anychart.graphModule.Chart.States.ROTATE
+]);
 
 
 /**
@@ -638,8 +642,6 @@ anychart.graphModule.Chart.prototype.nodeDragInteractivity = function(node, domT
     }
 
     iterator.select(node.dataRow);
-    iterator.meta('x', node.position.x);
-    iterator.meta('y', node.position.y);
     this.edges().getLabelsLayer().parent(this.rootLayer);
     dragger.dispose();
   }, false, this);
@@ -869,7 +871,7 @@ anychart.graphModule.Chart.prototype.setupGroupsForChart_ = function() {
    * @param {anychart.graphModule.Chart.Node} node
    * @return {Array.<string>}
    * */
-  function getSiblings(node) {
+  function getSiblings (node) {
     return [node.nodeId].concat(node.siblings);
   }
 
@@ -1415,6 +1417,19 @@ anychart.graphModule.Chart.prototype.drawContent = function(bounds) {
     this.markStateConsistent(anychart.enums.Store.GRAPH, anychart.enums.State.DATA);
   }
 
+  if (this.hasStateInvalidation(anychart.enums.Store.GRAPH, anychart.graphModule.Chart.States.ROTATE)) {
+    var nodes = this.getNodesArray();
+    var center = this.contentBounds.getCenter();
+    for (var i = 0; i < nodes.length; i++) {
+      var node = nodes[i];
+      var coordinate = new goog.math.Coordinate(node.position.x, node.position.y);
+      coordinate.rotateDegrees(this.rotateDegree_, center);
+      node.position.x = coordinate.getX();
+      node.position.y = coordinate.getY();
+    }
+    this.markStateConsistent(anychart.enums.Store.GRAPH, anychart.graphModule.Chart.States.ROTATE);
+  }
+
   if (this.hasStateInvalidation(anychart.enums.Store.GRAPH, anychart.enums.State.APPEARANCE)) {
     this.updateEdgesAppearance();
     this.updateNodesAppearance();
@@ -1514,25 +1529,26 @@ anychart.graphModule.Chart.prototype.fit = function() {
 
 /**
  * Rotate root layer.
- * @param {number} degree
+ * @param {number=} opt_degree
+ * @return {anychart.graphModule.Chart|?number}
  * */
-anychart.graphModule.Chart.prototype.rotate = function(degree) {
-  if (degree) {
-    var nodes = this.getNodesArray();
-    var center = this.contentBounds.getCenter();
-    for (var i = 0; i < nodes.length; i++) {
-      var node = nodes[i];
-      var coordinate = new goog.math.Coordinate(node.position.x, node.position.y);
-      coordinate.rotateDegrees(degree, center);
-      node.position.x = coordinate.getX();
-      node.position.y = coordinate.getY();
+anychart.graphModule.Chart.prototype.rotate = function(opt_degree) {
+  if (goog.isDef(opt_degree)) {
+    if (goog.isNull(opt_degree)) {
+      opt_degree = -this.chartRotation_;
     }
+    this.rotateDegree_ = goog.math.standardAngle(opt_degree);
+    this.chartRotation_ += opt_degree;
     var states = [
       anychart.graphModule.Chart.States.LABELS_STYLE,
+      anychart.graphModule.Chart.States.ROTATE,
       anychart.enums.State.APPEARANCE
     ];
     this.invalidate(anychart.ConsistencyState.BOUNDS);
     this.invalidateMultiState(anychart.enums.Store.GRAPH, states, anychart.Signal.NEEDS_REDRAW);
+    return this;
+  } else {
+    return this.chartRotation_;
   }
 };
 
@@ -1612,26 +1628,24 @@ anychart.graphModule.Chart.prototype.serialize = function() {
   var json = anychart.graphModule.Chart.base(this, 'serialize');
   anychart.core.settings.serialize(this, anychart.graphModule.Chart.OWN_DESCRIPTORS, json);
 
-  json['data'] = {
-    'nodes': this.data()['nodes'].serialize(),
-    'edges': this.data()['edges'].serialize()
-  };
-  var iterator = this.nodes().getIterator();
-  iterator.reset();
-  var i = 0;
-  var value;
-  while (iterator.advance()) {
-    value = iterator.meta('x');
-    if (value)
-      json['data']['nodes'][i]['x'] = value;
-    value = iterator.meta('y');
-    if (value)
-      json['data']['nodes'][i]['y'] = value;
-    i++;
+  var dataNodes = this.data()['nodes'].serialize();
+  var dataEdges = this.data()['edges'].serialize();
+  var i;
+  for (i = 0; i < dataNodes.length; i++) {
+    var dataNode = dataNodes[i];
+    var node = this.getNodeById(dataNode['id']);
+    dataNode['x'] = node.position.x;
+    dataNode['y'] = node.position.y;
   }
+  json['data'] = {
+    'nodes': dataNodes,
+    'edges': dataEdges
+  };
 
   json['nodes'] = this.nodes().serialize();
   json['edges'] = this.edges().serialize();
+  json['labels'] = this.labels().serialize();
+
   json['groups'] = [];
 
   for (i in this.groups_) {
@@ -1640,10 +1654,11 @@ anychart.graphModule.Chart.prototype.serialize = function() {
     group['settings'] = this.groups(i).serialize();
     json['groups'].push(group);
   }
-
+  json['layout'] = this.layout().serialize();
   json['interactivity'] = this.interactivity().serialize();
   json['zoom'] = this.zoom();
   json['move'] = this.move();
+  json['rotate'] = this.rotate();
   return {'chart': json};
 };
 
@@ -1655,15 +1670,27 @@ anychart.graphModule.Chart.prototype.setupByJSON = function(config, opt_default)
 
   if ('data' in config)
     this.data(config['data']);
+
   if ('edges' in config)
-    this.edges().setupInternal(config['edges']);
+    this.edges().setup(config['edges']);
+
   if ('nodes' in config)
-    this.nodes().setupInternal(config['nodes']);
+    this.nodes().setup(config['nodes']);
 
   if ('zoom' in config)
     this.zoom(config['zoom']);
+
   if ('move' in config)
     this.move(config['move'][0], config['move'][1]);
+
+  if ('rotate')
+    this.rotate(config['rotate']);
+
+  if ('labels')
+    this.labels().setup(config['labels']);
+
+  if ('layout')
+    this.layout().setup(config['layout']);
 
   if ('groups' in config) {
     var groups = config['groups'];
@@ -1672,10 +1699,9 @@ anychart.graphModule.Chart.prototype.setupByJSON = function(config, opt_default)
       this.groups(group['id'], group['settings']);
     }
   }
+
   if ('interactivity' in config)
-    this.nodes().setupInternal(config['interactivity']);
-  //zoom
-  //translate
+    this.interactivity().setup(config['interactivity']);
 };
 
 
@@ -1688,6 +1714,7 @@ anychart.graphModule.Chart.prototype.disposeInternal = function() {
 
   this.edges_ = {};
   this.nodes_ = {};
+  this.groups_ = {};
 
   anychart.graphModule.Chart.base(this, 'disposeInternal');
 };

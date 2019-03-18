@@ -40,3 +40,19 @@ anychart.graphModule.elements.Interactivity.OWN_DESCRIPTORS = (function() {
   return map;
 })();
 anychart.core.settings.populate(anychart.graphModule.elements.Interactivity, anychart.graphModule.elements.Interactivity.OWN_DESCRIPTORS);
+
+
+/** @inheritDoc */
+anychart.graphModule.elements.Interactivity.prototype.setupByJSON = function(config, opt_default) {
+  anychart.graphModule.elements.Interactivity.base(this, 'setupByJSON', config, opt_default);
+  anychart.core.settings.deserialize(this, anychart.graphModule.elements.Interactivity.OWN_DESCRIPTORS, config, opt_default);
+};
+
+
+/** @inheritDoc */
+anychart.graphModule.elements.Interactivity.prototype.serialize = function() {
+  var json = anychart.graphModule.elements.Interactivity.base(this, 'serialize');
+  anychart.core.settings.serialize(this, anychart.graphModule.elements.Interactivity.OWN_DESCRIPTORS, json);
+  return json;
+};
+
