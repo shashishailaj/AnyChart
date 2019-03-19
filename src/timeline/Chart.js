@@ -417,6 +417,11 @@ anychart.timelineModule.Chart.prototype.calculate = function() {
 
     }
 
+    if (dateMin == dateMax) {
+      dateMin--;
+      dateMax++;
+    }
+
     this.dateMin = dateMin;
     this.dateMax = dateMax;
     this.scale().setDataRange(this.dateMin, this.dateMax);
@@ -1038,7 +1043,6 @@ anychart.timelineModule.Chart.prototype.disposeInternal = function() {
 //exports
 (function() {
   var proto = anychart.timelineModule.Chart.prototype;
-  // proto['method'] = proto.method;
   proto['axis'] = proto.axis;
   proto['scale'] = proto.scale;
   proto['fit'] = proto.fit;
@@ -1048,6 +1052,7 @@ anychart.timelineModule.Chart.prototype.disposeInternal = function() {
   proto['lineMarker'] = proto.lineMarker;
   proto['textMarker'] = proto.textMarker;
   proto['rangeMarker'] = proto.rangeMarker;
+  proto['scroller'] = proto.scroller;
 })();
 //exports
 
