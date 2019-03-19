@@ -1043,6 +1043,12 @@ anychart.treeDataModule.Tree.DataItem = function(parentTree, rawData) {
    * @type {Object.<string, Array>}
    */
   this.wrappersMap = {};
+
+  /**
+   * UID.
+   * @type {number}
+   */
+  this.uid = anychart.utils.getUid();
 };
 
 

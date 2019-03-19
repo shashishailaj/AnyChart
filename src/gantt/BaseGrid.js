@@ -9,6 +9,7 @@ goog.require('anychart.format.Context');
 goog.require('anychart.ganttModule.Controller');
 goog.require('anychart.ganttModule.IInteractiveGrid');
 goog.require('anychart.ganttModule.ScrollBar');
+goog.require('anychart.ganttModule.Selection');
 goog.require('anychart.ganttModule.edit.StructureEdit');
 goog.require('anychart.math.Rect');
 goog.require('goog.events.KeyHandler');
@@ -77,6 +78,7 @@ anychart.ganttModule.BaseGrid = function(opt_controller, opt_isResource) {
     this.isStandalone = false;
   } else {
     this.createController(opt_isResource);
+    this.selection_ = new anychart.ganttModule.Selection();
   }
 
   /**
@@ -249,11 +251,11 @@ anychart.ganttModule.BaseGrid = function(opt_controller, opt_isResource) {
    */
   this.hoveredIndex = -1;
 
-  /**
-   * Currently selected data item.
-   * @type {anychart.treeDataModule.Tree.DataItem}
-   */
-  this.selectedItem = null;
+  // /**
+  //  * Currently selected data item.
+  //  * @type {anychart.treeDataModule.Tree.DataItem}
+  //  */
+  // this.selectedItem = null;
 
   /**
    * Vertical upper coordinate (top) of highlighted row.
@@ -416,6 +418,7 @@ anychart.ganttModule.BaseGrid.EVENTS_RECT_Z_INDEX = 20;
  */
 anychart.ganttModule.BaseGrid.CELLS_Z_INDEX = 30;
 
+
 /**
  * Draw layer z-index.
  * @type {number}
@@ -508,6 +511,16 @@ anychart.ganttModule.BaseGrid.LOWER_DRAG_EDIT_RATIO = .2;
  * @type {number}
  */
 anychart.ganttModule.BaseGrid.HIGHER_DRAG_EDIT_RATIO = 1 - anychart.ganttModule.BaseGrid.LOWER_DRAG_EDIT_RATIO;
+
+
+//endregion
+//region -- Selection.
+/**
+ * @inheritDoc
+ */
+anychart.ganttModule.BaseGrid.prototype.selection = function() {
+  return this.selection_;
+};
 
 
 //endregion
@@ -679,6 +692,7 @@ anychart.ganttModule.BaseGrid.prototype.addMouseUp = goog.nullFunction;
  * @param {?Object} evt - Event object.
  */
 anychart.ganttModule.BaseGrid.prototype.addMouseDblClick = goog.nullFunction;
+
 
 /**
  * Mouse click internal handler.
@@ -1911,8 +1925,10 @@ anychart.ganttModule.BaseGrid.prototype.drawRowFills = function() {
     }
 
     if (item.meta('selected')) {
-      this.selectedItem_ = item; //In case of restoration from XML/JSON, this allows to save selected item state.
+      this.interactivityHandler.selection().selectRow(item); //In case of restoration from XML/JSON, this allows to save selected item state.
+      // this.selectedItem_ = item;
       this.selectedPath_
+          .clear()
           .moveTo(this.pixelBoundsCache.left, top)
           .lineTo(this.pixelBoundsCache.left + this.pixelBoundsCache.width, top)
           .lineTo(this.pixelBoundsCache.left + this.pixelBoundsCache.width, newTop)
@@ -2235,7 +2251,9 @@ anychart.ganttModule.BaseGrid.prototype.drawInternal = function(positionRecalcul
     rowEvenFill = anychart.utils.isNone(rowEvenFill) ? rowFill : rowEvenFill;
     this.getOddPath().fill(/** @type {acgraph.vector.Fill} */(rowOddFill));
     this.getEvenPath().fill(/** @type {acgraph.vector.Fill} */(rowEvenFill));
-    var rowSelectedFill = anychart.ganttModule.BaseGrid.getColorResolver('rowSelectedFill', anychart.enums.ColorType.FILL, false)(this, 0, this.selectedItem);
+
+    var selectedItem = this.interactivityHandler.selection().getSelectedItem();
+    var rowSelectedFill = anychart.ganttModule.BaseGrid.getColorResolver('rowSelectedFill', anychart.enums.ColorType.FILL, false)(this, 0, selectedItem);
     this.getSelectedPath().fill(/** @type {acgraph.vector.Fill} */(rowSelectedFill));
 
     var rowStrokeColor;
@@ -2569,12 +2587,13 @@ anychart.ganttModule.BaseGrid.prototype.scroll = goog.abstractMethod;
  * @return {boolean} - Whether has been selected.
  */
 anychart.ganttModule.BaseGrid.prototype.selectRow = function(item) {
-  if (item && item != this.selectedItem) {
-    this.controller.data().suspendSignalsDispatching();//this.controller.data() can be Tree or TreeView.
-    item.meta('selected', true);
-    if (this.selectedItem) this.selectedItem.meta('selected', false); //selectedItem has the same tree as item.
-    this.selectedItem = item;
-    this.controller.data().resumeSignalsDispatching(false);
+  if (item) {
+    // this.controller.data().suspendSignalsDispatching();//this.controller.data() can be Tree or TreeView.
+    // item.meta('selected', true);
+    // if (this.selectedItem) this.selectedItem.meta('selected', false); //selectedItem has the same tree as item.
+    // this.selectedItem = item;
+    // this.controller.data().resumeSignalsDispatching(false);
+    this.interactivityHandler.selection().selectRow(item);
     this.invalidate(anychart.ConsistencyState.BASE_GRID_REDRAW, anychart.Signal.NEEDS_REDRAW);
     return true;
   }
@@ -2604,11 +2623,12 @@ anychart.ganttModule.BaseGrid.prototype.markersInvalidated = goog.nullFunction;
  * @inheritDoc
  */
 anychart.ganttModule.BaseGrid.prototype.rowUnselect = function(event) {
-  if (this.selectedItem && this.controller.data()) {
-    this.controller.data().suspendSignalsDispatching();
-    this.selectedItem.meta('selected', false);
-    this.selectedItem = null;
-    this.controller.data().resumeSignalsDispatching(false);
+  if (this.controller.data()) {
+    // this.controller.data().suspendSignalsDispatching();
+    // this.selectedItem.meta('selected', false);
+    // this.selectedItem = null;
+    // this.controller.data().resumeSignalsDispatching(false);
+    this.interactivityHandler.selection().reset();
 
     if (this.interactivityHandler == this) { //Should dispatch 'unselect-event' by itself.
       var newEvent = {
@@ -2790,7 +2810,7 @@ anychart.ganttModule.BaseGrid.prototype.disposeInternal = function() {
       this.rowStrokePath_, this.selectedPath_, this.hoverPath_,
       this.evenPath_, this.oddPath_, this.scrollsLayer_, this.clipLayer_,
       this.editLayer_, this.contentLayer_, this.drawLayer_, this.rangeLineMarkersLayer_,
-      this.textMarkersLayer_, this.cellsLayer_, this.base_);
+      this.textMarkersLayer_, this.cellsLayer_, this.base_, this.selection_);
   this.tooltip_ = null;
   this.eventsRect_ = null;
   this.bgRect_ = null;
@@ -2813,6 +2833,7 @@ anychart.ganttModule.BaseGrid.prototype.disposeInternal = function() {
   this.cellsLayer_ = null;
   this.base_ = null;
   this.edit_ = null;
+  this.selection_ = null;
   anychart.ganttModule.BaseGrid.base(this, 'disposeInternal');
 };
 

@@ -6,6 +6,7 @@ goog.require('anychart.format.Context');
 goog.require('anychart.ganttModule.Controller');
 goog.require('anychart.ganttModule.DataGrid');
 goog.require('anychart.ganttModule.IInteractiveGrid');
+goog.require('anychart.ganttModule.Selection');
 goog.require('anychart.ganttModule.Splitter');
 goog.require('anychart.ganttModule.TimeLine');
 goog.require('anychart.ganttModule.edit.StructureEdit');
@@ -75,6 +76,13 @@ anychart.ganttModule.Chart = function(opt_isResourcesChart) {
    * @private
    */
   this.splitter_ = null;
+
+  /**
+   * Selection.
+   * @type {anychart.ganttModule.Selection}
+   * @private
+   */
+  this.selection_ = new anychart.ganttModule.Selection();
 
   /**
    * Context provider.
@@ -766,6 +774,16 @@ anychart.ganttModule.Chart.prototype.editStructureHighlight = function(opt_index
 };
 
 
+//region -- Selection.
+/**
+ * @inheritDoc
+ */
+anychart.ganttModule.Chart.prototype.selection = function() {
+  return this.selection_;
+};
+
+
+//endregion
 /**
  * Row mouse move interactivity handler.
  * @param {Object} event - Dispatched event object.
@@ -817,20 +835,24 @@ anychart.ganttModule.Chart.prototype.rowSelect = function(event) {
   if (!this.tl_.checkRowSelection(event)) {
     var item = event['item'];
 
-    if (item && this.dg_.selectedItem != item) {
+    if (item && !this.selection().isRowSelected(item)) {
       var period = event['period'];
-      var periodId = period ? period[anychart.enums.GanttDataFields.ID] : void 0;
+      var periodIndex = event['periodIndex'];
+      // var periodId = period ? period[anychart.enums.GanttDataFields.ID] : void 0;
       var eventObj = {
         'type': anychart.enums.EventType.ROW_SELECT,
         'item': item,
-        'prevItem': this.dg_.selectedItem
+        'prevItem': this.selection().getSelectedItem()
       };
-      if (goog.isDef(period)) eventObj['period'] = period;
+      if (goog.isDef(period)) {
+        eventObj['period'] = period;
+        eventObj['periodIndex'] = periodIndex;
+      }
 
       if (this.dispatchEvent(eventObj)) {
         this.tl_.connectorUnselect(event);
         this.dg_.selectRow(item);
-        this.tl_.selectTimelineRow(item, periodId);
+        this.tl_.selectTimelineRow(item, periodIndex);
       }
     }
   }
@@ -885,6 +907,7 @@ anychart.ganttModule.Chart.prototype.rowUnselect = function(event) {
     this.dg_.rowUnselect(event);
     this.tl_.rowUnselect(event);
   }
+  this.tl_.connectorUnselect(event);
 };
 
 
@@ -1180,7 +1203,8 @@ anychart.ganttModule.Chart.prototype.disposeInternal = function() {
       this.dg_,
       this.tl_,
       this.splitter_,
-      this.edit_);
+      this.edit_,
+      this.selection_);
   this.palette_ = null;
   this.controller_ = null;
   this.verticalScrollBar_ = null;
@@ -1188,6 +1212,7 @@ anychart.ganttModule.Chart.prototype.disposeInternal = function() {
   this.tl_ = null;
   this.splitter_ = null;
   this.edit_ = null;
+  this.selection_ = null;
   anychart.ganttModule.Chart.base(this, 'disposeInternal');
 };
 
