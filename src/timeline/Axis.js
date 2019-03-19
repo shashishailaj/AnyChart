@@ -271,9 +271,20 @@ anychart.timelineModule.Axis.prototype.draw = function() {
  */
 anychart.timelineModule.Axis.prototype.getTicks = function() {
   var ticksArray = [];
-  for (var interval in anychart.enums.Interval) {
-    ticksArray = this.scale().getSimpleTicks(anychart.enums.Interval[interval], 1);
-    if (ticksArray.length >= 5) break;
+  var zoomLevels = this.scale().getLevelsData();
+
+  for (var i = 0; i < zoomLevels.length; i++) {
+    ticksArray = this.scale().getSimpleTicks(zoomLevels[i].unit, zoomLevels[i].count);
+    /*
+    We do not want to have more than 10 ticks, normally.
+    But if there are less than 3 ticks, we prefer to rollback to previous zoomLevel.
+     */
+    if (ticksArray.length <= 10) {
+      if (ticksArray.length < 3 && i > 0) {
+        ticksArray = this.scale().getSimpleTicks(zoomLevels[i - 1].unit, zoomLevels[i - 1].count);
+      }
+      break;
+    }
   }
   return ticksArray;
 };
