@@ -497,6 +497,11 @@ anychart.timelineModule.Chart.prototype.drawContent = function(bounds) {
   if (this.isConsistent())
     return;
 
+  if (!this.timelineLayer) {
+    this.timelineLayer = this.rootElement.layer();
+    this.timelineLayer.zIndex(1);
+  }
+
   if (this.hasInvalidationState(anychart.ConsistencyState.BOUNDS)) {
     this.dataBounds = bounds.clone();
     this.invalidate(anychart.ConsistencyState.AXES_CHART_AXES | anychart.ConsistencyState.SERIES_CHART_SERIES |
@@ -515,13 +520,13 @@ anychart.timelineModule.Chart.prototype.drawContent = function(bounds) {
   this.calculate();
 
   if (this.hasStateInvalidation(anychart.enums.Store.TIMELINE_CHART, anychart.timelineModule.Chart.States.SCROLL)) {
-    this.rootElement.setTransformationMatrix.apply(this.rootElement, this.baseTransform);// cleaning up transformations
-
-    if (this.scroll_ < 0) {
-      this.rootElement.translate(0, this.dataBounds.height / 2);
-    } else if (this.scroll_ > 0) {
-      this.rootElement.translate(0, -this.dataBounds.height / 2);
-    }
+    // this.timelineLayer.setTransformationMatrix.apply(this.timelineLayer, this.baseTransform);// cleaning up transformations
+    //
+    // if (this.scroll_ < 0) {
+    //   this.timelineLayer.translate(0, this.dataBounds.height / 2);
+    // } else if (this.scroll_ > 0) {
+    //   this.timelineLayer.translate(0, -this.dataBounds.height / 2);
+    // }
     this.markStateConsistent(anychart.enums.Store.TIMELINE_CHART, anychart.timelineModule.Chart.States.SCROLL);
   }
 
@@ -539,7 +544,7 @@ anychart.timelineModule.Chart.prototype.drawContent = function(bounds) {
     for (var i = 0; i < this.seriesList.length; i++) {
       var series = this.seriesList[i];
       series.parentBounds(this.dataBounds);
-      series.container(this.rootElement);
+      series.container(this.timelineLayer);
       series.draw();
     }
 
@@ -549,7 +554,7 @@ anychart.timelineModule.Chart.prototype.drawContent = function(bounds) {
   if (this.hasInvalidationState(anychart.ConsistencyState.AXES_CHART_AXES)) {
     if (axis) {
       axis.parentBounds(this.dataBounds);
-      axis.container(this.rootElement);
+      axis.container(this.timelineLayer);
       axis.draw();
     }
     this.markConsistent(anychart.ConsistencyState.AXES_CHART_AXES);
@@ -573,7 +578,7 @@ anychart.timelineModule.Chart.prototype.drawContent = function(bounds) {
         if (!axesMarker.scale())
           axesMarker.autoScale(this.xScale_);
         axesMarker.parentBounds(this.dataBounds);
-        axesMarker.container(this.rootElement);
+        axesMarker.container(this.timelineLayer);
         axesMarker.draw();
         axesMarker.resumeSignalsDispatching(false);
       }
@@ -594,54 +599,42 @@ anychart.timelineModule.Chart.prototype.drawContent = function(bounds) {
  * @private
  */
 anychart.timelineModule.Chart.prototype.handleMouseWheel_ = function(event) {
-  var ratio = 0.1;//how much of current range we want to cut after zoom
-  var range = this.scale().getRange();
-  var totalRange = this.scale().getTotalRange();
+
+  var matrix;
   if (event['shiftKey'] && this.interactivity().getOption('zoomOnMouseWheel')) {//zooming
     var zoomIn = event['deltaY'] < 0;
 
-    //don't do anything if there's nowhere to zoom out
-    if ((range['min']) <= totalRange['min'] && (range['max']) >= totalRange['max'] && !zoomIn)
-      return;
-
-    var cutOutPart = (range['max'] - range['min']) * ratio;
-    var mouseX = event['clientX'];
-    mouseX -= this.dataBounds.left;
-    var currentDate = this.scale().inverseTransform(mouseX / this.dataBounds.width);
-
-    var leftDelta, rightDelta;
-    if (currentDate - range['min'] !== range['max'] - currentDate) {
-      leftDelta = cutOutPart * ((currentDate - range['min']) / (range['max'] - range['min']));
-      rightDelta = cutOutPart - leftDelta;
+    matrix = this.timelineLayer.getTransformationMatrix();
+    if (zoomIn) {
+      matrix[0] += 0.1;
+      matrix[3] += 0.1;
+      var yDelta = 1 - matrix[3];
+      matrix[5] = this.dataBounds.height * (yDelta / 2);
     } else {
-      leftDelta = rightDelta = cutOutPart / 2;
+      matrix[0] -= 0.1;
+      matrix[3] -= 0.1;
+      if (matrix[0] < 1) {
+        matrix[0] = 1;
+        matrix[3] = 1;
+      }
+      var yDelta = 1 - matrix[3];
+      matrix[5] = this.dataBounds.height * (yDelta / 2);
     }
-    rightDelta = -rightDelta;
-    if (event['deltaY'] > 0) {
-      leftDelta = -leftDelta;
-      rightDelta = -rightDelta;
-    }
-    this.zoomTo(range['min'] + leftDelta, range['max'] + rightDelta);
-    // debugger;
+    this.timelineLayer.setTransformationMatrix.apply(this.timelineLayer, matrix);
   } else if (!event['shiftKey'] && this.interactivity().getOption('scrollOnMouseWheel')) {//scrolling
-    var movement = (range['max'] - range['min']) * ratio;
     var scrollForward = event['deltaY'] < 0;
+
+    matrix = this.timelineLayer.getTransformationMatrix();
     if (scrollForward) {
-      if (totalRange['max'] < (range['max'] + movement)) {
-        movement = totalRange['max'] - range['max'];
-      }
+      matrix[4] -= 0.1 * (matrix[3] * this.dataBounds.width);
+      if (matrix[4] < -(matrix[3] * this.dataBounds.width - this.dataBounds.width))
+        matrix[4] = -(matrix[3] * this.dataBounds.width - this.dataBounds.width);
     } else {
-      if (totalRange['min'] > (range['min'] - movement)) {
-        movement = range['min'] - totalRange['min'];
-      }
+      matrix[4] += 0.1 * (matrix[3] * this.dataBounds.width);
+      if (matrix[4] > 0)
+        matrix[4] = 0;
     }
-
-    if (!movement)
-      return;
-
-    var newMin = scrollForward ? range['min'] + movement : range['min'] - movement;
-    var newMax = scrollForward ? range['max'] + movement : range['max'] - movement;
-    this.zoomTo(newMin, newMax);
+    this.timelineLayer.setTransformationMatrix.apply(this.timelineLayer, matrix);
   }
 };
 
