@@ -1020,13 +1020,14 @@ anychart.timelineModule.Chart.prototype.disposeInternal = function() {
   this.xScale_.unlistenSignals(this.scaleInvalidated_, this);
   this.axis_.unlistenSignals(this.axisInvalidated_, this);
 
-  goog.disposeAll(this.axis_, this.xScale_, this.yScale_, this.lineAxesMarkers_, this.textAxesMarkers_, this.rangeAxesMarkers_);
+  goog.disposeAll(this.axis_, this.xScale_, this.yScale_, this.lineAxesMarkers_, this.textAxesMarkers_, this.rangeAxesMarkers_, this.timelineLayer);
   this.axis_ = null;
   this.xScale_ = null;
   this.yScale_ = null;
   this.lineAxesMarkers_.length = 0;
   this.textAxesMarkers_.length = 0;
   this.rangeAxesMarkers_.length = 0;
+  this.timelineLayer = null;
   anychart.timelineModule.Chart.base(this, 'disposeInternal');
 };
 
