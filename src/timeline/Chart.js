@@ -622,18 +622,36 @@ anychart.timelineModule.Chart.prototype.handleMouseWheel_ = function(event) {
     }
     this.timelineLayer.setTransformationMatrix.apply(this.timelineLayer, matrix);
   } else if (!event['shiftKey'] && this.interactivity().getOption('scrollOnMouseWheel')) {//scrolling
-    var scrollForward = event['deltaY'] < 0;
+    var horizontalScroll = event['deltaX'] != 0;
+    var verticalScroll = event['deltaY'] != 0;
+    var horizontalScrollForward = horizontalScroll && event['deltaX'] > 0;
+    var verticalScrollDown = verticalScroll && event['deltaY'] > 0;
 
     matrix = this.timelineLayer.getTransformationMatrix();
-    if (scrollForward) {
-      matrix[4] -= 0.1 * (matrix[3] * this.dataBounds.width);
-      if (matrix[4] < -(matrix[3] * this.dataBounds.width - this.dataBounds.width))
-        matrix[4] = -(matrix[3] * this.dataBounds.width - this.dataBounds.width);
-    } else {
-      matrix[4] += 0.1 * (matrix[3] * this.dataBounds.width);
-      if (matrix[4] > 0)
-        matrix[4] = 0;
+    if (horizontalScroll) {
+      if (horizontalScrollForward) {
+        matrix[4] -= 0.1 * (matrix[3] * this.dataBounds.width);
+        if (matrix[4] < -(matrix[3] * this.dataBounds.width - this.dataBounds.width))
+          matrix[4] = -(matrix[3] * this.dataBounds.width - this.dataBounds.width);
+      } else {
+        matrix[4] += 0.1 * (matrix[3] * this.dataBounds.width);
+        if (matrix[4] > 0)
+          matrix[4] = 0;
+      }
     }
+
+    if (verticalScroll) {
+      if (verticalScrollDown) {
+        matrix[5] -= 0.1 * (matrix[0] * this.dataBounds.height);
+        if (matrix[5] < -(matrix[0] * this.dataBounds.height - this.dataBounds.height))
+          matrix[5] = -(matrix[0] * this.dataBounds.height - this.dataBounds.height);
+      } else {
+        matrix[5] += 0.1 * (matrix[0] * this.dataBounds.height);
+        if (matrix[5] > 0)
+          matrix[5] = 0;
+      }
+    }
+
     this.timelineLayer.setTransformationMatrix.apply(this.timelineLayer, matrix);
   }
 };
