@@ -299,6 +299,8 @@ anychart.timelineModule.Chart.prototype.calculate = function() {
   var stacked = true;
   var stacks = [];
 
+  var arrayOfIntersectingBounds = [];
+
   if (this.hasInvalidationState(anychart.ConsistencyState.SERIES_CHART_SERIES | anychart.ConsistencyState.SCALE_CHART_SCALES)) {
     for (var i = 0; i < this.seriesList.length; i++) {
       var series = this.seriesList[i];
@@ -312,6 +314,18 @@ anychart.timelineModule.Chart.prototype.calculate = function() {
           this.rangeSeriesList.push(series);
           break;
       }
+
+      //region setting auto directions for series if needed
+      if (series.getOption('direction') == anychart.enums.EventMarkerDirection.AUTO) {
+        if (series.seriesType() == anychart.enums.TimelineSeriesType.RANGE) {
+          series.autoDirection(directions[rangeNum & 1]);
+          rangeNum++;
+        } else if (series.seriesType() == anychart.enums.TimelineSeriesType.EVENT) {
+          series.autoDirection(directions[eventNum & 1]);
+          eventNum++;
+        }
+      }
+      //endregion
 
       //region searching min/max values
       var it = series.getResetIterator();
@@ -332,18 +346,6 @@ anychart.timelineModule.Chart.prototype.calculate = function() {
 
           dateMin = Math.min(dateMin, start);
           dateMax = Math.max(dateMax, start);
-        }
-      }
-      //endregion
-
-      //region setting auto directions for series if needed
-      if (series.getOption('direction') == anychart.enums.EventMarkerDirection.AUTO) {
-        if (series.seriesType() == anychart.enums.TimelineSeriesType.RANGE) {
-          series.autoDirection(directions[rangeNum & 1]);
-          rangeNum++;
-        } else if (series.seriesType() == anychart.enums.TimelineSeriesType.EVENT) {
-          series.autoDirection(directions[eventNum & 1]);
-          eventNum++;
         }
       }
       //endregion
@@ -402,6 +404,15 @@ anychart.timelineModule.Chart.prototype.calculate = function() {
               stack.height = seriesHeight;
               stack.stackLevel = stackLevel;
               stacks.push(stack);
+              arrayOfIntersectingBounds.push({
+                sX: this.scale().transform(stack.start) * this.dataBounds.width,
+                eX: this.scale().transform(stack.end) * this.dataBounds.width,
+                sY: 0,
+                eY: seriesHeight,
+                id: k,
+                series: series,
+                direction: series.getFinalDirection()
+              });
             }
 
             point.meta['stackLevel'] = stack.stackLevel;
@@ -456,7 +467,7 @@ anychart.timelineModule.Chart.prototype.calculate = function() {
         var label;
         if (needsCreateLabels) {
           var formatProvider = series.createLabelsContextProvider();
-          var positionProvider = series.createPositionProvider(anychart.enums.Position.CENTER);
+          var positionProvider = series.createPositionProvider(series.labels().anchor());
           label = factory.add(formatProvider, positionProvider);
         } else {
           label = factory.getLabel(it.getIndex());
@@ -465,14 +476,23 @@ anychart.timelineModule.Chart.prototype.calculate = function() {
 
         var bounds = label.getTextElement().getBounds();
         bounds.top = it.meta('minLength');
-        bounds.left = this.scale().transform(date) * this.dataBounds.width - bounds.width / 2;
+        bounds.left = this.scale().transform(date) * this.dataBounds.width;
         points.push({bounds: bounds, date: date, series: series, id: it.getIndex(), direction: direction});
+        arrayOfIntersectingBounds.push({
+          sX: bounds.left,
+          eX: bounds.left + bounds.width,
+          sY: 0,
+          eY: 0 + series.height(),
+          id: it.getIndex(),
+          series: series,
+          direction: direction
+        });
       }
     }
     //endregion
 
     //region with event labels overlap handling
-    points = points.sort(function(a, b) {return a.date - b.date;});
+    points = points.sort(function(a, b) {return b.date - a.date;});
     for (var i = 0; i < points.length; i++) {
       var firstPoint = points[i];
       for (var k = i + 1; k < points.length; k++) {
@@ -486,6 +506,21 @@ anychart.timelineModule.Chart.prototype.calculate = function() {
           secondPoint.bounds.top = newLength;
         }
       }
+    }
+    //endregion
+
+    goog.array.sort(arrayOfIntersectingBounds, function(a, b) {
+      var startDifference = (a.sX - b.sX);
+      if (startDifference == 0) {
+        return b.eX - a.eX;
+      }
+      return startDifference;
+    });
+
+    //region new overlap
+    var eventsLabels = [];
+    for (var i = 0; i < arrayOfIntersectingBounds.length; i++) {
+      var point = arrayOfIntersectingBounds[i];
     }
     //endregion
   }
