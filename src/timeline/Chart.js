@@ -631,24 +631,24 @@ anychart.timelineModule.Chart.prototype.handleMouseWheel_ = function(event) {
     if (horizontalScroll) {
       if (horizontalScrollForward) {
         matrix[4] -= 0.1 * (matrix[3] * this.dataBounds.width);
-        if (matrix[4] < -(matrix[3] * this.dataBounds.width - this.dataBounds.width))
-          matrix[4] = -(matrix[3] * this.dataBounds.width - this.dataBounds.width);
+        // if (matrix[4] < -(matrix[3] * this.dataBounds.width - this.dataBounds.width))
+        //   matrix[4] = -(matrix[3] * this.dataBounds.width - this.dataBounds.width);
       } else {
         matrix[4] += 0.1 * (matrix[3] * this.dataBounds.width);
-        if (matrix[4] > 0)
-          matrix[4] = 0;
+        // if (matrix[4] > 0)
+        //   matrix[4] = 0;
       }
     }
 
     if (verticalScroll) {
       if (verticalScrollDown) {
         matrix[5] -= 0.1 * (matrix[0] * this.dataBounds.height);
-        if (matrix[5] < -(matrix[0] * this.dataBounds.height - this.dataBounds.height))
-          matrix[5] = -(matrix[0] * this.dataBounds.height - this.dataBounds.height);
+        // if (matrix[5] < -(matrix[0] * this.dataBounds.height - this.dataBounds.height))
+        //   matrix[5] = -(matrix[0] * this.dataBounds.height - this.dataBounds.height);
       } else {
         matrix[5] += 0.1 * (matrix[0] * this.dataBounds.height);
-        if (matrix[5] > 0)
-          matrix[5] = 0;
+        // if (matrix[5] > 0)
+        //   matrix[5] = 0;
       }
     }
 
