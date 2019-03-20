@@ -5,6 +5,7 @@ goog.require('anychart.graphModule.elements.Base');
 
 
 /**
+ * Use groups for set nodes that has same groupId similar settings.
  * @constructor
  * @param {anychart.graphModule.Chart} chart
  * @extends {anychart.graphModule.elements.Base}

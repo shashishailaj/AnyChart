@@ -16,8 +16,8 @@ anychart.graphModule.elements.Interactivity = function() {
     ['enabled', 0, 0],
     ['zoomOnMouseWheel', 0, 0],
     ['scrollOnMouseWheel', 0, 0],
-    ['node', 0, 0],
-    ['magnetize', 0, 0]
+    ['node', 0, 0], //can user drag nodes.
+    ['magnetize', 0, 0] //stick nodes to sibling position.
   ]);
 };
 goog.inherits(anychart.graphModule.elements.Interactivity, anychart.core.Base);

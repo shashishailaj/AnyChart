@@ -432,6 +432,7 @@ anychart.core.ui.OptimizedText.prototype.prepareComplexity = function() {
  * putAt() methods). That's why applying final settings doesn't break the bounds correct values.
  */
 anychart.core.ui.OptimizedText.prototype.finalizeComplexity = function() {
+
   if (this.consistency.complexity) {
     this.consistency.complexity = false;
     var i, text;
@@ -447,6 +448,7 @@ anychart.core.ui.OptimizedText.prototype.finalizeComplexity = function() {
         goog.dom.removeNode(this.domElement);
         this.container = null;
       }
+      this.disposeMultilines_();
     } else if (this.multilineOnly_) {
       // if (this.domElement) {
       //   goog.dom.removeNode(this.domElement);

@@ -110,12 +110,13 @@ anychart.graphModule.elements.Layout.prototype.explicitLayout_ = function() {
  * @private
  * */
 anychart.graphModule.elements.Layout.prototype.forceLayout_ = function() {
+  //manipulate this values you can achieve different results.
   var MAXIMUM_VELOCITY = 0.150;
   var MINIMUM_VELOCITY = -MAXIMUM_VELOCITY;
   var INITIAL_POSITION_FACTOR = 10;
   var COULOMB_FORCE_FACTOR = 0.9;
   var HARMONIC_FORCE_FACTOR = 10;
-  var ITERATION = 500;
+  var ITERATION = 500; //higher value increase rendering time.
 
   var nodes = this.chart_.getNodesArray();
   var subgraphs = this.chart_.getSubGraphsMap();
@@ -127,6 +128,7 @@ anychart.graphModule.elements.Layout.prototype.forceLayout_ = function() {
     node.velocityX = 0;
     node.velocityY = 0;
 
+    //Place nodes radial.
     node.position.x = INITIAL_POSITION_FACTOR * Math.cos(pi2 / (i + 1));
     node.position.y = INITIAL_POSITION_FACTOR * Math.sin(pi2 / (i + 1));
   }
@@ -177,7 +179,7 @@ anychart.graphModule.elements.Layout.prototype.forceLayout_ = function() {
       node.coulombY = 0;
       for (j = 0; j < length; j++) {
         node2 = nodes[j];
-        if (node != node2 && node.subGraphId == node2.subGraphId) { //
+        if (node != node2 && node.subGraphId == node2.subGraphId) { //repel only nodes of same groups. That works faster.
           force = coulomb(node.position.x, node.position.y, node2.position.x, node2.position.y);
           node.coulombX += force[0];
           node.coulombY += force[1];
@@ -202,27 +204,21 @@ anychart.graphModule.elements.Layout.prototype.forceLayout_ = function() {
       node.velocityX += (node.coulombX + node.harmonicX);
       node.velocityY += (node.coulombY + node.harmonicY);
 
-      if (node.velocityX > MAXIMUM_VELOCITY) {
-        node.velocityX = MAXIMUM_VELOCITY;
-      } else if (node.velocityX < MINIMUM_VELOCITY) {
-        node.velocityX = MINIMUM_VELOCITY;
-      }
-      if (node.velocityY > MAXIMUM_VELOCITY) {
-        node.velocityY = MAXIMUM_VELOCITY;
-      } else if (node.velocityY < MINIMUM_VELOCITY) {
-        node.velocityY = MINIMUM_VELOCITY;
-      }
+      //Prevent node fly away.
+      node.velocityX = goog.math.clamp(node.velocityX, MINIMUM_VELOCITY, MAXIMUM_VELOCITY);
+      node.velocityY = goog.math.clamp(node.velocityY, MINIMUM_VELOCITY, MAXIMUM_VELOCITY);
 
       node.position.x += node.velocityX;
       node.position.y += node.velocityY;
     }
   }
-
+  // If chart contains more than 1 disconnected graph place graphs from left to right.
   var keys = goog.object.getKeys(subgraphs);
   if (keys.length > 1) {
     var gap = 0.5; //offset between graphs
     var rectangles = [];
 
+    //create a rectangles that includes all nodes of current graph.
     for (i = 0; i < keys.length; i++) {
       var key = keys[i];
       var elementsOfSubgraphs = subgraphs[key];
@@ -231,6 +227,7 @@ anychart.graphModule.elements.Layout.prototype.forceLayout_ = function() {
       var left = Infinity;
       var right = -Infinity;
       length = elementsOfSubgraphs.length;
+      //create a rectangle with side length equal gap length.
       if (length == 1) {
         node = this.chart_.getNodeById(elementsOfSubgraphs[0]);
         top = node.position.y - gap;
@@ -238,6 +235,7 @@ anychart.graphModule.elements.Layout.prototype.forceLayout_ = function() {
         bottom = node.position.y + gap;
         right = node.position.x + gap;
       }
+      //create rectangle that include all nodes.
       else {
         for (j = 0; j < length; j++) {
           node = this.chart_.getNodeById(elementsOfSubgraphs[j]);
@@ -262,17 +260,17 @@ anychart.graphModule.elements.Layout.prototype.forceLayout_ = function() {
       var width = Math.abs(left - right);
       var height = Math.abs(bottom - top);
 
-      var e = {
+      var rectangleWithGroupId = {
         id: key,
         rectangle: new goog.math.Rect(left, top, width, height)
       };
-      rectangles.push(e);
+      rectangles.push(rectangleWithGroupId);
 
     }
 
     var x = 0;
     var y = 0;
-
+    //move rectangles along x.
     for (i = 0; i < rectangles.length; i++) {
       left = rectangles[i].rectangle.getTopLeft().getX();
       width = rectangles[i].rectangle.getWidth();
@@ -280,7 +278,7 @@ anychart.graphModule.elements.Layout.prototype.forceLayout_ = function() {
       x += width + gap;
       rectangles[i].dy = -rectangles[i].rectangle.getCenter().getY();
     }
-
+    //move all nodes that rectangles includes on new position.
     for (i = 0; i < rectangles.length; i++) {
       var nodesOfCurrentSubGraph = subgraphs[rectangles[i].id];
       for (j = 0; j < nodesOfCurrentSubGraph.length; j++) {

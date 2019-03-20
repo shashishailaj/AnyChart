@@ -8,6 +8,7 @@ goog.mixin(goog.global['anychart']['themes']['defaultTheme'], {
       'fontSize': 8,
       'fontColor': '#7c868e',
       'anchor': anychart.enums.Anchor.CENTER,
+      'disablePointerEvents': true,
       'padding' : {
         'top' : 0,
         'left' : 0,

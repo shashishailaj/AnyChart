@@ -67,7 +67,7 @@ anychart.graphModule.Chart = function(opt_data) {
 
   /**
    * Array with all edges.
-   * @type {?Array.<anychart.graphModule.Chart.Node>}
+   * @type {?Array.<anychart.graphModule.Chart.Edge>}
    * @private
    * */
   this.edgesArray_ = null;
@@ -111,6 +111,8 @@ anychart.graphModule.Chart.States = {
   LABELS_STYLE: 'labelsStyle',
   LABELS_ENABLED: 'labelsEnabled',
   LABELS_BOUNDS: 'labelsBounds',
+  NODES: 'nodes',
+  EDGES: 'edges',
   LAYOUT: 'layout',
   TRANSFORM: 'transform',
   ROTATE: 'rotate'
@@ -125,7 +127,9 @@ anychart.consistency.supportStates(anychart.graphModule.Chart, anychart.enums.St
   anychart.graphModule.Chart.States.LABELS_STYLE,
   anychart.graphModule.Chart.States.LAYOUT,
   anychart.graphModule.Chart.States.TRANSFORM,
-  anychart.graphModule.Chart.States.ROTATE
+  anychart.graphModule.Chart.States.ROTATE,
+  anychart.graphModule.Chart.States.NODES,
+  anychart.graphModule.Chart.States.EDGES
 ]);
 
 
@@ -484,87 +488,67 @@ anychart.graphModule.Chart.prototype.setOffset = function() {
 
   var length = nodes.length;
 
-  var i;
-
+  var i, x, y;
   for (i = 0; i < length; i++) {
-    var x = nodes[i].position.x;
-    var y = nodes[i].position.y;
-    if (x < mostLeft) {
-      mostLeft = x;
-    }
-    if (x > mostRight) {
-      mostRight = x;
-    }
-    if (y > mostBottom) {
-      mostBottom = y;
-    }
-    if (y < mostTop) {
-      mostTop = y;
-    }
+    x = nodes[i].position.x;
+    y = nodes[i].position.y;
+    mostTop = Math.min(y, mostTop);
+    mostRight = Math.max(x, mostRight);
+    mostBottom = Math.max(y, mostBottom);
+    mostLeft = Math.min(x, mostLeft);
   }
 
   mostBottom += -mostTop;
-  for (i = 0; i < length; i++) {
-    nodes[i].position.y += -mostTop;
-  }
-
   mostRight += -mostLeft;
-  for (i = 0; i < length; i++) {
-    nodes[i].position.x += -mostLeft;
-  }
+  var gapFactor = 0.05; //don't let nodes to stick close to bounds.
+  var widthGap = this.contentBounds.width * gapFactor;
+  var heightGap = this.contentBounds.height * gapFactor;
+  var height = this.contentBounds.height - 2 * heightGap;
+  var width = this.contentBounds.width - 2 * widthGap;
 
-  var maxSide;
-  var mlt;
-
-  if (mostRight > mostBottom) {
-    //horizontal chart
-    mlt = mostRight;
-    maxSide = this.contentBounds.width / 2 > this.contentBounds.height ? this.contentBounds.height : this.contentBounds.width;
-  } else {
-    //vertical
-    mlt = mostBottom;
-    maxSide = this.contentBounds.height > this.contentBounds.width ? this.contentBounds.width : this.contentBounds.height;
-  }
-
-  var gap = maxSide * 0.1;
-  mlt = (maxSide - gap) / (mlt ? mlt : 1);//zero division
+  var scaleFactor = Math.min(width / mostRight, height / mostBottom);
 
   var centerX = this.contentBounds.getCenter().getX();
   var centerY = this.contentBounds.getCenter().getY();
 
-  var offstX = 0;
-  var offstY = 0;
+  var offsetX = 0;
+  var offsetY = 0;
   for (i = 0; i < length; i++) {
-    nodes[i].position.x *= mlt;
-    nodes[i].position.y *= mlt;
-    nodes[i].position.x += this.contentBounds.left;
-    nodes[i].position.y += this.contentBounds.top;
-
-    if (nodes[i].position.x < centerX) {
-      offstX += centerX - nodes[i].position.x;
+    x = nodes[i].position.x;
+    y = nodes[i].position.y;
+    x += -mostLeft;
+    y += -mostTop;
+    x *= scaleFactor;
+    y *= scaleFactor;
+    //calculate offset from center of bounds.
+    if (x < centerX) {
+      offsetX += centerX - x;
     } else {
-      offstX -= nodes[i].position.x - centerX;
+      offsetX -= x - centerX;
     }
 
-    if (nodes[i].position.y < centerY) {
-      offstY += centerY - nodes[i].position.y;
+    if (y < centerY) {
+      offsetY += centerY - y;
     } else {
-      offstY -= nodes[i].position.y - centerY;
+      offsetY -= y - centerY;
     }
+    nodes[i].position.x = x;
+    nodes[i].position.y = y;
   }
+  //average offset
+  offsetX /= nodes.length;
+  offsetY /= nodes.length;
 
-  offstX /= nodes.length;
-  offstY /= nodes.length;
-
+  //push all nodes to center.
   for (i = 0; i < length; i++) {
-    nodes[i].position.x += offstX;
-    nodes[i].position.y += offstY;
+    nodes[i].position.x += offsetX;
+    nodes[i].position.y += offsetY;
   }
 };
 
 
 /**
- * Update current x y position for node.
+ * Set new position for node.
  * @param {anychart.graphModule.Chart.Node} node
  * @param {number} dx
  * @param {number} dy
@@ -613,16 +597,14 @@ anychart.graphModule.Chart.prototype.nodeDragInteractivity = function(node, domT
   var iterator = this.nodes().getIterator();
 
   dragger.listen(goog.fx.Dragger.EventType.START, /** @this {anychart.graphModule.Chart}*/ function(e) {
-
     startX = this.getXWithTranslate(event.clientX);
     startY = this.getYWithTranslate(event.clientY);
   }, false, this);
 
   dragger.listen(goog.fx.Dragger.EventType.DRAG, /** @this {anychart.graphModule.Chart}*/ function(e) {
-    this.edges().getLabelsLayer().parent(null);
     var x = this.getXWithTranslate(e.clientX);
     var y = this.getYWithTranslate(e.clientY);
-
+    //this.edges().getLabelsLayer().parent(null);
     var dx = x - startX;
     var dy = y - startY;
     startX = x;
@@ -641,8 +623,7 @@ anychart.graphModule.Chart.prototype.nodeDragInteractivity = function(node, domT
       this.updateEdgesConnectedToNode(node);
     }
 
-    iterator.select(node.dataRow);
-    this.edges().getLabelsLayer().parent(this.rootLayer);
+    // this.edges().getLabelsLayer().parent(this.rootLayer);
     dragger.dispose();
   }, false, this);
 
@@ -706,6 +687,7 @@ anychart.graphModule.Chart.prototype.handleMouseOut = function(event) {
 anychart.graphModule.Chart.prototype.updateNode = function(node, state) {
   this.nodes().state(node, state);
   this.nodes().updateAppearance(node);
+  debugger
   this.nodes().updateLabelStyle(node);
 };
 
@@ -985,7 +967,7 @@ anychart.graphModule.Chart.prototype.onNodeSignal_ = function(event) {
     anychart.Signal.NEEDS_REAPPLICATION |
     anychart.Signal.ENABLED_STATE_CHANGED)
   ) {
-    this.labelsSettingsInvalidated_(event);
+    this.labelsSettingsInvalidated_(event, anychart.graphModule.Chart.Element.NODE);
   }
 
   var states = [];
@@ -1010,7 +992,7 @@ anychart.graphModule.Chart.prototype.onEdgeSignal_ = function(event) {
     anychart.Signal.NEEDS_REAPPLICATION |
     anychart.Signal.ENABLED_STATE_CHANGED)
   ) {
-    this.labelsSettingsInvalidated_(event);
+    this.labelsSettingsInvalidated_(event, anychart.graphModule.Chart.Element.EDGE);
   }
   if (event.hasSignal(anychart.Signal.NEEDS_REDRAW_APPEARANCE)) {
     this.invalidateState(anychart.enums.Store.GRAPH, anychart.enums.State.APPEARANCE, anychart.Signal.NEEDS_REDRAW_APPEARANCE);
@@ -1029,7 +1011,7 @@ anychart.graphModule.Chart.prototype.onGroupSignal_ = function(event) {
     anychart.Signal.NEEDS_REAPPLICATION |
     anychart.Signal.ENABLED_STATE_CHANGED)
   ) {
-    this.labelsSettingsInvalidated_(event);
+    this.labelsSettingsInvalidated_(event, anychart.graphModule.Chart.Element.GROUP);
   }
   if (event.hasSignal(anychart.Signal.NEEDS_REDRAW_APPEARANCE)) {
     this.invalidateState(anychart.enums.Store.GRAPH, anychart.enums.State.APPEARANCE, anychart.Signal.NEEDS_REDRAW_APPEARANCE);
@@ -1092,6 +1074,7 @@ anychart.graphModule.Chart.prototype.nodes = function(opt_value) {
     this.setupCreated('nodes', this.nodesSettingObject);
     this.nodesSettingObject.setupElements();
     this.nodesSettingObject.listenSignals(this.onNodeSignal_, this);
+    this.nodesSettingObject.dispatchSignal(anychart.Signal.MEASURE_COLLECT | anychart.Signal.MEASURE_BOUNDS);
   }
   if (opt_value) {
     this.nodesSettingObject.setup(opt_value);
@@ -1131,7 +1114,7 @@ anychart.graphModule.Chart.prototype.groups = function(id, opt_value) {
       if (goog.isNull(this.groups_[id])) {
         var group = new anychart.graphModule.elements.Group(this);
         // group.setupElements();
-        group.listenSignals(this.onNodeSignal_, this);
+        group.listenSignals(this.onGroupSignal_, this);
         this.groups_[id] = group;
       }
       if (opt_value) {
@@ -1175,6 +1158,7 @@ anychart.graphModule.Chart.prototype.edges = function(opt_value) {
     this.setupCreated('edges', this.edgeSettingsObject_);
     this.edgeSettingsObject_.setupElements();
     this.edgeSettingsObject_.listenSignals(this.onEdgeSignal_, this);
+    this.edgeSettingsObject_.dispatchSignal(anychart.Signal.MEASURE_COLLECT | anychart.Signal.MEASURE_BOUNDS);
   }
   if (opt_value) {
     return this;
@@ -1186,28 +1170,31 @@ anychart.graphModule.Chart.prototype.edges = function(opt_value) {
 /**
  * Labels handler
  * @param {anychart.SignalEvent} event
+ * @param {anychart.graphModule.Chart.Element} source
  * @private
  * */
-anychart.graphModule.Chart.prototype.labelsSettingsInvalidated_ = function(event) {
+anychart.graphModule.Chart.prototype.labelsSettingsInvalidated_ = function(event, source) {
   var state = [];
   var signal = anychart.Signal.NEEDS_REDRAW;
-  if (event.hasSignal(anychart.Signal.NEEDS_REDRAW)) {
-    state.push(anychart.graphModule.Chart.States.LABELS_STYLE);
-  }
-  if (event.hasSignal(anychart.Signal.BOUNDS_CHANGED)) {
-    state.push(
-      anychart.graphModule.Chart.States.LABELS_BOUNDS,
-      anychart.graphModule.Chart.States.LABELS_STYLE,
-      anychart.graphModule.Chart.States.LABELS_ENABLED
-    );
-  }
-
-  if (event.hasSignal(anychart.Signal.NEEDS_REAPPLICATION)) {
-    state.push(anychart.graphModule.Chart.States.LABELS_STYLE);
-  }
-
-  if (event.hasSignal(anychart.Signal.ENABLED_STATE_CHANGED)) {
-    state.push(anychart.graphModule.Chart.States.LABELS_ENABLED, anychart.graphModule.Chart.States.LABELS_STYLE);
+  state.push(
+    anychart.graphModule.Chart.States.LABELS_BOUNDS,
+    anychart.graphModule.Chart.States.LABELS_STYLE,
+    anychart.graphModule.Chart.States.LABELS_ENABLED
+  );
+  switch (source) {
+    case anychart.graphModule.Chart.Element.GROUP:
+    case anychart.graphModule.Chart.Element.NODE:
+      state.push(anychart.graphModule.Chart.States.NODES);
+      this.nodes().needsMeasureLabels();
+      break;
+    case anychart.graphModule.Chart.Element.EDGE:
+      state.push(anychart.graphModule.Chart.States.EDGES);
+      this.edges().needsMeasureLabels();
+      break;
+    default:
+      state.push(anychart.graphModule.Chart.States.EDGES, anychart.graphModule.Chart.States.NODES);
+      this.nodes().needsMeasureLabels();
+      this.edges().needsMeasureLabels();
   }
   this.invalidateMultiState(anychart.enums.Store.GRAPH, state, signal);
 };
@@ -1221,6 +1208,7 @@ anychart.graphModule.Chart.prototype.labels = function(opt_value) {
   if (!this.labelsSettings_) {
     this.labelsSettings_ = new anychart.core.ui.LabelsSettings();
     this.setupCreated('labels', this.labelsSettings_);
+    // this.listenSignals(this.labelsSettingsInvalidated_, this);
   }
 
   if (goog.isDef(opt_value)) {
@@ -1283,7 +1271,7 @@ anychart.graphModule.Chart.prototype.getNodesArray = function() {
 
 /**
  * Return array with all edges.
- * @return {Array.<anychart.graphModule.Chart.Node>}
+ * @return {Array.<anychart.graphModule.Chart.Edge>}
  * */
 anychart.graphModule.Chart.prototype.getEdgesArray = function() {
   if (!this.edgesArray_) {
@@ -1319,7 +1307,7 @@ anychart.graphModule.Chart.prototype.getEdgeById = function(id) {
 
 
 /**
- * Update all appearance of all nodes.
+ * Update appearance of all nodes.
  * */
 anychart.graphModule.Chart.prototype.updateNodesAppearance = function() {
   var nodes = this.getNodesArray();
@@ -1336,7 +1324,7 @@ anychart.graphModule.Chart.prototype.updateNodesAppearance = function() {
  * */
 anychart.graphModule.Chart.prototype.drawNode = function(node) {
   var domElement = this.nodes().createDOM(node);
-  domElement.parent(this.rootLayer);
+  domElement.parent(this.nodesLayer_);
 };
 
 
@@ -1348,6 +1336,7 @@ anychart.graphModule.Chart.prototype.drawNodes = function() {
     node = this.getNodeById(node);
     this.drawNode(node);
   }
+  this.nodes().dispatchSignal(anychart.Signal.MEASURE_COLLECT | anychart.Signal.MEASURE_BOUNDS);
 };
 
 
@@ -1378,7 +1367,7 @@ anychart.graphModule.Chart.prototype.drawEdge = function(edge) {
   domElement.moveTo(from.position.x, from.position.y);
   domElement.lineTo(to.position.x, to.position.y);
 
-  domElement.parent(this.rootLayer);
+  domElement.parent(this.edgesLayer_);
 };
 
 
@@ -1390,7 +1379,7 @@ anychart.graphModule.Chart.prototype.drawEdges = function() {
     var edge = this.getEdgeById(i);
     this.drawEdge(edge);
   }
-  this.edges().dispatchSignal(anychart.Signal.MEASURE_COLLECT);
+  this.edges().dispatchSignal(anychart.Signal.MEASURE_COLLECT | anychart.Signal.MEASURE_BOUNDS);
 };
 
 
@@ -1402,19 +1391,22 @@ anychart.graphModule.Chart.prototype.drawContent = function(bounds) {
   if (!this.rootLayer) {
     this.rootLayer = this.rootElement.layer();
     this.rootLayer.zIndex(anychart.graphModule.Chart.Z_INDEX);
+    this.nodesLayer_ = acgraph.layer();
+    this.edgesLayer_ = acgraph.layer();
+    this.edgesLayer_.parent(this.rootLayer);
     this.edges().getLabelsLayer().parent(this.rootLayer);
     this.nodes().getLabelsLayer().parent(this.rootLayer);
+    this.nodesLayer_.parent(this.rootLayer);
+
+    // debugger
+    // this.nodesLayer_.suspend();
+    // this.edgesLayer_.suspend();
+
   }
 
   if (this.hasStateInvalidation(anychart.enums.Store.GRAPH, anychart.graphModule.Chart.States.LAYOUT)) {
     this.layout().getCoordinatesForCurrentLayout();
     this.markStateConsistent(anychart.enums.Store.GRAPH, anychart.graphModule.Chart.States.LAYOUT);
-  }
-
-  if (this.hasStateInvalidation(anychart.enums.Store.GRAPH, anychart.enums.State.DATA)) {
-    this.drawEdges();
-    this.drawNodes();
-    this.markStateConsistent(anychart.enums.Store.GRAPH, anychart.enums.State.DATA);
   }
 
   if (this.hasStateInvalidation(anychart.enums.Store.GRAPH, anychart.graphModule.Chart.States.ROTATE)) {
@@ -1430,40 +1422,76 @@ anychart.graphModule.Chart.prototype.drawContent = function(bounds) {
     this.markStateConsistent(anychart.enums.Store.GRAPH, anychart.graphModule.Chart.States.ROTATE);
   }
 
+  if (this.hasInvalidationState(anychart.ConsistencyState.BOUNDS)) {
+    if (this.layout().type() == anychart.graphModule.elements.LayoutType.FORCE) {
+      this.setOffset();
+    }
+    this.drawEdges();
+    this.drawNodes();
+
+    this.invalidateMultiState(anychart.enums.Store.GRAPH, [
+      anychart.graphModule.Chart.States.EDGES,
+      anychart.graphModule.Chart.States.NODES,
+      anychart.graphModule.Chart.States.LABELS_STYLE,
+      anychart.graphModule.Chart.States.LABELS_ENABLED,
+     // anychart.graphModule.Chart.States.LABELS_BOUNDS,
+      anychart.enums.State.APPEARANCE
+
+    ]);
+    this.markConsistent(anychart.ConsistencyState.BOUNDS);
+  }
+
+
   if (this.hasStateInvalidation(anychart.enums.Store.GRAPH, anychart.enums.State.APPEARANCE)) {
     this.updateEdgesAppearance();
     this.updateNodesAppearance();
     this.markStateConsistent(anychart.enums.Store.GRAPH, anychart.enums.State.APPEARANCE);
   }
 
-  if (this.hasStateInvalidation(anychart.enums.Store.GRAPH, anychart.graphModule.Chart.States.LABELS_ENABLED)) {
-    this.edges().drawLabels();
-    this.nodes().drawLabels();
-    this.edges().updateLabelsStyle();
-    this.nodes().updateLabelsStyle();
-    this.nodes().resetComplexityForTexts();
-    this.edges().resetComplexityForTexts();
-    this.markStateConsistent(anychart.enums.Store.GRAPH, anychart.graphModule.Chart.States.LABELS_ENABLED);
-  }
+  if (this.hasMultiStateInvalidation(anychart.enums.Store.GRAPH,
+    [
+      anychart.graphModule.Chart.States.LABELS_STYLE,
+      anychart.graphModule.Chart.States.LABELS_BOUNDS,
+      anychart.graphModule.Chart.States.LABELS_ENABLED
+    ])) {
+    if (this.hasStateInvalidation(anychart.enums.Store.GRAPH, anychart.graphModule.Chart.States.LABELS_STYLE)) {
+      if (this.hasStateInvalidation(anychart.enums.Store.GRAPH, anychart.graphModule.Chart.States.NODES)) {
+        this.nodes().applyLabelsStyle();
+      }
 
-  if (this.hasStateInvalidation(anychart.enums.Store.GRAPH, anychart.graphModule.Chart.States.LABELS_BOUNDS)) {
-    anychart.measuriator.measure();
-    this.markStateConsistent(anychart.enums.Store.GRAPH, anychart.graphModule.Chart.States.LABELS_BOUNDS);
-  }
-
-  if (this.hasStateInvalidation(anychart.enums.Store.GRAPH, anychart.graphModule.Chart.States.LABELS_STYLE)) {
-    this.edges().updateLabelsStyle();
-    this.nodes().updateLabelsStyle();
-    this.markStateConsistent(anychart.enums.Store.GRAPH, anychart.graphModule.Chart.States.LABELS_STYLE);
-  }
-  if (this.hasInvalidationState(anychart.ConsistencyState.BOUNDS)) {
-    if (this.layout().type() == anychart.graphModule.elements.LayoutType.FORCE) {
-      this.setOffset();
+      if (this.hasStateInvalidation(anychart.enums.Store.GRAPH, anychart.graphModule.Chart.States.EDGES)) {
+        this.edges().applyLabelsStyle();
+      }
+      this.markStateConsistent(anychart.enums.Store.GRAPH, anychart.graphModule.Chart.States.LABELS_STYLE);
     }
-    this.moveNodes();
-    this.markConsistent(anychart.ConsistencyState.BOUNDS);
+
+    if (this.hasStateInvalidation(anychart.enums.Store.GRAPH, anychart.graphModule.Chart.States.LABELS_BOUNDS)) {
+      anychart.measuriator.measure();
+      this.markStateConsistent(anychart.enums.Store.GRAPH, anychart.graphModule.Chart.States.LABELS_BOUNDS);
+    }
+
+    if (this.hasStateInvalidation(anychart.enums.Store.GRAPH, anychart.graphModule.Chart.States.LABELS_ENABLED)) {
+      if (this.hasStateInvalidation(anychart.enums.Store.GRAPH, anychart.graphModule.Chart.States.EDGES)) {
+        this.edges().drawLabels();
+      }
+
+      if (this.hasStateInvalidation(anychart.enums.Store.GRAPH, anychart.graphModule.Chart.States.NODES)) {
+        this.nodes().drawLabels();
+      }
+      this.markStateConsistent(anychart.enums.Store.GRAPH, anychart.graphModule.Chart.States.LABELS_ENABLED);
+    }
+    this.markMultiStateConsistent(anychart.enums.Store.GRAPH,
+      [anychart.graphModule.Chart.States.EDGES, anychart.graphModule.Chart.States.NODES]);
   }
 
+
+  // if (this.hasInvalidationState(anychart.ConsistencyState.BOUNDS)) {
+  //   if (this.layout().type() == anychart.graphModule.elements.LayoutType.FORCE) {
+  //     this.setOffset();
+  //   }
+  //   this.moveNodes();
+  //   this.markConsistent(anychart.ConsistencyState.BOUNDS);
+  // }
 
   if (this.hasStateInvalidation(anychart.enums.Store.GRAPH, anychart.graphModule.Chart.States.TRANSFORM)) {
     this.rootLayer.scale(this.zoom_[0], this.zoom_[0], this.zoom_[1], this.zoom_[1]);
@@ -1689,9 +1717,12 @@ anychart.graphModule.Chart.prototype.setupByJSON = function(config, opt_default)
   if ('labels')
     this.labels().setup(config['labels']);
 
-  if ('layout')
+  if ('layout') {
     this.layout().setup(config['layout']);
-
+    if (config['layout']['type'] == anychart.graphModule.elements.LayoutType.FORCE) {
+      this.markStateConsistent(anychart.enums.Store.GRAPH, anychart.graphModule.Chart.States.LAYOUT);
+    }
+  }
   if ('groups' in config) {
     var groups = config['groups'];
     for (var i = 0; i < groups.length; i++) {

@@ -8,7 +8,6 @@ goog.require('anychart.graphModule.elements.Base');
 goog.require('anychart.reflow.IMeasurementsTargetProvider');
 
 
-
 /**
  * @constructor
  * @param {anychart.graphModule.Chart} chart
@@ -18,8 +17,17 @@ goog.require('anychart.reflow.IMeasurementsTargetProvider');
 anychart.graphModule.elements.Node = function(chart) {
   anychart.graphModule.elements.Node.base(this, 'constructor', chart);
 
+  /**
+   * Chart instance.
+   * @type {anychart.graphModule.Chart}
+   * @private
+   * */
   this.chart_ = chart;
 
+  /**
+   * Type of element
+   * @type {anychart.graphModule.Chart.Element}
+   * */
   this.type = anychart.graphModule.Chart.Element.NODE;
 
   /**
@@ -28,13 +36,6 @@ anychart.graphModule.elements.Node = function(chart) {
    * @private
    * */
   this.labelsLayerEl_;
-
-  /**
-   * Gap for magnetize.
-   * @private
-   * @const
-   * */
-  this.magnetizeGap_ = 5;
 
   /**
    * @type {!anychart.data.Iterator}
@@ -75,17 +76,16 @@ anychart.graphModule.elements.Node.prototype.getIterator = function() {
 };
 
 
-/**
- * @inheritDoc
- */
+/** @inheritDoc */
 anychart.graphModule.elements.Node.prototype.provideMeasurements = function() {
   var texts = [];
-
   var nodes = this.chart_.getNodesArray();
   for (var i = 0; i < nodes.length; i++) {
     var node = nodes[i];
-    if (node.textElement) {
-      texts.push(node.textElement);
+    var labelSettings = this.resolveLabelSettings(node);
+    var te = this.getTextElement(node);
+    if (labelSettings.enabled()) {
+      texts.push(te);
     }
   }
 
@@ -123,22 +123,6 @@ anychart.graphModule.elements.Node.prototype.tooltip = function(opt_value) {
 anychart.graphModule.elements.Node.prototype.getElementId = function(node) {
   return node.nodeId;
 };
-
-
-// /**
-//  * Calculates middle position for label
-//  * @param {anychart.graphModule.Chart.Node} node
-//  * */
-// anychart.graphModule.elements.Node.prototype.updateEdgesConntectedToNode = function(node) {
-//   var connectedEdges = node.connectedEdges;
-//   var edges = this.chart_.getEdgesMap();
-//
-//   for (var i = 0, length = connectedEdges.length; i < length; i++) {
-//     var edge = edges[connectedEdges[i]];
-//     this.chart_.edges().calculateLabelPositionForEdge(edges[edge]);
-//     this.chart_.rootLayer.circle(edge.labelsSettings.position.x, edge.labelsSettings.position.y);
-//   }
-// };
 
 
 /**
@@ -212,12 +196,11 @@ anychart.graphModule.elements.Node.prototype.updateLabelStyle = function(node) {
  * @private
  */
 anychart.graphModule.elements.Node.prototype.setupText_ = function(node) {
-  var labels = this.resolveLabelSettings(node);
-  var provider = this.createFormatProvider(node);
-  var textVal = labels.getText(provider);
-
-  var text = node.textElement;
+  var text = this.getTextElement(node);
   if (text) {
+    var labels = this.resolveLabelSettings(node);
+    var provider = this.createFormatProvider(node);
+    var textVal = labels.getText(provider);
     text.text(textVal);
     text.style(labels.flatten());
     text.prepareComplexity();
@@ -269,37 +252,32 @@ anychart.graphModule.elements.Node.prototype.getLabelPosition = function(node) {
  * @param {anychart.graphModule.Chart.Node} node
  * */
 anychart.graphModule.elements.Node.prototype.drawLabel = function(node) {
+  var textElement = this.getTextElement(node);
   var labelSettings = this.resolveLabelSettings(node);
-  if (labelSettings.enabled() && !node.textElement) {
-    node.textElement = this.getText();
+  if (labelSettings.enabled()) {
+    var position = this.getLabelPosition(node);
+    var padding = /**@type {anychart.core.utils.Padding}*/(labelSettings.padding());
+    var left, right, top, bottom, width, height;
+
+    width = 100;
+    height = 50;
+    left = /**@type {number}*/(padding.getOption('left'));
+    right = /**@type {number}*/(padding.getOption('right'));
+    top = /**@type {number}*/(padding.getOption('top'));
+    bottom = /**@type {number}*/(padding.getOption('bottom'));
+
+    width = left + width + right;
+    height = top + height + bottom;
+    var y = position.y + top - bottom;
+    var x = position.x + left - right;
+    var cellBounds = anychart.math.rect(x, y, width, height);
+    textElement.renderTo(this.labelsLayerEl_);
+    textElement.putAt(cellBounds);
+    textElement.finalizeComplexity();
+  } else {
+    textElement.renderTo(null);
   }
-  var textElement = node.textElement;
-  if (textElement) {
 
-    if (labelSettings.enabled()) {
-      var position = this.getLabelPosition(node);
-      var padding = /**@type {anychart.core.utils.Padding}*/(labelSettings.padding());
-      var left, right, top, bottom, width, height;
-
-      width = 100;
-      height = 50;
-      left = /**@type {number}*/(padding.getOption('left'));
-      right = /**@type {number}*/(padding.getOption('right'));
-      top = /**@type {number}*/(padding.getOption('top'));
-      bottom = /**@type {number}*/(padding.getOption('bottom'));
-
-      width = left + width + right;
-      height = top + height + bottom;
-      var y = position.y + top - bottom;
-      var x = position.x + left - right;
-      var cellBounds = anychart.math.rect(x, y, width, height);
-      textElement.renderTo(this.labelsLayerEl_);
-      textElement.putAt(cellBounds);
-      textElement.finalizeComplexity();
-    } else {
-      textElement.renderTo(null);
-    }
-  }
 };
 
 
@@ -312,7 +290,7 @@ anychart.graphModule.elements.Node.prototype.drawLabels = function() {
     var node = nodes[i];
     this.drawLabel(node);
   }
-  this.dispatchSignal(anychart.Signal.MEASURE_COLLECT | anychart.Signal.MEASURE_BOUNDS);
+  // this.resetComplexityForTexts();
 };
 
 
@@ -352,7 +330,7 @@ anychart.graphModule.elements.Node.prototype.createFormatProvider = function(nod
  * @param {anychart.graphModule.Chart.Node} node
  * */
 anychart.graphModule.elements.Node.prototype.stickNode = function(node) {
-  var gap = this.magnetizeGap_;
+  var gap = 5;
   var node_ = this.chart_.getSubGraphsMap()[/**@type {string}*/(node.subGraphId)];
   var newX, newY;
   newX = newY = Infinity;
@@ -413,10 +391,6 @@ anychart.graphModule.elements.Node.prototype.getWidth = function(node) {
  * @private
  * */
 anychart.graphModule.elements.Node.prototype.labelsInvalidated_ = function(event) {
-  if (event.hasSignal(anychart.Signal.BOUNDS_CHANGED)) {
-    event.signals |= anychart.Signal.MEASURE_COLLECT | anychart.Signal.MEASURE_BOUNDS;
-  }
-
   this.dispatchSignal(event.signals);
 };
 
@@ -431,7 +405,7 @@ anychart.graphModule.elements.Node.prototype.state = function(node, opt_state) {
     node.currentState = opt_state;
     return node;
   }
-  return node.currentState;
+  return node.currentState || anychart.SettingsState.NORMAL;
 };
 
 
@@ -456,30 +430,30 @@ anychart.graphModule.elements.Node.prototype.getShapeDrawer = function(node) {
     return anychart.utils.getMarkerDrawer(type);
   } else {
     return (
-        /**
-         * @param {!acgraph.vector.Path} path
-         * @param {number} x
-         * @param {number} y
-         * @param {number} height
-         * @param {number} width
-         * @return {!acgraph.vector.Path}
-         */
-        (function(path, x, y, height, width) {
-          var left = x - width;
-          var top = y - height;
-          var right = x + width;
-          var bottom = y + height;
+      /**
+       * @param {!acgraph.vector.Path} path
+       * @param {number} x
+       * @param {number} y
+       * @param {number} height
+       * @param {number} width
+       * @return {!acgraph.vector.Path}
+       */
+      (function(path, x, y, height, width) {
+        var left = x - width;
+        var top = y - height;
+        var right = x + width;
+        var bottom = y + height;
 
-          path
-              .moveTo(left, top)
-              .lineTo(right, top)
-              .lineTo(right, bottom)
-              .lineTo(left, bottom)
-              .lineTo(left, top)
-              .close();
+        path
+          .moveTo(left, top)
+          .lineTo(right, top)
+          .lineTo(right, bottom)
+          .lineTo(left, bottom)
+          .lineTo(left, top)
+          .close();
 
-          return path;
-        }));
+        return path;
+      }));
   }
 };
 
@@ -527,17 +501,16 @@ anychart.graphModule.elements.Node.prototype.updateNodeColors = function(node) {
  * @return {acgraph.vector.Path}
  * */
 anychart.graphModule.elements.Node.prototype.createDOM = function(node) {
-  var domElement = this.getPath();
+  if (!node.domElement) {
+    node.domElement = this.getPath();
+  }
+  var domElement = node.domElement;
 
   domElement.tag = /**@type {anychart.graphModule.Chart.Tag}*/({});
   domElement.tag.type = this.getType();
   domElement.tag.id = node.nodeId;
-  domElement.tag.currentState = anychart.SettingsState.NORMAL;
-  node.currentState = anychart.SettingsState.NORMAL;
-  var lbs = this.resolveLabelSettings(node);
-  if (lbs.enabled()) {
-    node.textElement = this.getText();
-  }
+  domElement.tag.currentState = /**@type {anychart.SettingsState}*/(this.state(node));
+  node.currentState = /**@type {anychart.SettingsState}*/(this.state(node));
   node.domElement = domElement;
   return domElement;
 };
