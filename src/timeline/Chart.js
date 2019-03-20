@@ -599,28 +599,33 @@ anychart.timelineModule.Chart.prototype.drawContent = function(bounds) {
  * @private
  */
 anychart.timelineModule.Chart.prototype.handleMouseWheel_ = function(event) {
-
+  var range = this.scale().getRange();
+  var totalRange = this.scale().getTotalRange();
+  var ratio = 0.1;//how much of current range we want to cut after zoom
   var matrix;
   if (event['shiftKey'] && this.interactivity().getOption('zoomOnMouseWheel')) {//zooming
     var zoomIn = event['deltaY'] < 0;
+    if ((range['min']) <= totalRange['min'] && (range['max']) >= totalRange['max'] && !zoomIn)
+      return;
 
-    matrix = this.timelineLayer.getTransformationMatrix();
-    if (zoomIn) {
-      matrix[0] += 0.1;
-      matrix[3] += 0.1;
-      var yDelta = 1 - matrix[3];
-      matrix[5] = this.dataBounds.height * (yDelta / 2);
+    var cutOutPart = (range['max'] - range['min']) * ratio;
+    var mouseX = event['clientX'];
+    mouseX -= this.dataBounds.left;
+    var currentDate = this.scale().inverseTransform(mouseX / this.dataBounds.width);
+
+    var leftDelta, rightDelta;
+    if (currentDate - range['min'] !== range['max'] - currentDate) {
+      leftDelta = cutOutPart * ((currentDate - range['min']) / (range['max'] - range['min']));
+      rightDelta = cutOutPart - leftDelta;
     } else {
-      matrix[0] -= 0.1;
-      matrix[3] -= 0.1;
-      if (matrix[0] < 1) {
-        matrix[0] = 1;
-        matrix[3] = 1;
-      }
-      var yDelta = 1 - matrix[3];
-      matrix[5] = this.dataBounds.height * (yDelta / 2);
+      leftDelta = rightDelta = cutOutPart / 2;
     }
-    this.timelineLayer.setTransformationMatrix.apply(this.timelineLayer, matrix);
+    rightDelta = -rightDelta;
+    if (event['deltaY'] > 0) {
+      leftDelta = -leftDelta;
+      rightDelta = -rightDelta;
+    }
+    this.zoomTo(range['min'] + leftDelta, range['max'] + rightDelta);
   } else if (!event['shiftKey'] && this.interactivity().getOption('scrollOnMouseWheel')) {//scrolling
     var horizontalScroll = event['deltaX'] != 0;
     var verticalScroll = event['deltaY'] != 0;
