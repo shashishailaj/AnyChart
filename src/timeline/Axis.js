@@ -113,7 +113,7 @@ anychart.timelineModule.Axis.prototype.scale = function(opt_value) {
  * @private
  */
 anychart.timelineModule.Axis.prototype.scaleInvalidated_ = function(event) {
-  this.invalidate(anychart.ConsistencyState.AXIS_TICKS | anychart.ConsistencyState.AXIS_LABELS, anychart.Signal.NEEDS_REDRAW);
+  this.invalidate(anychart.ConsistencyState.APPEARANCE | anychart.ConsistencyState.AXIS_TICKS | anychart.ConsistencyState.AXIS_LABELS, anychart.Signal.NEEDS_REDRAW);
 };
 
 
@@ -238,8 +238,8 @@ anychart.timelineModule.Axis.prototype.draw = function() {
 
       for (var i = 0; i < ticksArray.length; i++) {
         var tickRatio = this.scale().transform(ticksArray[i]['start']);
-        if (tickRatio <= 1 && tickRatio >= 0)
-          axisTicks.drawTick(tickRatio, this.axisBounds_);
+        // if (tickRatio <= 1 && tickRatio >= 0)
+        axisTicks.drawTick(tickRatio, this.axisBounds_);
       }
     }
 
@@ -272,6 +272,7 @@ anychart.timelineModule.Axis.prototype.draw = function() {
 anychart.timelineModule.Axis.prototype.getTicks = function() {
   var ticksArray = [];
   var zoomLevels = this.scale().getLevelsData();
+  var totalRange = this.scale().getTotalRange();
 
   for (var i = 0; i < zoomLevels.length; i++) {
     ticksArray = this.scale().getTicks(void 0, void 0, zoomLevels[i].unit, zoomLevels[i].count);
@@ -282,10 +283,15 @@ anychart.timelineModule.Axis.prototype.getTicks = function() {
     if (ticksArray.length <= 10) {
       if (ticksArray.length < 3 && i > 0) {
         ticksArray = this.scale().getTicks(void 0, void 0, zoomLevels[i - 1].unit, zoomLevels[i - 1].count);
+        i--;
       }
       break;
     }
   }
+  if (i == zoomLevels.length)
+    i--;
+
+  ticksArray = this.scale().getTicks(void 0, void 0, zoomLevels[i].unit, zoomLevels[i].count, totalRange);
   return ticksArray;
 };
 
@@ -366,8 +372,15 @@ anychart.timelineModule.Axis.prototype.drawAxis = function() {
 
   var thickness = anychart.utils.extractThickness(stroke);
 
-  var left = bounds.left;
-  var right = bounds.getRight();
+  var totalRange = this.scale().getTotalRange();
+  var min = this.scale().transform(totalRange['min']);
+  var max = this.scale().transform(totalRange['max']);
+
+  min = bounds.width * min;
+  max = bounds.width * max;
+
+  var left = min;
+  var right = max;
   var top = center - halfHeight;
   var bottom = center + halfHeight;
 
