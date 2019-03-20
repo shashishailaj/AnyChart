@@ -687,7 +687,6 @@ anychart.graphModule.Chart.prototype.handleMouseOut = function(event) {
 anychart.graphModule.Chart.prototype.updateNode = function(node, state) {
   this.nodes().state(node, state);
   this.nodes().updateAppearance(node);
-  debugger
   this.nodes().updateLabelStyle(node);
 };
 
@@ -853,53 +852,54 @@ anychart.graphModule.Chart.prototype.setupGroupsForChart_ = function() {
    * @param {anychart.graphModule.Chart.Node} node
    * @return {Array.<string>}
    * */
-  function getSiblings (node) {
+  function getSiblings(node) {
     return [node.nodeId].concat(node.siblings);
   }
 
-  /**
-   * @type {Array.<goog.structs.Set>}
-   * */
-  var allNodes = [new goog.structs.Set(getSiblings(nodes[0]))];
+  if (nodes.length) {
+    /**
+     * @type {Array.<goog.structs.Set>}
+     * */
+    var allNodes = [new goog.structs.Set(getSiblings(nodes[0]))];
 
-  for (var i = 1, length = nodes.length; i < length; i++) {
-    var currentNode = nodes[i];
-    var siblings = getSiblings(currentNode);
-    var isSubSet = false;
-    var set = 0;
-    for (var setLength = allNodes.length; set < setLength; set++) {
-      for (var element = 0, siblingsLength = siblings.length; element < siblingsLength; element++) {
-        if (allNodes[set].contains(siblings[element])) {
-          isSubSet = true;
+    for (var i = 1, length = nodes.length; i < length; i++) {
+      var currentNode = nodes[i];
+      var siblings = getSiblings(currentNode);
+      var isSubSet = false;
+      var set = 0;
+      for (var setLength = allNodes.length; set < setLength; set++) {
+        for (var element = 0, siblingsLength = siblings.length; element < siblingsLength; element++) {
+          if (allNodes[set].contains(siblings[element])) {
+            isSubSet = true;
+            break;
+          }
+        }
+        if (isSubSet) {
           break;
         }
       }
       if (isSubSet) {
-        break;
+        allNodes[set].addAll(siblings);
+      } else {
+        allNodes.push((new goog.structs.Set(siblings)));
+      }
+
+    }
+    for (var groupNumber = 0; groupNumber < allNodes.length; groupNumber++) {
+      var groupElements = allNodes[groupNumber].getValues();
+      for (var groupElement = 0; groupElement < groupElements.length; groupElement++) {
+        var nodeId = groupElements[groupElement];
+        var node = this.getNodeById(nodeId);
+        node.subGraphId = groupNumber.toString();
+
+        var graphId = groupNumber.toString();
+        if (!(graphId in this.subGraphGroups_)) {
+          this.subGraphGroups_[graphId] = [];
+        }
+        this.subGraphGroups_[graphId].push(node.nodeId);
       }
     }
-    if (isSubSet) {
-      allNodes[set].addAll(siblings);
-    } else {
-      allNodes.push((new goog.structs.Set(siblings)));
-    }
-
   }
-  for (var groupNumber = 0; groupNumber < allNodes.length; groupNumber++) {
-    var groupElements = allNodes[groupNumber].getValues();
-    for (var groupElement = 0; groupElement < groupElements.length; groupElement++) {
-      var nodeId = groupElements[groupElement];
-      var node = this.getNodeById(nodeId);
-      node.subGraphId = groupNumber.toString();
-
-      var graphId = groupNumber.toString();
-      if (!(graphId in this.subGraphGroups_)) {
-        this.subGraphGroups_[graphId] = [];
-      }
-      this.subGraphGroups_[graphId].push(node.nodeId);
-    }
-  }
-
 };
 
 
@@ -953,6 +953,7 @@ anychart.graphModule.Chart.prototype.dropCurrentData_ = function() {
   this.edges_ = {};
   this.nodesArray_ = null;
   this.subGraphGroups_ = {};
+  this.selectedElement_ = null;
 };
 
 
@@ -1397,11 +1398,6 @@ anychart.graphModule.Chart.prototype.drawContent = function(bounds) {
     this.edges().getLabelsLayer().parent(this.rootLayer);
     this.nodes().getLabelsLayer().parent(this.rootLayer);
     this.nodesLayer_.parent(this.rootLayer);
-
-    // debugger
-    // this.nodesLayer_.suspend();
-    // this.edgesLayer_.suspend();
-
   }
 
   if (this.hasStateInvalidation(anychart.enums.Store.GRAPH, anychart.graphModule.Chart.States.LAYOUT)) {
@@ -1434,7 +1430,7 @@ anychart.graphModule.Chart.prototype.drawContent = function(bounds) {
       anychart.graphModule.Chart.States.NODES,
       anychart.graphModule.Chart.States.LABELS_STYLE,
       anychart.graphModule.Chart.States.LABELS_ENABLED,
-     // anychart.graphModule.Chart.States.LABELS_BOUNDS,
+      // anychart.graphModule.Chart.States.LABELS_BOUNDS,
       anychart.enums.State.APPEARANCE
 
     ]);
@@ -1592,10 +1588,14 @@ anychart.graphModule.Chart.prototype.rotate = function(opt_degree) {
  * */
 anychart.graphModule.Chart.prototype.data = function(opt_value) {
   if (goog.isDef(opt_value)) {
+    var nodes = opt_value && opt_value['nodes'] ? opt_value['nodes'] : null;
+    var edges = opt_value && opt_value['edges'] ? opt_value['edges'] : null;
+
     var data = {
-      'nodes': opt_value['nodes'],
-      'edges': opt_value['edges']
+      'nodes': nodes,
+      'edges': edges
     };
+
     var dataElement = data['nodes'];
     if (this.rawDataForNodes != dataElement) {
       this.rawDataForNodes = dataElement;
@@ -1673,6 +1673,7 @@ anychart.graphModule.Chart.prototype.serialize = function() {
   json['nodes'] = this.nodes().serialize();
   json['edges'] = this.edges().serialize();
   json['labels'] = this.labels().serialize();
+  json['tooltip'] = this.tooltip().serialize();
 
   json['groups'] = [];
 
