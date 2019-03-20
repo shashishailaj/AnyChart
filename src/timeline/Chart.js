@@ -794,6 +794,7 @@ anychart.timelineModule.Chart.prototype.zoomTo = function(startDate, endDate) {
 anychart.timelineModule.Chart.prototype.fit = function() {
   this.suspendSignalsDispatching();
   this.scale().fitAll();
+  this.timelineLayer.setTransformationMatrix.apply(this.timelineLayer, this.baseTransform);// cleaning up transformations
   this.scroll(0);
   this.invalidate(anychart.ConsistencyState.SCALE_CHART_SCALES, anychart.Signal.NEEDS_REDRAW);
   this.resumeSignalsDispatching(true);
