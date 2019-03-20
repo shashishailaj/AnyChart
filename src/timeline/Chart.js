@@ -724,7 +724,7 @@ anychart.timelineModule.Chart.prototype.scale = function(opt_value) {
  */
 anychart.timelineModule.Chart.prototype.scaleInvalidated_ = function(event) {
   this.suspendSignalsDispatching();
-  this.invalidate(anychart.ConsistencyState.SCALE_CHART_SCALES, anychart.Signal.NEEDS_REDRAW);
+  this.invalidate(anychart.ConsistencyState.SCALE_CHART_SCALES | anychart.ConsistencyState.AXES_CHART_AXES, anychart.Signal.NEEDS_REDRAW);
   this.resumeSignalsDispatching(true);
 };
 
@@ -783,7 +783,6 @@ anychart.timelineModule.Chart.prototype.zoomTo = function(startDate, endDate) {
     var delta = totalRange['max'] - totalRange['min'];
     scroller.setRangeInternal((startDate - totalRange['min']) / delta, (endDate - totalRange['min']) / delta);
   }
-  this.invalidate(anychart.ConsistencyState.SCALE_CHART_SCALES, anychart.Signal.NEEDS_REDRAW);
   return this;
 };
 
