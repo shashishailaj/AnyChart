@@ -237,7 +237,7 @@ anychart.timelineModule.Axis.prototype.draw = function() {
       var ticksArray = this.getTicks();
 
       for (var i = 0; i < ticksArray.length; i++) {
-        var tickRatio = this.scale().transform(ticksArray[i]);
+        var tickRatio = this.scale().transform(ticksArray[i]['start']);
         if (tickRatio <= 1 && tickRatio >= 0)
           axisTicks.drawTick(tickRatio, this.axisBounds_);
       }
@@ -274,14 +274,14 @@ anychart.timelineModule.Axis.prototype.getTicks = function() {
   var zoomLevels = this.scale().getLevelsData();
 
   for (var i = 0; i < zoomLevels.length; i++) {
-    ticksArray = this.scale().getSimpleTicks(zoomLevels[i].unit, zoomLevels[i].count);
+    ticksArray = this.scale().getTicks(void 0, void 0, zoomLevels[i].unit, zoomLevels[i].count);
     /*
     We do not want to have more than 10 ticks, normally.
     But if there are less than 3 ticks, we prefer to rollback to previous zoomLevel.
      */
     if (ticksArray.length <= 10) {
       if (ticksArray.length < 3 && i > 0) {
-        ticksArray = this.scale().getSimpleTicks(zoomLevels[i - 1].unit, zoomLevels[i - 1].count);
+        ticksArray = this.scale().getTicks(void 0, void 0, zoomLevels[i - 1].unit, zoomLevels[i - 1].count);
       }
       break;
     }
@@ -325,9 +325,9 @@ anychart.timelineModule.Axis.prototype.drawLabels = function() {
 
   for (var i = 0; i < ticksArray.length; i++) {
     var text = this.texts_[i];
-    var tick = ticksArray[i];
+    var tick = ticksArray[i]['start'];
     var tickRatio = this.scale_.transform(tick);
-    var nextTickRatio = (i == ticksArray.length - 1 ? 1 : this.scale_.transform(ticksArray[i + 1]));
+    var nextTickRatio = (i == ticksArray.length - 1 ? 1 : this.scale_.transform(ticksArray[i + 1]['start']));
 
     if (this.labels()['enabled']() && tickRatio <= 1) {
       if (nextTickRatio > 1)
@@ -463,10 +463,10 @@ anychart.timelineModule.Axis.prototype.applyLabelsStyle = function() {
   if (!this.formatProvider_)
     this.formatProvider_ = new anychart.format.Context();
 
-  for (var i = 0; i < this.texts_.length; i++) {
+  for (var i = 0; i < ticksArray.length; i++) {
     var textString = this.labels().getText(this.formatProvider_.propagate({
       'value': {
-        value: ticksArray[i],
+        value: ticksArray[i]['start'],
         type: anychart.enums.TokenType.DATE
       }
     }));
