@@ -38,14 +38,17 @@ goog.mixin(goog.global['anychart']['themes']['defaultTheme'], {
     },
     'defaultSeriesSettings': {
       'base': {
-        'direction': anychart.enums.EventMarkerDirection.AUTO
+        'direction': anychart.enums.EventMarkerDirection.AUTO,
+        'clip': false
       },
       'event': {
         'connector': {'length': '4%'},
         'normal': {
           'markers': {'enabled': true},
           'labels': {
-            'enabled': true
+            'enabled': true,
+            'anchor': anychart.enums.Anchor.LEFT_CENTER,
+            'width': 120
           }
         },
         'zIndex': 34,
