@@ -598,10 +598,11 @@ anychart.scales.GanttDateTime.prototype.maximumGap = function(opt_value) {
  * @param {number} pixEnd - TODO (A.Kudryavtsev): Unused parameter, from previous scale implementation.
  * @param {anychart.enums.Interval} unit
  * @param {number} count
+ * @param {{min: number, max: number}=} opt_range
  * @return {Array.<anychart.scales.GanttDateTime.Tick>}
  */
-anychart.scales.GanttDateTime.prototype.getTicks = function(pixStart, pixEnd, unit, count) {
-  var range = this.getRange();
+anychart.scales.GanttDateTime.prototype.getTicks = function(pixStart, pixEnd, unit, count, opt_range) {
+  var range = opt_range || this.getRange();
   var start = anychart.utils.alignDateLeftByUnit(range['min'], unit, count, 2000);
   var end = range['max'];
   var res = [];
