@@ -598,7 +598,7 @@ anychart.scales.GanttDateTime.prototype.maximumGap = function(opt_value) {
  * @param {number} pixEnd - TODO (A.Kudryavtsev): Unused parameter, from previous scale implementation.
  * @param {anychart.enums.Interval} unit
  * @param {number} count
- * @param {{min: number, max: number}=} opt_range
+ * @param {{min: number, max: number}=} opt_range we want ticks from, visible range by default
  * @return {Array.<anychart.scales.GanttDateTime.Tick>}
  */
 anychart.scales.GanttDateTime.prototype.getTicks = function(pixStart, pixEnd, unit, count, opt_range) {
