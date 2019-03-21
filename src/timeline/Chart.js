@@ -275,9 +275,11 @@ anychart.timelineModule.Chart.prototype.calculate = function() {
   var directions = [anychart.enums.EventMarkerDirection.UP, anychart.enums.EventMarkerDirection.DOWN];
   var rangeNum = 0;
   var eventNum = 0;
+  var axisHeight = this.axis().getOption('height');
 
   this.drawingPlans = [];
   this.drawingPlansRange = [];
+  this.drawingPlansEvent = [];
 
   this.eventSeriesList = [];
   this.rangeSeriesList = [];
@@ -296,10 +298,13 @@ anychart.timelineModule.Chart.prototype.calculate = function() {
   var valueInsideRange = function(value, rangeMin, rangeMax) {
     return (value > rangeMin && (value < rangeMax || isNaN(rangeMax)));
   };
-  var stacked = true;
-  var stacks = [];
 
-  var arrayOfIntersectingBounds = [];
+  var intersectingBounds = [];
+  var intersectingBoundsRange = [];
+  var intersectingBoundsRangeUp = [];
+  var intersectingBoundsRangeDown = [];
+  var intersectingBoundsEvent = [];
+
 
   if (this.hasInvalidationState(anychart.ConsistencyState.SERIES_CHART_SERIES | anychart.ConsistencyState.SCALE_CHART_SCALES)) {
     for (var i = 0; i < this.seriesList.length; i++) {
@@ -353,78 +358,13 @@ anychart.timelineModule.Chart.prototype.calculate = function() {
       //region obtaining drawing plan for series
       var drawingPlan = series.getScatterDrawingPlan(false, true);
       this.drawingPlans.push(drawingPlan);
-      if (drawingPlan.series.getType() == anychart.enums.TimelineSeriesType.RANGE) {
+      if (seriesType == anychart.enums.TimelineSeriesType.RANGE) {
         this.drawingPlansRange.push(drawingPlan);
+      } else {
+        this.drawingPlansEvent.push(drawingPlan);
       }
       //endregion
 
-      //region stacking ranges
-      if (drawingPlan.series.getType() == anychart.enums.TimelineSeriesType.RANGE) {
-        var seriesZIndex = anychart.timelineModule.Chart.RANGE_BASE_Z_INDEX - (i / 100);
-        drawingPlan.series.zIndex(seriesZIndex);
-        var data = drawingPlan.data;
-        if (stacked) {
-          for (var k = 0; k < data.length; k++) {
-            var point = data[k];
-            var stack = {};
-            stack.start = point.data['start'];
-            stack.end = point.data['end'];
-            stack.direction = /** @type {anychart.enums.EventMarkerDirection} */(drawingPlan.series.getFinalDirection());
-
-            // find in already stacked ranges all of those, that contain current range start or end value
-            var intersectingStacks = stacks.filter(function(value) {
-              if (stack.direction == value.direction)
-                return valueInsideRange(stack.start, value.start, value.end) ||
-                    valueInsideRange(stack.end, value.start, value.end) ||
-                    valueInsideRange(value.start, stack.start, stack.end) ||
-                    valueInsideRange(value.end, stack.start, stack.end);
-              return false;
-            });
-
-            var seriesHeight = /** @type {number} */(series.getOption('height'));
-            seriesHeight = anychart.utils.normalizeSize(seriesHeight, this.dataBounds.height);
-            // no intersections, so it's placed on the first level
-            if (intersectingStacks.length == 0) {
-              stack.height = seriesHeight;
-              stack.base = 0;
-              stack.stackLevel = 1;
-              stacks.push(stack);
-            } else {// if there are intersections - find range that is stacked the highest, so that we stack above it
-              var stackLevel = 0;
-              var baseHeight = 0;
-              for (var j = 0; j < intersectingStacks.length; j++) {
-                if (intersectingStacks[j].stackLevel > stackLevel) {
-                  stackLevel = intersectingStacks[j].stackLevel;
-                  baseHeight = intersectingStacks[j].base + intersectingStacks[j].height;
-                }
-              }
-              stackLevel++;
-
-              stack.base = baseHeight;
-              stack.height = seriesHeight;
-              stack.stackLevel = stackLevel;
-              stacks.push(stack);
-              arrayOfIntersectingBounds.push({
-                sX: this.scale().transform(stack.start) * this.dataBounds.width,
-                eX: this.scale().transform(stack.end) * this.dataBounds.width,
-                sY: 0,
-                eY: seriesHeight,
-                id: k,
-                series: series,
-                direction: series.getFinalDirection()
-              });
-            }
-
-            point.meta['stackLevel'] = stack.stackLevel;
-            point.meta['axisHeight'] = axisHeight;
-            /*
-            Individual zIndexes for points, so that intersecting points from same series correctly overlap.
-             */
-            point.meta['stateZIndex'] = 0.01 - stack.stackLevel / 1000;
-          }
-        }
-      }
-      //endregion
 
     }
 
@@ -436,95 +376,145 @@ anychart.timelineModule.Chart.prototype.calculate = function() {
     this.dateMin = dateMin;
     this.dateMax = dateMax;
     this.scale().setDataRange(this.dateMin, this.dateMax);
+  }
 
-    var points = [];
-    //region where event series length is calculated and labels overlap data prepared
-    for (var i = 0; i < this.eventSeriesList.length; i++) {
-      series = this.eventSeriesList[i];
-      var direction = series.getFinalDirection();
-      it = series.getResetIterator();
+  //region populate array of intersecting bounds
+  /** @type {anychart.timelineModule.Chart.SeriesIntersectionBounds} */
 
-      var factory = series.labels();
-      var needsCreateLabels = factory.labelsCount() == 0;
+  var pointBounds;
+  var sX, eX, sY, eY, direction, pointId;
+  var k, point;
+  var data;
+  for (var i = 0; i < this.drawingPlansRange.length; i++) {
+    var drawingPlan = this.drawingPlansRange[i];
+    data = drawingPlan.data;
+    series = drawingPlan.series;
+    for (k = 0; k < data.length; k++) {
+      point = data[k];
+      sX = point.data['start'];
+      eX = point.data['end'];
+      sY = 0;
+      eY = series.getOption('height');
+      direction = series.getFinalDirection();
+      pointId = k;
 
-      while (it.advance()) {
-        var date = anychart.utils.normalizeTimestamp(it.get('x'));
-        var intersectingRanges = stacks.filter(function(value) {
-          if (direction == value.direction)
-            return valueInsideRange(date, value.start, value.end);
-          return false;
-        });
-        var minLength = anychart.utils.normalizeSize(series.connector().getOption('length'), this.dataBounds.height);
-        for (var j = 0; j < intersectingRanges.length; j++) {
-          var range = intersectingRanges[j];
-          if (minLength < (range.height + range.base))
-            minLength = (range.height + range.base) + gap;
-        }
-        it.meta('minLength', minLength);
-        it.meta('axisHeight', axisHeight);
+      pointBounds = {
+        sX: sX,
+        eX: eX,
+        sY: sY,
+        eY: eY,
+        direction: direction,
+        series: series,
+        pointId: pointId,
+        drawingPlan: this.drawingPlansRange[i]
+      };
 
-        //preparing data for labels overlap calculation
-        var label;
-        if (needsCreateLabels) {
-          var formatProvider = series.createLabelsContextProvider();
-          var positionProvider = series.createPositionProvider(series.labels().anchor());
-          label = factory.add(formatProvider, positionProvider);
-        } else {
-          label = factory.getLabel(it.getIndex());
-        }
-        label.draw();
-
-        var bounds = label.getTextElement().getBounds();
-        bounds.top = it.meta('minLength');
-        bounds.left = this.scale().transform(date) * this.dataBounds.width;
-        points.push({bounds: bounds, date: date, series: series, id: it.getIndex(), direction: direction});
-        arrayOfIntersectingBounds.push({
-          sX: bounds.left,
-          eX: bounds.left + bounds.width,
-          sY: 0,
-          eY: 0 + series.height(),
-          id: it.getIndex(),
-          series: series,
-          direction: direction
-        });
+      intersectingBounds.push(pointBounds);
+      intersectingBoundsRange.push(pointBounds);
+      if (direction == anychart.enums.EventMarkerDirection.UP) {
+        intersectingBoundsRangeUp.push(pointBounds);
+      } else {
+        intersectingBoundsRangeDown.push(pointBounds);
       }
-    }
-    //endregion
+      point.meta['axisHeight'] = axisHeight;
 
-    //region with event labels overlap handling
-    points = points.sort(function(a, b) {return b.date - a.date;});
-    for (var i = 0; i < points.length; i++) {
-      var firstPoint = points[i];
-      for (var k = i + 1; k < points.length; k++) {
-        var secondPoint = points[k];
-        if (firstPoint.bounds.intersection(secondPoint.bounds) && firstPoint.direction == secondPoint.direction) {
-          var secondPointIterator = secondPoint.series.getResetIterator();
-          secondPointIterator.select(secondPoint.id);
-          var length = secondPointIterator.meta('minLength');
-          var newLength = length + firstPoint.bounds.height + gap;
-          secondPointIterator.meta('minLength', newLength);
-          secondPoint.bounds.top = newLength;
+      // todo(i.kurnoy) temporary!!!!!
+      point.meta['stackLevel'] = 1;
+    }
+  }
+
+  for (var i = 0; i < this.drawingPlansEvent.length; i++) {
+    data = this.drawingPlansEvent[i].data;
+    for (k = 0; k < data.length; k++) {
+      point = data[k];
+      sX = point.data['date'];
+      eX = point.data['date'];
+      sY = 0;
+      eY = 0;
+      direction = series.getFinalDirection();
+      pointId = k;
+
+      pointBounds = {
+        sX: sX,
+        eX: eX,
+        sY: sY,
+        eY: eY,
+        direction: direction,
+        series: series,
+        pointId: pointId,
+        drawingPlan: this.drawingPlansEvent[i]
+      };
+
+      intersectingBounds.push(pointBounds);
+      intersectingBoundsEvent.push(pointBounds);
+
+      point.meta['axisHeight'] = axisHeight;
+
+      //todo(i.kurnoy) temporary!!!!!!
+      point.meta['minLength'] = 50;
+    }
+  }
+  //endregion
+
+  var sortCallback = function(a, b) {
+    var diff = a.sX - b.sX;
+    if (diff == 0) {
+      return b.eX - a.eX;
+    }
+    return diff;
+  };
+
+  goog.array.sort(intersectingBoundsRangeUp, sortCallback);
+  goog.array.sort(intersectingBoundsRangeDown, sortCallback);
+
+  this.stackRanges(intersectingBoundsRangeUp);
+  this.stackRanges(intersectingBoundsRangeDown);
+};
+
+
+/**
+ *
+ * @param {Array.<anychart.timelineModule.Chart.SeriesIntersectionBounds>} ranges sorted array of range series point bounds
+ */
+anychart.timelineModule.Chart.prototype.stackRanges = function(ranges) {
+  if (ranges.length > 1) {
+    // start from 1, to check intersections with previous ranges
+    for (var i = 1; i < ranges.length; i++) {
+      var currentPoint = ranges[i];
+      var previousIntersecting = [];
+      var maxStack = 0;
+
+      for (var k = 0; k < i; k++) {
+        if (ranges[k].sX <= currentPoint.sX && ranges[k].eX >= currentPoint.sX) {
+          previousIntersecting.push(ranges[k]);
+          var id = ranges[k].pointId;
+          var stack = ranges[k].drawingPlan.data[id].meta['stackLevel'];
+          if (stack > maxStack) {
+            maxStack = stack;
+          }
         }
       }
-    }
-    //endregion
 
-    goog.array.sort(arrayOfIntersectingBounds, function(a, b) {
-      var startDifference = (a.sX - b.sX);
-      if (startDifference == 0) {
-        return b.eX - a.eX;
-      }
-      return startDifference;
-    });
-
-    //region new overlap
-    var eventsLabels = [];
-    for (var i = 0; i < arrayOfIntersectingBounds.length; i++) {
-      var point = arrayOfIntersectingBounds[i];
+      maxStack++;
+      currentPoint.drawingPlan.data[currentPoint.pointId].meta['stackLevel'] = maxStack;
+      currentPoint.drawingPlan.data[currentPoint.pointId].meta['stateZIndex'] = 0.01 - maxStack / 1000;
     }
-    //endregion
   }
 };
+
+
+/** @typedef {{
+ * sX: number,
+ * eX: number,
+ * sY: number,
+ * eY: number,
+ * direction: anychart.enums.EventMarkerDirection,
+ * series: anychart.core.series.Base,
+ * pointId: number,
+ * drawingPlan: Object
+ * }}
+ */
+anychart.timelineModule.Chart.SeriesIntersectionBounds;
 
 
 /** @inheritDoc */
