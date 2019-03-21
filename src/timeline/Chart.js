@@ -304,6 +304,8 @@ anychart.timelineModule.Chart.prototype.calculate = function() {
   var intersectingBoundsRangeUp = [];
   var intersectingBoundsRangeDown = [];
   var intersectingBoundsEvent = [];
+  var intersectingBoundsEventUp = [];
+  var intersectingBoundsEventDown = [];
 
 
   if (this.hasInvalidationState(anychart.ConsistencyState.SERIES_CHART_SERIES | anychart.ConsistencyState.SCALE_CHART_SCALES)) {
@@ -424,13 +426,29 @@ anychart.timelineModule.Chart.prototype.calculate = function() {
   }
 
   for (var i = 0; i < this.drawingPlansEvent.length; i++) {
+    var drawingPlan = this.drawingPlansEvent[i];
+    series = drawingPlan.series;
     data = this.drawingPlansEvent[i].data;
     for (k = 0; k < data.length; k++) {
+      var factory = series.labels();
+      var formatProvider = series.createLabelsContextProvider();
+      var it = series.getResetIterator();
+      it.select(k);
+      formatProvider['value'] = it.get('value');
+      var positionProvider = series.createPositionProvider(series.labels().anchor());
+      var label = factory.getLabel(k);// = factory.add(formatProvider, positionProvider);
+      if (goog.isNull(label)) {
+        label = factory.add(formatProvider, positionProvider);
+      }
+      label.width(factory.width());
+      label.draw();
+      var bounds = label.getTextElement().getBounds();
+
       point = data[k];
-      sX = point.data['date'];
-      eX = point.data['date'];
+      sX = chart.scale().transform(point.data['x']) * this.dataBounds.width;
+      eX = sX + bounds.width;
       sY = 0;
-      eY = 0;
+      eY = bounds.height;
       direction = series.getFinalDirection();
       pointId = k;
 
@@ -447,6 +465,12 @@ anychart.timelineModule.Chart.prototype.calculate = function() {
 
       intersectingBounds.push(pointBounds);
       intersectingBoundsEvent.push(pointBounds);
+
+      if (direction == anychart.enums.EventMarkerDirection.UP) {
+        intersectingBoundsEventUp.push(pointBounds);
+      } else {
+        intersectingBoundsEventDown.push(pointBounds);
+      }
 
       point.meta['axisHeight'] = axisHeight;
 
@@ -469,6 +493,10 @@ anychart.timelineModule.Chart.prototype.calculate = function() {
 
   this.stackRanges(intersectingBoundsRangeUp);
   this.stackRanges(intersectingBoundsRangeDown);
+
+  goog.array.sort(intersectingBoundsEventUp, sortCallback);
+
+  this.stackOverlapEvents(intersectingBoundsEventUp, intersectingBoundsRangeUp);
 };
 
 
@@ -500,6 +528,16 @@ anychart.timelineModule.Chart.prototype.stackRanges = function(ranges) {
       currentPoint.drawingPlan.data[currentPoint.pointId].meta['stateZIndex'] = 0.01 - maxStack / 1000;
     }
   }
+};
+
+
+/**
+ * Events and ranges should be of one direction.
+ * @param events
+ * @param ranges
+ */
+anychart.timelineModule.Chart.prototype.stackOverlapEvents = function(events, ranges) {
+  debugger;
 };
 
 
