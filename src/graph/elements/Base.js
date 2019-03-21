@@ -6,6 +6,7 @@ goog.require('anychart.core.ui.LabelsSettings');
 goog.require('anychart.core.ui.OptimizedText');
 
 
+
 /**
  * @constructor
  * @param {anychart.graphModule.Chart} chart
@@ -98,24 +99,12 @@ anychart.core.settings.populateAliases(anychart.graphModule.elements.Base, ['fil
 //region StateSettings
 /**
  * Setup elements.
- * Set parent for labels.
  * */
 anychart.graphModule.elements.Base.prototype.setupElements = function() {
-
   this.normal_.addThemes(this.themeSettings);
   this.setupCreated('normal', this.normal_);
   this.setupCreated('hovered', this.hovered_);
   this.setupCreated('selected', this.selected_);
-
-  var normalLabels = /**@type {anychart.core.ui.LabelsSettings}*/(this.normal_.labels());
-
-  normalLabels.removeAllListeners(anychart.enums.EventType.SIGNAL);
-  normalLabels.parent(/**@type {anychart.core.ui.LabelsSettings}*/(this.chart_.labels()));
-  this.hovered_.labels().parent(normalLabels);
-  this.selected_.labels().parent(normalLabels);
-  normalLabels.listenSignals(this.labelsInvalidated_, this);
-
-
 };
 
 
@@ -123,7 +112,7 @@ anychart.graphModule.elements.Base.prototype.setupElements = function() {
  * Normal state settings.
  * @param {!Object=} opt_value
  * @return {anychart.core.StateSettings|anychart.graphModule.elements.Base}
- */
+ * */
 anychart.graphModule.elements.Base.prototype.normal = function(opt_value) {
   if (goog.isDef(opt_value)) {
     this.normal_.setup(opt_value);
@@ -137,7 +126,7 @@ anychart.graphModule.elements.Base.prototype.normal = function(opt_value) {
  * Hovered state settings.
  * @param {!Object=} opt_value
  * @return {anychart.core.StateSettings|anychart.graphModule.elements.Base}
- */
+ * */
 anychart.graphModule.elements.Base.prototype.hovered = function(opt_value) {
   if (goog.isDef(opt_value)) {
     this.hovered_.setup(opt_value);
@@ -151,7 +140,7 @@ anychart.graphModule.elements.Base.prototype.hovered = function(opt_value) {
  * Selected state settings.
  * @param {!Object=} opt_value
  * @return {anychart.core.StateSettings|anychart.graphModule.elements.Base}
- */
+ * */
 anychart.graphModule.elements.Base.prototype.selected = function(opt_value) {
   if (goog.isDef(opt_value)) {
     this.selected_.setup(opt_value);
@@ -233,7 +222,7 @@ anychart.graphModule.elements.Base.prototype.getTextElement = function(element) 
 /**
  * Supported signals.
  * @type {number}
- */
+ * */
 anychart.graphModule.elements.Base.prototype.SUPPORTED_SIGNALS =
   anychart.Signal.NEEDS_REDRAW_APPEARANCE |
   anychart.Signal.MEASURE_COLLECT | //Signal for Measuriator to collect labels to measure.
@@ -247,7 +236,7 @@ anychart.graphModule.elements.Base.prototype.SUPPORTED_SIGNALS =
 
 /**
  * Reset DOM of passed element and add it in pool.
- @param {anychart.graphModule.Chart.Edge|anychart.graphModule.Chart.Node} element
+ * @param {anychart.graphModule.Chart.Edge|anychart.graphModule.Chart.Node} element
  * */
 anychart.graphModule.elements.Base.prototype.clear = function(element) {
   var domElement = element.domElement;
@@ -271,7 +260,7 @@ anychart.graphModule.elements.Base.prototype.clear = function(element) {
 /**
  * Returns iterator.
  * @return {!anychart.data.Iterator} iterator
- */
+ * */
 anychart.graphModule.elements.Base.prototype.getIterator = goog.abstractMethod;
 
 
@@ -281,12 +270,12 @@ anychart.graphModule.elements.Base.prototype.getIterator = goog.abstractMethod;
  * @return {anychart.core.ui.LabelsSettings} instance of LabelSettings.
  * */
 anychart.graphModule.elements.Base.prototype.resolveLabelSettings = function(element) {
-  var state = this.state(element),
-    stringState = anychart.utils.pointStateToName(state),
-    id = this.getElementId(element),
-    dataRow = element.dataRow,
-    groupSettings = this.chart_.getGroupsMap()[/**@type {string}*/(element.groupId)],
-    labelSettingFromData;
+  var state = /**@type {anychart.SettingsState}*/(this.state(element));
+  var stringState = anychart.utils.pointStateToName(state);
+  var id = this.getElementId(element);
+  var dataRow = element.dataRow;
+  var groupSettings = this.chart_.getGroupsMap()[/**@type {string}*/(element.groupId)];
+  var labelSettingFromData;
 
   if (!this.settingsForLabels[stringState][id]) {
     var specificLblSettings;
@@ -306,7 +295,13 @@ anychart.graphModule.elements.Base.prototype.resolveLabelSettings = function(ele
     //settings for nodes from groups.
     var groupLabelSettings = groupSettings ? groupSettings[stringState]()['labels']() : void 0;
     var finalLblSetting = this[stringState]()['labels']();
-
+    if (!finalLblSetting.parent()) {
+      if (state == anychart.SettingsState.NORMAL) {
+        finalLblSetting.parent(this.chart_.labels());
+      } else {
+        finalLblSetting.parent(this.normal_.labels());
+      }
+    }
     if (groupLabelSettings) {
       finalLblSetting = groupLabelSettings.parent(finalLblSetting);
     }
@@ -314,10 +309,27 @@ anychart.graphModule.elements.Base.prototype.resolveLabelSettings = function(ele
       finalLblSetting = specificLblSettings.parent(finalLblSetting);
     }
     finalLblSetting.resolutionChainCache(null);//reset resolution chain.
+    finalLblSetting.removeAllListeners();
+    finalLblSetting.listenSignals(this.labelsInvalidated_, this);
+
     this.settingsForLabels[stringState][id] = finalLblSetting;
   }
   this.settingsForLabels[stringState][id].resetFlatSettings();
   return /**@type {anychart.core.ui.LabelsSettings}*/(this.settingsForLabels[stringState][id]);
+};
+
+
+/**
+ * @param {anychart.graphModule.Chart.Node | anychart.graphModule.Chart.Edge} element
+ * @param {anychart.SettingsState=} opt_state
+ * @return {anychart.graphModule.Chart.Node | anychart.graphModule.Chart.Edge |anychart.SettingsState}
+ * */
+anychart.graphModule.elements.Base.prototype.state = function(element, opt_state) {
+  if (goog.isDefAndNotNull(opt_state)) {
+    element.currentState = opt_state;
+    return element;
+  }
+  return element.currentState || anychart.SettingsState.NORMAL;
 };
 
 
@@ -327,6 +339,7 @@ anychart.graphModule.elements.Base.prototype.resolveLabelSettings = function(ele
 anychart.graphModule.elements.Base.prototype.needsMeasureLabels = function() {
   this.dispatchSignal(anychart.Signal.MEASURE_COLLECT | anychart.Signal.MEASURE_BOUNDS);
 };
+
 
 /** @inheritDoc */
 anychart.graphModule.elements.Base.prototype.setupByJSON = function(config, opt_default) {
@@ -374,26 +387,34 @@ anychart.graphModule.elements.Base.prototype.serialize = function() {
 };
 
 
-/** @inheritDoc */
-anychart.graphModule.elements.Base.prototype.disposeInternal = function() {
-  goog.disposeAll(this.textPool_);
-  goog.disposeAll(this.pathPool_);
-
+/**
+ * Displose all created labels settings.
+ * */
+anychart.graphModule.elements.Base.prototype.resetLabelSettings = function() {
   for (var labelSettings in this.settingsForLabels) {
     for (var setting in this.settingsForLabels[labelSettings]) {
       var lblSetting = this.settingsForLabels[labelSettings][setting];
       lblSetting.disposeInternal();
     }
   }
-
-  this.textPool_ = [];
-  this.pathPool_ = [];
-
   this.settingsForLabels = {
     'normal': {},
     'hovered': {},
     'selected': {}
   };
+};
+
+
+/** @inheritDoc */
+anychart.graphModule.elements.Base.prototype.disposeInternal = function() {
+  goog.disposeAll(this.textPool_);
+  goog.disposeAll(this.pathPool_);
+
+  this.textPool_ = [];
+  this.pathPool_ = [];
+
+  this.resetLabelSettings();
+
 
 };
 

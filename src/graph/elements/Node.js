@@ -396,20 +396,6 @@ anychart.graphModule.elements.Node.prototype.labelsInvalidated_ = function(event
 
 
 /**
- * @param {anychart.graphModule.Chart.Node} node
- * @param {anychart.SettingsState=} opt_state
- * @return {anychart.graphModule.Chart.Node|anychart.SettingsState}
- * */
-anychart.graphModule.elements.Node.prototype.state = function(node, opt_state) {
-  if (goog.isDefAndNotNull(opt_state)) {
-    node.currentState = opt_state;
-    return node;
-  }
-  return node.currentState || anychart.SettingsState.NORMAL;
-};
-
-
-/**
  * Update shape and colors for node.
  * @param {anychart.graphModule.Chart.Node} node
  * */

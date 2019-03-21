@@ -93,6 +93,9 @@ anychart.graphModule.Chart = function(opt_data) {
    * */
   this.mouseWheelHandler_ = null;
 
+
+  this.dragger_ = null;
+
   this.zoom_ = [1];
   this.move_ = [0, 0];
   this.rotateDegree_ = 0;
@@ -188,7 +191,7 @@ anychart.graphModule.Chart.Tag;
 /**
  * Supported signals.
  * @type {number}
- */
+ * */
 anychart.graphModule.Chart.prototype.SUPPORTED_SIGNALS = anychart.core.Chart.prototype.SUPPORTED_SIGNALS |
   anychart.Signal.NEEDS_REDRAW_APPEARANCE;
 
@@ -196,7 +199,7 @@ anychart.graphModule.Chart.prototype.SUPPORTED_SIGNALS = anychart.core.Chart.pro
 /**
  * Supported consistency states.
  * @type {number}
- */
+ * */
 anychart.graphModule.Chart.prototype.SUPPORTED_CONSISTENCY_STATES = anychart.core.Chart.prototype.SUPPORTED_CONSISTENCY_STATES |
   anychart.ConsistencyState.APPEARANCE;
 
@@ -211,7 +214,7 @@ anychart.graphModule.Chart.Z_INDEX = 30;
 /**
  * Properties that should be defined in class prototype.
  * @type {!Object.<string, anychart.core.settings.PropertyDescriptor>}
- */
+ * */
 anychart.graphModule.Chart.OWN_DESCRIPTORS = (function() {
   /** @type {!Object.<string, anychart.core.settings.PropertyDescriptor>} */
   var map = {};
@@ -274,7 +277,7 @@ anychart.graphModule.Chart.prototype.toCsv = function(opt_chartDataExportMode, o
  * Creates context provider for tooltip.
  * @param {anychart.graphModule.Chart.Tag} tag
  * @return {anychart.format.Context}
- */
+ * */
 anychart.graphModule.Chart.prototype.createContextProvider = function(tag) {
   if (tag.type == anychart.graphModule.Chart.Element.NODE) {
     var node = this.getNodeById(tag.id);
@@ -294,7 +297,7 @@ anychart.graphModule.Chart.prototype.createContextProvider = function(tag) {
  * Mouse click internal handler.
  * Set selected state for selected element, deselect previous selected element if click on empty space.
  * @param {anychart.core.MouseEvent} event - Event object.
- */
+ * */
 anychart.graphModule.Chart.prototype.handleMouseClick = function(event) {
   if (event['button'] != acgraph.events.BrowserEvent.MouseButton.LEFT) return;
   if (this.selectedElement_) { //deselect previous selected element
@@ -463,6 +466,7 @@ anychart.graphModule.Chart.prototype.updateNodeDOMElementPosition = function(nod
 anychart.graphModule.Chart.prototype.handleMouseDown = function(event) {
   var domTarget = event['domTarget'];
   var tag = domTarget.tag;
+
   if (this.interactivity().getOption('enabled')) {
     if (tag && tag.type == anychart.graphModule.Chart.Element.NODE && this.interactivity().getOption('node')) {
       var node = this.getNodeById(tag.id);
@@ -949,9 +953,12 @@ anychart.graphModule.Chart.prototype.dropCurrentData_ = function() {
       this.edges().clear(edge);
     }
   }
+  this.nodes().resetLabelSettings();
+  this.edges().resetLabelSettings();
   this.nodes_ = {};
   this.edges_ = {};
   this.nodesArray_ = null;
+  this.edgesArray_ = null;
   this.subGraphGroups_ = {};
   this.selectedElement_ = null;
 };
@@ -1204,7 +1211,7 @@ anychart.graphModule.Chart.prototype.labelsSettingsInvalidated_ = function(event
 /**
  * @param {Object=} opt_value - Settings object.
  * @return {(anychart.graphModule.Chart|anychart.core.ui.LabelsSettings)} - Current value or itself for method chaining.
- */
+ * */
 anychart.graphModule.Chart.prototype.labels = function(opt_value) {
   if (!this.labelsSettings_) {
     this.labelsSettings_ = new anychart.core.ui.LabelsSettings();
@@ -1480,21 +1487,12 @@ anychart.graphModule.Chart.prototype.drawContent = function(bounds) {
       [anychart.graphModule.Chart.States.EDGES, anychart.graphModule.Chart.States.NODES]);
   }
 
-
-  // if (this.hasInvalidationState(anychart.ConsistencyState.BOUNDS)) {
-  //   if (this.layout().type() == anychart.graphModule.elements.LayoutType.FORCE) {
-  //     this.setOffset();
-  //   }
-  //   this.moveNodes();
-  //   this.markConsistent(anychart.ConsistencyState.BOUNDS);
-  // }
-
   if (this.hasStateInvalidation(anychart.enums.Store.GRAPH, anychart.graphModule.Chart.States.TRANSFORM)) {
-    this.rootLayer.scale(this.zoom_[0], this.zoom_[0], this.zoom_[1], this.zoom_[1]);
+    this.rootLayer.scale(this.zoom_[0], this.zoom_[0], this.zoom_[1], this.zoom_[2]);
     this.rootLayer.translate(this.move_[0], this.move_[1]);
     this.zoom_[0] = 1;
-    this.zoom_[2] = this.contentBounds.width / 2;
-    this.zoom_[3] = this.contentBounds.height / 2;
+    this.zoom_[1] = this.contentBounds.width / 2;
+    this.zoom_[2] = this.contentBounds.height / 2;
     this.move_[0] = 0;
     this.move_[1] = 0;
     this.markStateConsistent(anychart.enums.Store.GRAPH, anychart.graphModule.Chart.States.TRANSFORM);
@@ -1504,6 +1502,7 @@ anychart.graphModule.Chart.prototype.drawContent = function(bounds) {
     this.mouseWheelHandler_ = new goog.events.MouseWheelHandler(this.container().getStage().getDomWrapper(), false);
     this.mouseWheelHandler_.listen(goog.events.MouseWheelHandler.EventType.MOUSEWHEEL, this.handleMouseWheel_, false, this);
   }
+
 };
 
 
@@ -1589,7 +1588,7 @@ anychart.graphModule.Chart.prototype.rotate = function(opt_degree) {
 anychart.graphModule.Chart.prototype.data = function(opt_value) {
   if (goog.isDef(opt_value)) {
     var nodes = opt_value && opt_value['nodes'] ? opt_value['nodes'] : null;
-    var edges = opt_value && opt_value['edges'] ? opt_value['edges'] : null;
+    var edges = opt_value && opt_value['edges'] && nodes ? opt_value['edges'] : null;
 
     var data = {
       'nodes': nodes,

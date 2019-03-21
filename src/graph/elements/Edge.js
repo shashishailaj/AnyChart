@@ -33,7 +33,7 @@ anychart.graphModule.elements.Edge = function(chart) {
    * Context provider.
    * @type {anychart.format.Context}
    * @private
-   */
+   * */
   this.formatProvider_ = null;
   anychart.measuriator.register(this);
 };
@@ -84,8 +84,8 @@ anychart.graphModule.elements.Edge.prototype.createDOM = function(edge) {
   domElement.tag = /**@type {anychart.graphModule.Chart.Tag}*/({});
   domElement.tag.type = this.getType();
   domElement.tag.id = this.getElementId(edge);
-  domElement.tag.currentState = anychart.SettingsState.NORMAL;
-  edge.currentState = anychart.SettingsState.NORMAL;
+  domElement.tag.currentState = /**@type {anychart.SettingsState}*/(this.state(edge));
+  edge.currentState = /**@type {anychart.SettingsState}*/(this.state(edge));
   edge.domElement = domElement;
   var lbs = this.resolveLabelSettings(edge);
   if (lbs.enabled()) {
@@ -154,23 +154,7 @@ anychart.graphModule.elements.Edge.prototype.createFormatProvider = function(edg
  * */
 anychart.graphModule.elements.Edge.prototype.updateColors = function(edge) {
   var stroke = this.getStroke(edge);
-
   edge.domElement.stroke(stroke);
-};
-
-
-/**
- * Return state of edge, or set it if passed.
- * @param {anychart.graphModule.Chart.Edge} edge
- * @param {anychart.SettingsState} state
- * @return {anychart.graphModule.Chart.Edge|anychart.SettingsState}
- * */
-anychart.graphModule.elements.Edge.prototype.state = function(edge, state) {
-  if (goog.isDefAndNotNull(state)) {
-    edge.currentState = state;
-    return edge;
-  }
-  return edge.currentState;
 };
 
 
@@ -190,16 +174,15 @@ anychart.graphModule.elements.Edge.prototype.updateAppearance = function(edge) {
 anychart.graphModule.elements.Edge.prototype.updateLabelStyle = function(edge) {
   var enabled = this.resolveLabelSettings(edge).enabled();
   if (enabled && !edge.textElement) {
-    edge.textElement = this.getText();
+    this.getTextElement(edge);
   }
 
   if (edge.textElement) {
-    edge.textElement.resetComplexity();
+    edge.textElement.resetComplexity();//drop all old settings
     this.setupText_(edge);
     edge.textElement.renderTo(this.labelsLayerEl_);
     edge.textElement.prepareBounds();
     this.drawLabel(edge);
-    edge.textElement.resetComplexity();
   }
 };
 
