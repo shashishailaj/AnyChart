@@ -363,12 +363,18 @@ anychart.ganttModule.Column.prototype.controllerListener_ = function(event) {
       text.dispose();
     }
     this.texts_.length = 0;
+    var state = anychart.ConsistencyState.DATA_GRID_COLUMN_DATA;
+    var labels = this.hasLabelsOverrider() ?
+        this.labelsOverrider() :
+        this.labels();
+    if (labels.needsBoundsCalculation())
+      state |= anychart.ConsistencyState.DATA_GRID_COLUMN_LABELS_BOUNDS;
 
     /*
       Column dispatches NEEDS_REDRAW because DG decides itself
       when to dispatch MEASURE_COLLECT in dg.prepareLabels() .
      */
-    this.invalidate(anychart.ConsistencyState.DATA_GRID_COLUMN_DATA);
+    this.invalidate(state);
   }
 };
 
