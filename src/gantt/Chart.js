@@ -838,7 +838,6 @@ anychart.ganttModule.Chart.prototype.rowSelect = function(event) {
     if (item && !this.selection().isRowSelected(item)) {
       var period = event['period'];
       var periodIndex = event['periodIndex'];
-      // var periodId = period ? period[anychart.enums.GanttDataFields.ID] : void 0;
       var eventObj = {
         'type': anychart.enums.EventType.ROW_SELECT,
         'item': item,

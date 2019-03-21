@@ -124,21 +124,6 @@ anychart.ganttModule.TimeLine = function(opt_controller, opt_isResources) {
   this.tooltipEnabledBackup_;
 
 
-  // /**
-  //  * Selected period.
-  //  * @type {(string|number|undefined)}
-  //  * @private
-  //  */
-  // this.selectedPeriodId_ = void 0;
-
-  // /**
-  //  * Information about currently selected connector.
-  //  * Connector can't be characterized by it's path, but can be defined by elements that it connects.
-  //  * @type {Object}
-  //  * @private
-  //  */
-  // this.selectedConnectorData_ = null;
-
   /**
    * This value sets to ID of hovered item when mouse moves over the bar of item on timeline
    * in live edit mode.
@@ -3521,13 +3506,12 @@ anychart.ganttModule.TimeLine.prototype.checkConnectorDblClick = function(event)
  */
 anychart.ganttModule.TimeLine.prototype.rowSelect = function(event) {
   if (!this.checkRowSelection(event)) {
-    this.connectorUnselect(event); // this dispatche conn unselect event.
+    this.connectorUnselect(event); // this dispatches conn unselect event.
     if (this.selectTimelineRow(event['item'], event['periodIndex'])) {
       var eventObj = goog.object.clone(event);
       eventObj['type'] = anychart.enums.EventType.ROW_SELECT;
       (/** @type {anychart.ganttModule.IInteractiveGrid} */ (this.interactivityHandler)).dispatchEvent(eventObj);
     }
-    // this.selectedConnectorData_ = null;
   }
 };
 
@@ -3553,7 +3537,6 @@ anychart.ganttModule.TimeLine.prototype.checkRowSelection = function(event) {
 
       if (this.interactivityHandler.dispatchEvent(connSelectEvent)) {
         this.interactivityHandler.rowUnselect(event['originalEvent']);
-        // this.selectedConnectorData_ = domTarget.meta;
         var m = domTarget.meta;
         this.interactivityHandler.selection().selectConnector(
             m['fromItem'], m['toItem'],
@@ -3568,21 +3551,6 @@ anychart.ganttModule.TimeLine.prototype.checkRowSelection = function(event) {
   }
   return false;
 };
-
-
-// /**
-//  * @inheritDoc
-//  */
-// anychart.ganttModule.TimeLine.prototype.rowUnselect = function(event) {
-//   // var selection = this.interactivityHandler.selection();
-//   // // if (this.selectedItem || goog.isDefAndNotNull(this.selectedPeriodId_)) {
-//   // if (selection.hasSelectedRow() || selection.hasSelectedPeriod()) {
-//   //   selection.selectPeriod(null);
-//   //   anychart.ganttModule.TimeLine.base(this, 'rowUnselect', event);
-//   // }
-//   this.interactivityHandler.selection().reset();
-//   anychart.ganttModule.TimeLine.base(this, 'rowUnselect', event);
-// };
 
 
 /**
@@ -3648,29 +3616,6 @@ anychart.ganttModule.TimeLine.prototype.selectTimelineRow = function(item, opt_p
     return true;
   }
   return false;
-  // var itemSelected = false;
-  // var periodSelected = false;
-  //
-  // if (item && item != this.selectedItem) {
-  //   this.controller.data().suspendSignalsDispatching();//this.controller.data() can be Tree or TreeView.
-  //   item.meta('selected', true);
-  //   if (this.selectedItem) this.selectedItem.meta('selected', false); //selectedItem has the same tree as item.
-  //   this.selectedItem = item;
-  //   this.controller.data().resumeSignalsDispatching(false);
-  //   itemSelected = true;
-  // }
-  //
-  // if (this.selectedPeriodId_ !== opt_periodId) {
-  //   this.selectedPeriodId_ = opt_periodId;
-  //   periodSelected = true;
-  // }
-  //
-  // if (itemSelected || periodSelected) {
-  //   this.selectedConnectorData_ = null;
-  //   this.invalidate(anychart.ConsistencyState.BASE_GRID_REDRAW, anychart.Signal.NEEDS_REDRAW);
-  //   return true;
-  // }
-  // return false;
 };
 
 
@@ -3921,7 +3866,6 @@ anychart.ganttModule.TimeLine.prototype.drawAsPeriods_ = function(dataItem, tota
     for (var j = 0; j < periods.length; j++) {
       var start = dataItem.getMeta(anychart.enums.GanttDataFields.PERIODS, j, anychart.enums.GanttDataFields.START);
       var end = dataItem.getMeta(anychart.enums.GanttDataFields.PERIODS, j, anychart.enums.GanttDataFields.END);
-      // var id = dataItem.get(anychart.enums.GanttDataFields.PERIODS, j, anychart.enums.GanttDataFields.ID);
 
       if (goog.isNumber(start) && goog.isNumber(end)) {
         var startRatio = this.scale_.timestampToRatio(start);
@@ -3948,7 +3892,7 @@ anychart.ganttModule.TimeLine.prototype.drawAsPeriods_ = function(dataItem, tota
 
           var coord = anychart.utils.getCoordinateByAnchor(itemBounds, position);
           var top = this.fixBarTop_(coord.y, height, anchor) + offsetNorm;
-          var isSelected = this.interactivityHandler.selection().isPeriodSelected(dataItem, j);//this.selectedPeriodId_ == id;
+          var isSelected = this.interactivityHandler.selection().isPeriodSelected(dataItem, j);
 
           var bounds = this.fixBounds_(el, new anychart.math.Rect(coord.x, top, width, height), dataItem, j, isSelected);
 
@@ -4005,7 +3949,7 @@ anychart.ganttModule.TimeLine.prototype.drawAsBaseline_ = function(dataItem, tot
 
     this.fixBaselineBarsPositioning_(actualBounds, baselineBounds, element, dataItem);
 
-    var isSelected = this.interactivityHandler.selection().isRowSelected(dataItem); //this.selectedItem == dataItem;
+    var isSelected = this.interactivityHandler.selection().isRowSelected(dataItem);
     actualBounds = this.fixBounds_(element, actualBounds, dataItem, void 0, isSelected);
 
     baselineBounds = this.fixBounds_(baselines, baselineBounds, dataItem, void 0, isSelected);
@@ -4105,7 +4049,7 @@ anychart.ganttModule.TimeLine.prototype.drawAsParent_ = function(dataItem, total
     var actualItemBounds = new anychart.math.Rect(actualLeft, totalTop, actualWidth, itemHeight);
     var actualBounds = this.getBarBounds_(el, actualItemBounds);
 
-    var isSelected = this.interactivityHandler.selection().isRowSelected(dataItem); //this.selectedItem == dataItem;
+    var isSelected = this.interactivityHandler.selection().isRowSelected(dataItem);
     actualBounds = this.fixBounds_(el, actualBounds, dataItem, void 0, isSelected);
 
     var tag = this.createTag(dataItem, el, actualBounds);
@@ -4154,7 +4098,7 @@ anychart.ganttModule.TimeLine.prototype.drawAsProgress_ = function(dataItem, tot
     var actualItemBounds = new anychart.math.Rect(actualLeft, totalTop, actualWidth, itemHeight);
     var actualBounds = this.getBarBounds_(el, actualItemBounds);
 
-    var isSelected = this.interactivityHandler.selection().isRowSelected(dataItem);//this.selectedItem == dataItem;
+    var isSelected = this.interactivityHandler.selection().isRowSelected(dataItem);
     actualBounds = this.fixBounds_(el, actualBounds, dataItem, void 0, isSelected);
 
     var tag = this.createTag(dataItem, el, actualBounds);
@@ -4210,7 +4154,7 @@ anychart.ganttModule.TimeLine.prototype.drawAsMilestone_ = function(dataItem, to
     var itemBounds = new anychart.math.Rect(centerLeft - halfHeight, totalTop, height, itemHeight);
     var bounds = this.getBarBounds_(el, itemBounds);
 
-    var isSelected = this.interactivityHandler.selection().isRowSelected(dataItem);//this.selectedItem == dataItem;
+    var isSelected = this.interactivityHandler.selection().isRowSelected(dataItem);
     bounds = this.fixBounds_(el, bounds, dataItem, void 0, isSelected);
 
     var tag = this.createTag(dataItem, el, bounds);
@@ -4347,16 +4291,6 @@ anychart.ganttModule.TimeLine.prototype.connectItems_ = function(from, to, opt_c
   var toRowHeight = this.controller.getItemHeight(toItem);
 
   if (fromBounds && toBounds) {
-    // var selected = !goog.isNull(this.selectedConnectorData_) &&
-    //     this.selectedConnectorData_['fromItemIndex'] == fromIndex &&
-    //     this.selectedConnectorData_['toItemIndex'] == toIndex &&
-    //     this.selectedConnectorData_['connType'] == opt_connType;
-    //
-    // if (this.controller.isResources()) {
-    //   if (this.selectedConnectorData_) {
-    //     selected &= (this.selectedConnectorData_['fromPeriodIndex'] == fromPeriodIndex && this.selectedConnectorData_['toPeriodIndex'] == toPeriodIndex);
-    //   }
-    // }
     var selected = this.interactivityHandler.selection().isConnectorSelected(fromItem, toItem, fromIndex, toIndex, fromPeriodIndex, toPeriodIndex, opt_connType);
 
     var drawPreview = goog.isDefAndNotNull(opt_path);

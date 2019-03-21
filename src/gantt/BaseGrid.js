@@ -251,12 +251,6 @@ anychart.ganttModule.BaseGrid = function(opt_controller, opt_isResource) {
    */
   this.hoveredIndex = -1;
 
-  // /**
-  //  * Currently selected data item.
-  //  * @type {anychart.treeDataModule.Tree.DataItem}
-  //  */
-  // this.selectedItem = null;
-
   /**
    * Vertical upper coordinate (top) of highlighted row.
    * @type {number|undefined}
@@ -1926,7 +1920,6 @@ anychart.ganttModule.BaseGrid.prototype.drawRowFills = function() {
 
     if (item.meta('selected')) {
       this.interactivityHandler.selection().selectRow(item); //In case of restoration from XML/JSON, this allows to save selected item state.
-      // this.selectedItem_ = item;
       this.selectedPath_
           .clear()
           .moveTo(this.pixelBoundsCache.left, top)
@@ -2588,11 +2581,6 @@ anychart.ganttModule.BaseGrid.prototype.scroll = goog.abstractMethod;
  */
 anychart.ganttModule.BaseGrid.prototype.selectRow = function(item) {
   if (item) {
-    // this.controller.data().suspendSignalsDispatching();//this.controller.data() can be Tree or TreeView.
-    // item.meta('selected', true);
-    // if (this.selectedItem) this.selectedItem.meta('selected', false); //selectedItem has the same tree as item.
-    // this.selectedItem = item;
-    // this.controller.data().resumeSignalsDispatching(false);
     this.interactivityHandler.selection().selectRow(item);
     this.invalidate(anychart.ConsistencyState.BASE_GRID_REDRAW, anychart.Signal.NEEDS_REDRAW);
     return true;
@@ -2624,12 +2612,7 @@ anychart.ganttModule.BaseGrid.prototype.markersInvalidated = goog.nullFunction;
  */
 anychart.ganttModule.BaseGrid.prototype.rowUnselect = function(event) {
   if (this.controller.data()) {
-    // this.controller.data().suspendSignalsDispatching();
-    // this.selectedItem.meta('selected', false);
-    // this.selectedItem = null;
-    // this.controller.data().resumeSignalsDispatching(false);
     this.interactivityHandler.selection().reset();
-
     if (this.interactivityHandler == this) { //Should dispatch 'unselect-event' by itself.
       var newEvent = {
         'type': anychart.enums.EventType.ROW_SELECT,
