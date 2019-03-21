@@ -393,10 +393,10 @@ anychart.timelineModule.Chart.prototype.calculate = function() {
     series = drawingPlan.series;
     for (k = 0; k < data.length; k++) {
       point = data[k];
-      sX = point.data['start'];
-      eX = point.data['end'];
+      sX = this.scale().transform(point.data['start']) * this.dataBounds.width;
+      eX = this.scale().transform(point.data['end']) * this.dataBounds.width;
       sY = 0;
-      eY = series.getOption('height');
+      eY = anychart.utils.normalizeSize(series.getOption('height'), this.dataBounds.height);
       direction = series.getFinalDirection();
       pointId = k;
 
@@ -534,6 +534,7 @@ anychart.timelineModule.Chart.prototype.stackRanges = function(ranges) {
 
       maxStack++;
       currentPoint.drawingPlan.data[currentPoint.pointId].meta['stackLevel'] = maxStack;
+      currentPoint.eY = maxStack * (currentPoint.eY - currentPoint.sY);
       currentPoint.drawingPlan.data[currentPoint.pointId].meta['stateZIndex'] = 0.01 - maxStack / 1000;
     }
   }
@@ -542,8 +543,8 @@ anychart.timelineModule.Chart.prototype.stackRanges = function(ranges) {
 
 /**
  * Events and ranges should be of one direction.
- * @param events
- * @param ranges
+ * @param {Array.<anychart.timelineModule.Chart.SeriesIntersectionBounds>} events
+ * @param {Array.<anychart.timelineModule.Chart.SeriesIntersectionBounds>} ranges
  */
 anychart.timelineModule.Chart.prototype.stackOverlapEvents = function(events, ranges) {
   /**
@@ -551,7 +552,29 @@ anychart.timelineModule.Chart.prototype.stackOverlapEvents = function(events, ra
    * and take a look at "28 Days Later" in the left part
    * chart.zoomTo(1030110818057.4343, 1327969734452.1423)
    */
+  // for (var i = 0; i < events.length; i++) {
+  //   /*
+  //   Only takes into account event leg. No labels bounds intersection handling.
+  //    */
+  //   debugger;
+  //   var event = events[i];
+  //   var posX = event.sX;
+  //   var height = 0;
+  //   for (var ri = 0; ri < ranges.length; ri++) {
+  //     var range = ranges[ri];
+  //     if (posX >= range.sX && posX <= range.eX && range.eY > height)
+  //       height = range.eY;
+  //   }
+  //   var deltaY = event.eY - event.sY;
+  //   event.sY = height;
+  //   event.eY = height + deltaY;
+  //   event.drawingPlan.data[event.pointId].meta['minLength'] = height + deltaY / 2;
+  // }
   if (events.length > 1) {
+    /*
+    Here we start from the item before last and go to the first one (backwards),
+    checking intersections with items in front of us.
+    */
     for (var i = events.length - 2; i >= 0; i--) {
       var currentPoint = events[i];
       var intersections = [];
@@ -565,6 +588,18 @@ anychart.timelineModule.Chart.prototype.stackOverlapEvents = function(events, ra
             maxY = pointToCompare.eY;
         }
       }
+
+      for (var ri = 0; ri < ranges.length; ri++) {
+        debugger;
+        var pointToCompare = ranges[ri];
+        if (((currentPoint.sX <= pointToCompare.eX || isNaN(pointToCompare.eX)) && currentPoint.sX >= pointToCompare.sX) ||
+            ((currentPoint.eX <= pointToCompare.eX || isNaN(pointToCompare.eX)) && currentPoint.eX >= pointToCompare.sX)) {
+          intersections.push(pointToCompare);
+          if (pointToCompare.eY > maxY)
+            maxY = pointToCompare.eY;
+        }
+      }
+
       if (intersections.length > 0) {
 
         var yDelta = currentPoint.eY - currentPoint.sY;
