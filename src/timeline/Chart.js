@@ -434,7 +434,8 @@ anychart.timelineModule.Chart.prototype.calculate = function() {
       var formatProvider = series.createLabelsContextProvider();
       var it = series.getResetIterator();
       it.select(k);
-      formatProvider['value'] = it.get('value');
+      var text = it.get('value');
+      formatProvider['value'] = text;
       var positionProvider = series.createPositionProvider(series.labels().anchor());
       var label = factory.getLabel(k);// = factory.add(formatProvider, positionProvider);
       if (goog.isNull(label)) {
@@ -447,8 +448,8 @@ anychart.timelineModule.Chart.prototype.calculate = function() {
       point = data[k];
       sX = chart.scale().transform(point.data['x']) * this.dataBounds.width;
       eX = sX + bounds.width;
-      sY = 0;
-      eY = bounds.height;
+      sY = 50 - bounds.height / 2;
+      eY = 50 + bounds.height / 2;
       direction = series.getFinalDirection();
       pointId = k;
 
@@ -460,7 +461,8 @@ anychart.timelineModule.Chart.prototype.calculate = function() {
         direction: direction,
         series: series,
         pointId: pointId,
-        drawingPlan: this.drawingPlansEvent[i]
+        drawingPlan: this.drawingPlansEvent[i],
+        text: text
       };
 
       intersectingBounds.push(pointBounds);
@@ -494,7 +496,14 @@ anychart.timelineModule.Chart.prototype.calculate = function() {
   this.stackRanges(intersectingBoundsRangeUp);
   this.stackRanges(intersectingBoundsRangeDown);
 
-  goog.array.sort(intersectingBoundsEventUp, sortCallback);
+  var eventSortCallback = function(a, b) {
+    var diff = a.sX - b.sX;
+    if (diff == 0) {
+      return a.eX - b.eX;
+    }
+    return diff;
+  };
+  goog.array.sort(intersectingBoundsEventUp, eventSortCallback);
 
   this.stackOverlapEvents(intersectingBoundsEventUp, intersectingBoundsRangeUp);
 };
@@ -537,7 +546,34 @@ anychart.timelineModule.Chart.prototype.stackRanges = function(ranges) {
  * @param ranges
  */
 anychart.timelineModule.Chart.prototype.stackOverlapEvents = function(events, ranges) {
-  debugger;
+  /**
+   * debug range: {min: 1030110818057.4343, max: 1327969734452.1423}
+   * and take a look at "28 Days Later" in the left part
+   * chart.zoomTo(1030110818057.4343, 1327969734452.1423)
+   */
+  if (events.length > 1) {
+    for (var i = events.length - 2; i >= 0; i--) {
+      var currentPoint = events[i];
+      var intersections = [];
+      var maxY = -Infinity;
+      for (var k = i + 1; k < events.length; k++) {
+        var pointToCompare = events[k];
+        if ((pointToCompare.sX <= currentPoint.eX && pointToCompare.sX >= currentPoint.sX) ||//find intersections over x axis
+            (pointToCompare.eX <= currentPoint.eX && pointToCompare.eX >= currentPoint.sX)) {
+          intersections.push(pointToCompare);
+          if (pointToCompare.eY > maxY)
+            maxY = pointToCompare.eY;
+        }
+      }
+      if (intersections.length > 0) {
+
+        var yDelta = currentPoint.eY - currentPoint.sY;
+        currentPoint.sY = maxY;
+        currentPoint.eY = maxY + yDelta;
+        currentPoint.drawingPlan.data[currentPoint.pointId].meta['minLength'] = maxY + yDelta / 2;
+      }
+    }
+  }
 };
 
 
