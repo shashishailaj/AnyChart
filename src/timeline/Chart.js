@@ -275,7 +275,6 @@ anychart.timelineModule.Chart.prototype.calculate = function() {
   var directions = [anychart.enums.EventMarkerDirection.UP, anychart.enums.EventMarkerDirection.DOWN];
   var rangeNum = 0;
   var eventNum = 0;
-  var axisHeight = this.axis().getOption('height');
 
   this.drawingPlans = [];
   this.drawingPlansRange = [];
@@ -446,7 +445,7 @@ anychart.timelineModule.Chart.prototype.calculate = function() {
       var bounds = label.getTextElement().getBounds();
 
       point = data[k];
-      sX = chart.scale().transform(point.data['x']) * this.dataBounds.width;
+      sX = this.scale().transform(point.data['x']) * this.dataBounds.width;
       eX = sX + bounds.width;
       sY = 50 - bounds.height / 2;
       eY = 50 + bounds.height / 2;
@@ -590,7 +589,6 @@ anychart.timelineModule.Chart.prototype.stackOverlapEvents = function(events, ra
       }
 
       for (var ri = 0; ri < ranges.length; ri++) {
-        debugger;
         var pointToCompare = ranges[ri];
         if (((currentPoint.sX <= pointToCompare.eX || isNaN(pointToCompare.eX)) && currentPoint.sX >= pointToCompare.sX) ||
             ((currentPoint.eX <= pointToCompare.eX || isNaN(pointToCompare.eX)) && currentPoint.eX >= pointToCompare.sX)) {
