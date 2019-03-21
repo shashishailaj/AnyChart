@@ -280,8 +280,6 @@ anychart.timelineModule.Chart.prototype.calculate = function() {
   this.drawingPlansRange = [];
   this.drawingPlansEvent = [];
 
-  this.eventSeriesList = [];
-  this.rangeSeriesList = [];
 
   var axisHeight = this.axis().enabled() ? /** @type {number} */(this.axis().getOption('height')) : 0;
   var gap = 10;
@@ -308,6 +306,8 @@ anychart.timelineModule.Chart.prototype.calculate = function() {
 
 
   if (this.hasInvalidationState(anychart.ConsistencyState.SERIES_CHART_SERIES | anychart.ConsistencyState.SCALE_CHART_SCALES)) {
+    this.eventSeriesList = [];
+    this.rangeSeriesList = [];
     for (var i = 0; i < this.seriesList.length; i++) {
       var series = this.seriesList[i];
       var seriesType = series.seriesType();
@@ -503,8 +503,10 @@ anychart.timelineModule.Chart.prototype.calculate = function() {
     return diff;
   };
   goog.array.sort(intersectingBoundsEventUp, eventSortCallback);
+  goog.array.sort(intersectingBoundsEventDown, eventSortCallback);
 
   this.stackOverlapEvents(intersectingBoundsEventUp, intersectingBoundsRangeUp);
+  this.stackOverlapEvents(intersectingBoundsEventDown, intersectingBoundsRangeDown);
 };
 
 
@@ -551,24 +553,18 @@ anychart.timelineModule.Chart.prototype.stackOverlapEvents = function(events, ra
    * and take a look at "28 Days Later" in the left part
    * chart.zoomTo(1030110818057.4343, 1327969734452.1423)
    */
-  // for (var i = 0; i < events.length; i++) {
-  //   /*
-  //   Only takes into account event leg. No labels bounds intersection handling.
-  //    */
-  //   debugger;
-  //   var event = events[i];
-  //   var posX = event.sX;
-  //   var height = 0;
-  //   for (var ri = 0; ri < ranges.length; ri++) {
-  //     var range = ranges[ri];
-  //     if (posX >= range.sX && posX <= range.eX && range.eY > height)
-  //       height = range.eY;
-  //   }
-  //   var deltaY = event.eY - event.sY;
-  //   event.sY = height;
-  //   event.eY = height + deltaY;
-  //   event.drawingPlan.data[event.pointId].meta['minLength'] = height + deltaY / 2;
-  // }
+  /**
+   *
+   * @param {{sY: number, eY: number}} a
+   * @param {{sY: number, eY: number}} b
+   * @return {boolean}
+   */
+  var checkYIntersection = function(a, b) {
+    var intersect = (a.sY <= b.eY && a.sY >= b.sY) || (a.eY <= b.eY && a.eY >= b.sY) ||
+        (b.sY <= a.eY && b.sY >= a.sY) || (b.eY <= a.eY && b.eY >= a.sY);
+    return intersect;
+  };
+  //check case, when there is one event and some ranges, that should up the event
   if (events.length > 1) {
     /*
     Here we start from the item before last and go to the first one (backwards),
@@ -578,6 +574,7 @@ anychart.timelineModule.Chart.prototype.stackOverlapEvents = function(events, ra
       var currentPoint = events[i];
       var intersections = [];
       var maxY = -Infinity;
+      var maxYRange = 0; //heighest range for given event labels box
       for (var k = i + 1; k < events.length; k++) {
         var pointToCompare = events[k];
         if ((pointToCompare.sX <= currentPoint.eX && pointToCompare.sX >= currentPoint.sX) ||//find intersections over x axis
@@ -589,18 +586,46 @@ anychart.timelineModule.Chart.prototype.stackOverlapEvents = function(events, ra
       }
 
       for (var ri = 0; ri < ranges.length; ri++) {
+        // intersections with ranges
         var pointToCompare = ranges[ri];
         if (((currentPoint.sX <= pointToCompare.eX || isNaN(pointToCompare.eX)) && currentPoint.sX >= pointToCompare.sX) ||
             ((currentPoint.eX <= pointToCompare.eX || isNaN(pointToCompare.eX)) && currentPoint.eX >= pointToCompare.sX)) {
-          intersections.push(pointToCompare);
-          if (pointToCompare.eY > maxY)
-            maxY = pointToCompare.eY;
+          // intersections.push(pointToCompare);
+          if (pointToCompare.eY > maxYRange)
+            maxYRange = pointToCompare.eY;
         }
       }
 
+      //checking if we can put currentPoint somewhere down, to not grow very tall event grass
+      goog.array.sort(intersections, function(a, b) {
+        return a.sY - b.sY;
+      });
+      var yDelta = currentPoint.eY - currentPoint.sY;
+      var okBox = {
+        sY: maxYRange,
+        eY: maxYRange + yDelta,
+        sX: currentPoint.sX,
+        eX: currentPoint.eX
+      };
+      for (var ii = 0; ii < intersections.length; ii++) {
+        var currentIntersectionPoint = intersections[ii];
+        if (checkYIntersection(okBox, currentIntersectionPoint)) {
+          okBox.sY = currentIntersectionPoint.eY;
+          okBox.eY = okBox.sY + yDelta;
+        }
+        // if (okBox.eY <= currentIntersectionPoint.sY) {
+        //   maxY = okBox.sY;
+        // }
+      }
+
+      maxY = okBox.sY;
+
+      if (maxYRange > maxY)
+        maxY = maxYRange;
+
       if (intersections.length > 0) {
 
-        var yDelta = currentPoint.eY - currentPoint.sY;
+        yDelta = currentPoint.eY - currentPoint.sY;
         currentPoint.sY = maxY;
         currentPoint.eY = maxY + yDelta;
         currentPoint.drawingPlan.data[currentPoint.pointId].meta['minLength'] = maxY + yDelta / 2;
