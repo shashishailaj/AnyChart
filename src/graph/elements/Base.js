@@ -388,7 +388,7 @@ anychart.graphModule.elements.Base.prototype.serialize = function() {
 
 
 /**
- * Displose all created labels settings.
+ * Dispose all created labels settings.
  * */
 anychart.graphModule.elements.Base.prototype.resetLabelSettings = function() {
   for (var labelSettings in this.settingsForLabels) {
@@ -414,8 +414,6 @@ anychart.graphModule.elements.Base.prototype.disposeInternal = function() {
   this.pathPool_ = [];
 
   this.resetLabelSettings();
-
-
 };
 
 (function() {

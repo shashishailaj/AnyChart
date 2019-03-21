@@ -304,6 +304,8 @@ anychart.core.reporting.getWarningDescription_ = function(code, opt_arguments) {
       return 'Can\'t connect edge with id: "' + opt_arguments[0] + '" to node with id "' + opt_arguments[1] + '", node not exists.';
     case anychart.enums.WarningCode.GRAPH_CONNECT_SAME_NODE:
       return 'You try make edge with id "' + opt_arguments[0] + '" on one node with id "' + opt_arguments[1] + '".';
+    case anychart.enums.WarningCode.GRAPH_NO_GROUP:
+      return 'No group with id "' + opt_arguments[0] + '". At first set groups for nodes then use groups method.';
     default:
       return 'Unknown error. Please, contact support team at http://support.anychart.com/.\n' +
           'We will be very grateful for your report!';
