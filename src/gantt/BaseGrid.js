@@ -2619,7 +2619,8 @@ anychart.ganttModule.BaseGrid.prototype.rowUnselect = function(event) {
         'actualTarget': event ? event.target : this,
         'target': this,
         'originalEvent': event,
-        'item': null //This is a real difference between 'select' and 'unselect' events.
+        'item': null, //This is a real difference between 'select' and 'unselect' events.
+        'prevItem': this.interactivityHandler.selection().getSelectedItem()
       };
       this.dispatchEvent(newEvent);
     }
