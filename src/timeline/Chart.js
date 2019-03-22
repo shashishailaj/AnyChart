@@ -506,7 +506,9 @@ anychart.timelineModule.Chart.prototype.calculate = function() {
   goog.array.sort(intersectingBoundsEventUp, eventSortCallback);
   goog.array.sort(intersectingBoundsEventDown, eventSortCallback);
 
+  console.timeStamp('Start');
   this.stackOverlapEvents(intersectingBoundsEventUp, intersectingBoundsRangeUp);
+  console.timeStamp('End');
   this.stackOverlapEvents(intersectingBoundsEventDown, intersectingBoundsRangeDown);
 };
 
@@ -516,29 +518,26 @@ anychart.timelineModule.Chart.prototype.calculate = function() {
  * @param {Array.<anychart.timelineModule.Chart.SeriesIntersectionBounds>} ranges sorted array of range series point bounds
  */
 anychart.timelineModule.Chart.prototype.stackRanges = function(ranges) {
-  if (ranges.length > 1) {
-    // start from 1, to check intersections with previous ranges
-    for (var i = 1; i < ranges.length; i++) {
-      var currentPoint = ranges[i];
-      var previousIntersecting = [];
-      var maxStack = 0;
+  for (var i = 0; i < ranges.length; i++) {
+    var currentPoint = ranges[i];
+    var previousIntersecting = [];
+    var maxStack = 0;
 
-      for (var k = 0; k < i; k++) {
-        if (ranges[k].sX <= currentPoint.sX && (ranges[k].eX >= currentPoint.sX || isNaN(ranges[k].eX))) {
-          previousIntersecting.push(ranges[k]);
-          var id = ranges[k].pointId;
-          var stack = ranges[k].drawingPlan.data[id].meta['stackLevel'];
-          if (stack > maxStack) {
-            maxStack = stack;
-          }
+    for (var k = 0; k < i; k++) {
+      if (ranges[k].sX <= currentPoint.sX && (ranges[k].eX >= currentPoint.sX || isNaN(ranges[k].eX))) {
+        previousIntersecting.push(ranges[k]);
+        var id = ranges[k].pointId;
+        var stack = ranges[k].drawingPlan.data[id].meta['stackLevel'];
+        if (stack > maxStack) {
+          maxStack = stack;
         }
       }
-
-      maxStack++;
-      currentPoint.drawingPlan.data[currentPoint.pointId].meta['stackLevel'] = maxStack;
-      currentPoint.eY = maxStack * (currentPoint.eY - currentPoint.sY);
-      currentPoint.drawingPlan.data[currentPoint.pointId].meta['stateZIndex'] = 0.01 - maxStack / 1000;
     }
+
+    maxStack++;
+    currentPoint.drawingPlan.data[currentPoint.pointId].meta['stackLevel'] = maxStack;
+    currentPoint.eY = maxStack * (currentPoint.eY - currentPoint.sY);
+    currentPoint.drawingPlan.data[currentPoint.pointId].meta['stateZIndex'] = 1 - maxStack / 1000;
   }
 };
 
@@ -590,7 +589,9 @@ anychart.timelineModule.Chart.prototype.stackOverlapEvents = function(events, ra
         // intersections with ranges
         var pointToCompare = ranges[ri];
         if (((currentPoint.sX <= pointToCompare.eX || isNaN(pointToCompare.eX)) && currentPoint.sX >= pointToCompare.sX) ||
-            ((currentPoint.eX <= pointToCompare.eX || isNaN(pointToCompare.eX)) && currentPoint.eX >= pointToCompare.sX)) {
+            ((currentPoint.eX <= pointToCompare.eX || isNaN(pointToCompare.eX)) && currentPoint.eX >= pointToCompare.sX) ||
+            (pointToCompare.sX <= currentPoint.eX && pointToCompare.sX >= currentPoint.sX) ||
+            (pointToCompare.eX <= currentPoint.eX && pointToCompare.eX >= currentPoint.sX)) {
           // intersections.push(pointToCompare);
           if (pointToCompare.eY > maxYRange)
             maxYRange = pointToCompare.eY;
@@ -603,16 +604,16 @@ anychart.timelineModule.Chart.prototype.stackOverlapEvents = function(events, ra
       });
       var yDelta = currentPoint.eY - currentPoint.sY;
       var okBox = {
-        sY: maxYRange,
-        eY: maxYRange + yDelta,
+        sY: maxYRange + 3,
+        eY: maxYRange + yDelta + 3,
         sX: currentPoint.sX,
         eX: currentPoint.eX
       };
       for (var ii = 0; ii < intersections.length; ii++) {
         var currentIntersectionPoint = intersections[ii];
         if (checkYIntersection(okBox, currentIntersectionPoint)) {
-          okBox.sY = currentIntersectionPoint.eY;
-          okBox.eY = okBox.sY + yDelta;
+          okBox.sY = currentIntersectionPoint.eY + 3;
+          okBox.eY = okBox.sY + yDelta + 3;
         }
       }
 

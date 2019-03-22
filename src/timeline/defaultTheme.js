@@ -22,7 +22,7 @@ goog.mixin(goog.global['anychart']['themes']['defaultTheme'], {
     'axis': {
       'enabled': true,
       'zIndex': 35,
-      'height': 10,
+      'height': 15,
       'stroke': anychart.core.defaultTheme.colorStrokeNormal,
       'fill': anychart.core.defaultTheme.colorStrokeNormal,
       'ticks': {
@@ -31,7 +31,7 @@ goog.mixin(goog.global['anychart']['themes']['defaultTheme'], {
         'zIndex': 36
       },
       'labels': {
-        'fontSize': '10px',
+        'fontSize': 10,
         'textOverflow': true,
         'format': '{%Value}'
       }
@@ -50,19 +50,27 @@ goog.mixin(goog.global['anychart']['themes']['defaultTheme'], {
            */
           'stroke': function() {
             return {
-              'color': this['sourceColor'],
+              'color': anychart.color.lighten(this['sourceColor']),
               'thickness': 1,
-              'dash': '5 5'
+              'dash': '2 2'
             };
           },
           'markers': {'enabled': true},
           'labels': {
             'enabled': true,
             'anchor': anychart.enums.Anchor.LEFT_CENTER,
-            'width': 120
+            'width': 120,
+            'background': {
+              'enabled': true,
+              'color': 'white 1',
+              'corners': 2,
+              'stroke': '#cecece 1'
+            },
+            'fontSize': 11,
+            'offsetX': 5
           }
         },
-        'zIndex': 34,
+        'zIndex': 33,
         'tooltip': {
           /**
            * @this {*}
@@ -74,6 +82,7 @@ goog.mixin(goog.global['anychart']['themes']['defaultTheme'], {
         }
       },
       'range': {
+        'zIndex': 34,
         'height': '5%',
         'normal': {
           'labels': {
