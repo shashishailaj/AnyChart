@@ -76,7 +76,7 @@ anychart.timelineModule.drawers.Event.prototype.drawPointShape = function(point,
   var x = /** @type {number} */(point.meta('x'));
   var zero = /** @type {number} */(point.meta('zero'));
   var minLength = /** @type {number} */(point.meta('minLength'));
-  var length = /** @type {number} */(point.meta('length'));
+  // var length = /** @type {number} */(point.meta('length'));
   var thickness = anychart.utils.extractThickness(/** @type {acgraph.vector.Stroke} */(path.stroke()));
   var axisHeight = /** @type {number} */(point.meta('axisHeight'));
   // false - direction is down, it can't be auto
@@ -84,10 +84,7 @@ anychart.timelineModule.drawers.Event.prototype.drawPointShape = function(point,
 
   zero += directionUp ? -axisHeight / 2 : axisHeight / 2;
 
-  if (length < minLength)
-    length = minLength;
-
   x = anychart.utils.applyPixelShift(x, thickness);
   anychart.core.drawers.move(path, this.isVertical, x, zero);
-  anychart.core.drawers.line(path, this.isVertical, x, directionUp ? zero - length : zero + length);
+  anychart.core.drawers.line(path, this.isVertical, x, directionUp ? zero - minLength : zero + minLength);
 };

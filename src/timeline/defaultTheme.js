@@ -44,6 +44,17 @@ goog.mixin(goog.global['anychart']['themes']['defaultTheme'], {
       'event': {
         'connector': {'length': '4%'},
         'normal': {
+          /**
+           * @this {*}
+           * @return {acgraph.vector.Stroke}
+           */
+          'stroke': function() {
+            return {
+              'color': this['sourceColor'],
+              'thickness': 1,
+              'dash': '5 5'
+            };
+          },
           'markers': {'enabled': true},
           'labels': {
             'enabled': true,
@@ -68,7 +79,8 @@ goog.mixin(goog.global['anychart']['themes']['defaultTheme'], {
           'labels': {
             'enabled': true,
             'anchor': anychart.enums.Anchor.LEFT_CENTER,
-            'format': '{%x}'
+            'format': '{%x}',
+            'fontColor': 'white'
           },
           'fill': anychart.core.defaultTheme.returnSourceColor85
         },

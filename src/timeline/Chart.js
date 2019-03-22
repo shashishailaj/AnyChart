@@ -440,9 +440,10 @@ anychart.timelineModule.Chart.prototype.calculate = function() {
       if (goog.isNull(label)) {
         label = factory.add(formatProvider, positionProvider);
       }
-      label.width(factory.width());
       label.draw();
       var bounds = label.getTextElement().getBounds();
+      if (factory.background().enabled())
+        bounds = factory.padding().widenBounds(bounds);
 
       point = data[k];
       sX = this.scale().transform(point.data['x']) * this.dataBounds.width;
@@ -523,7 +524,7 @@ anychart.timelineModule.Chart.prototype.stackRanges = function(ranges) {
       var maxStack = 0;
 
       for (var k = 0; k < i; k++) {
-        if (ranges[k].sX <= currentPoint.sX && ranges[k].eX >= currentPoint.sX) {
+        if (ranges[k].sX <= currentPoint.sX && (ranges[k].eX >= currentPoint.sX || isNaN(ranges[k].eX))) {
           previousIntersecting.push(ranges[k]);
           var id = ranges[k].pointId;
           var stack = ranges[k].drawingPlan.data[id].meta['stackLevel'];
@@ -565,12 +566,12 @@ anychart.timelineModule.Chart.prototype.stackOverlapEvents = function(events, ra
     return intersect;
   };
   //check case, when there is one event and some ranges, that should up the event
-  if (events.length > 1) {
+  if (events.length >= 1) {
     /*
     Here we start from the item before last and go to the first one (backwards),
     checking intersections with items in front of us.
     */
-    for (var i = events.length - 2; i >= 0; i--) {
+    for (var i = events.length - 1; i >= 0; i--) {
       var currentPoint = events[i];
       var intersections = [];
       var maxY = -Infinity;
@@ -613,9 +614,6 @@ anychart.timelineModule.Chart.prototype.stackOverlapEvents = function(events, ra
           okBox.sY = currentIntersectionPoint.eY;
           okBox.eY = okBox.sY + yDelta;
         }
-        // if (okBox.eY <= currentIntersectionPoint.sY) {
-        //   maxY = okBox.sY;
-        // }
       }
 
       maxY = okBox.sY;
@@ -623,13 +621,10 @@ anychart.timelineModule.Chart.prototype.stackOverlapEvents = function(events, ra
       if (maxYRange > maxY)
         maxY = maxYRange;
 
-      if (intersections.length > 0) {
-
-        yDelta = currentPoint.eY - currentPoint.sY;
-        currentPoint.sY = maxY;
-        currentPoint.eY = maxY + yDelta;
-        currentPoint.drawingPlan.data[currentPoint.pointId].meta['minLength'] = maxY + yDelta / 2;
-      }
+      yDelta = currentPoint.eY - currentPoint.sY;
+      currentPoint.sY = maxY;
+      currentPoint.eY = maxY + yDelta;
+      currentPoint.drawingPlan.data[currentPoint.pointId].meta['minLength'] = maxY + yDelta / 2;
     }
   }
 };
