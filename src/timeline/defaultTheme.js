@@ -46,7 +46,7 @@ goog.mixin(goog.global['anychart']['themes']['defaultTheme'], {
         'normal': {
           /**
            * @this {*}
-           * @return {acgraph.vector.Stroke}
+           * @return {Object}
            */
           'stroke': function() {
             return {

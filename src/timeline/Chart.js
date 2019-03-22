@@ -524,7 +524,8 @@ anychart.timelineModule.Chart.prototype.stackRanges = function(ranges) {
     var maxStack = 0;
 
     for (var k = 0; k < i; k++) {
-      if (ranges[k].sX <= currentPoint.sX && (ranges[k].eX >= currentPoint.sX || isNaN(ranges[k].eX))) {
+      if (ranges[k].sX < currentPoint.sX && (ranges[k].eX > currentPoint.sX || isNaN(ranges[k].eX)) ||
+          (ranges[k].sX == currentPoint.sX && ranges[k].eX == currentPoint.eX)) {
         previousIntersecting.push(ranges[k]);
         var id = ranges[k].pointId;
         var stack = ranges[k].drawingPlan.data[id].meta['stackLevel'];
