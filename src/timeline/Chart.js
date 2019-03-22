@@ -14,6 +14,7 @@ goog.require('anychart.core.ui.ChartScroller');
 goog.require('anychart.scales.GanttDateTime');
 goog.require('anychart.scales.Linear');
 goog.require('anychart.timelineModule.Axis');
+goog.require('anychart.timelineModule.Intersections');
 goog.require('anychart.timelineModule.series.Event');
 goog.require('anychart.timelineModule.series.Range');
 goog.require('goog.events.MouseWheelHandler');
@@ -481,6 +482,7 @@ anychart.timelineModule.Chart.prototype.calculate = function() {
     }
   }
   //endregion
+  debugger;
 
   var sortCallback = function(a, b) {
     var diff = a.sX - b.sX;
@@ -506,10 +508,29 @@ anychart.timelineModule.Chart.prototype.calculate = function() {
   goog.array.sort(intersectingBoundsEventUp, eventSortCallback);
   goog.array.sort(intersectingBoundsEventDown, eventSortCallback);
 
-  console.timeStamp('Start');
-  this.stackOverlapEvents(intersectingBoundsEventUp, intersectingBoundsRangeUp);
-  console.timeStamp('End');
-  this.stackOverlapEvents(intersectingBoundsEventDown, intersectingBoundsRangeDown);
+  var intersections = new anychart.timelineModule.Intersections();
+  for (var i = 0; i < intersectingBoundsRangeUp.length; i++) {
+    var range = intersectingBoundsRangeUp[i];
+    var id = range.pointId;
+    intersections.add(range);
+    var drawingPlanData = range.drawingPlan.data[id];
+    drawingPlanData.meta['startY'] = range.sY;
+    drawingPlanData.meta['endY'] = range.eY;
+  }
+
+  for (var i = intersectingBoundsEventUp.length - 1; i >= 0; i--) {
+    var range = intersectingBoundsEventUp[i];
+    var id = range.pointId;
+    intersections.add(range);
+    var drawingPlanData = range.drawingPlan.data[id];
+    drawingPlanData.meta['minLength'] = range.sY + (range.eY - range.sY) / 2;
+  }
+
+
+  // console.timeStamp('Start');
+  // this.stackOverlapEvents(intersectingBoundsEventUp, intersectingBoundsRangeUp);
+  // console.timeStamp('End');
+  // this.stackOverlapEvents(intersectingBoundsEventDown, intersectingBoundsRangeDown);
 };
 
 

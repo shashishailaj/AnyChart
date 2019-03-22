@@ -580,6 +580,7 @@ goog.addDependency('../../../../src/timeline/Axis.js', ['anychart.timelineModule
 goog.addDependency('../../../../src/timeline/AxisTicks.js', ['anychart.timelineModule.AxisTicks'], ['anychart.core.VisualBase'], {});
 goog.addDependency('../../../../src/timeline/Chart.js', ['anychart.timelineModule.Chart'], ['anychart.core.ChartWithSeries', 'anychart.core.IChart', 'anychart.core.IPlot', 'anychart.core.StateSettings', 'anychart.core.axisMarkers.Line', 'anychart.core.axisMarkers.Range', 'anychart.core.axisMarkers.Text', 'anychart.core.settings', 'anychart.core.ui.ChartScroller', 'anychart.scales.GanttDateTime', 'anychart.scales.Linear', 'anychart.timelineModule.Axis', 'anychart.timelineModule.series.Event', 'anychart.timelineModule.series.Range', 'goog.events.MouseWheelHandler'], {});
 goog.addDependency('../../../../src/timeline/ConnectorSettings.js', ['anychart.timelineModule.ConnectorSettings'], ['anychart.core.Base', 'anychart.core.settings'], {});
+goog.addDependency('../../../../src/timeline/Intersections.js', ['anychart.timelineModule.Intersections'], [], {});
 goog.addDependency('../../../../src/timeline/defaultTheme.js', ['anychart.timelineModule.defaultTheme'], [], {});
 goog.addDependency('../../../../src/timeline/drawers/Event.js', ['anychart.timelineModule.drawers.Event'], ['anychart.core.drawers', 'anychart.core.drawers.Base'], {});
 goog.addDependency('../../../../src/timeline/drawers/Range.js', ['anychart.timelineModule.drawers.Range'], ['anychart.core.drawers', 'anychart.core.drawers.Base'], {});

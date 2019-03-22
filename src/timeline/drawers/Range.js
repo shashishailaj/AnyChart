@@ -81,6 +81,10 @@ anychart.timelineModule.drawers.Range.prototype.drawPointShape = function(point,
   var stackLevel = /** @type {number} */(point.meta('stackLevel'));
   var direction = /** @type {anychart.enums.EventMarkerDirection} */(point.meta('direction'));
 
+  var startY = point.meta('startY');
+  var endY = point.meta('endY');
+  debugger;
+
   if (!goog.isDef(stackLevel)) {
     stackLevel = 1;
   }
