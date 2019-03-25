@@ -5095,7 +5095,15 @@ anychart.enums.State = {
   APPEARANCE: 'appearance',
   DATA: 'data',
   NODE_LABELS: 'nodelabels',
-  FLOW_LABELS: 'flowlabels'
+  FLOW_LABELS: 'flowlabels',
+  LABELS_STYLE: 'labelsStyle',
+  LABELS_ENABLED: 'labelsEnabled',
+  LABELS_BOUNDS: 'labelsBounds',
+  NODES: 'nodes',
+  EDGES: 'edges',
+  LAYOUT: 'layout',
+  TRANSFORM: 'transform',
+  ROTATE: 'rotate'
 };
 //endregion
 

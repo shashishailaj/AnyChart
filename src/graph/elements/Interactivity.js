@@ -1,7 +1,6 @@
 goog.provide('anychart.graphModule.elements.Interactivity');
 
 goog.require('anychart.core.Base');
-goog.require('anychart.core.StateSettings');
 
 
 

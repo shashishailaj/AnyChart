@@ -1,7 +1,6 @@
 goog.provide('anychart.graphModule.elements.Layout');
 
 goog.require('anychart.core.Base');
-goog.require('anychart.core.StateSettings');
 goog.require('goog.math.Rect');
 
 

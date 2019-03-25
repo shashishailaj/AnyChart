@@ -1,3 +1,4 @@
+//region Require
 goog.provide('anychart.graphModule.elements.Base');
 
 goog.require('anychart.core.Base');
@@ -7,6 +8,8 @@ goog.require('anychart.core.ui.OptimizedText');
 
 
 
+//endregion
+//region Constructor
 /**
  * @constructor
  * @param {anychart.graphModule.Chart} chart
@@ -82,7 +85,7 @@ anychart.graphModule.elements.Base = function(chart) {
   this.hovered_.setOption(anychart.core.StateSettings.LABELS_FACTORY_CONSTRUCTOR, anychart.core.StateSettings.OPTIMIZED_LABELS_CONSTRUCTOR_NO_THEME);
   this.selected_.setOption(anychart.core.StateSettings.LABELS_FACTORY_CONSTRUCTOR, anychart.core.StateSettings.OPTIMIZED_LABELS_CONSTRUCTOR_NO_THEME);
 
-  function labelsCallBack (labels) {
+  function labelsCallBack(labels) {
     labels.setParentEventTarget(/** @type {goog.events.EventTarget} */ (this));
   }
 
@@ -96,6 +99,24 @@ goog.inherits(anychart.graphModule.elements.Base, anychart.core.Base);
 anychart.core.settings.populateAliases(anychart.graphModule.elements.Base, ['fill', 'stroke', 'labels', 'shape', 'height', 'width'], 'normal');
 
 
+//endregion
+//region Signals
+/**
+ * Supported signals.
+ * @type {number}
+ * */
+anychart.graphModule.elements.Base.prototype.SUPPORTED_SIGNALS =
+  anychart.Signal.NEEDS_REDRAW_APPEARANCE |
+  anychart.Signal.MEASURE_COLLECT | //Signal for Measuriator to collect labels to measure.
+  anychart.Signal.MEASURE_BOUNDS | //Signal for Measuriator to measure the bounds of collected labels.
+  anychart.Signal.NEEDS_REDRAW_LABELS | //Signal for DG to change the labels placement.
+  anychart.Signal.NEEDS_REDRAW |
+  anychart.Signal.BOUNDS_CHANGED |
+  anychart.Signal.NEEDS_REAPPLICATION |
+  anychart.Signal.ENABLED_STATE_CHANGED;
+
+
+//endregion
 //region StateSettings
 /**
  * Setup elements.
@@ -148,9 +169,10 @@ anychart.graphModule.elements.Base.prototype.selected = function(opt_value) {
   }
   return this.selected_;
 };
+
+
 //endregion
-
-
+//region Settings resolve
 /**
  * Return stroke for element
  * @param {(anychart.graphModule.Chart.Edge|anychart.graphModule.Chart.Node)} element
@@ -178,90 +200,6 @@ anychart.graphModule.elements.Base.prototype.getFill = function(element) {
 anychart.graphModule.elements.Base.prototype.getType = function() {
   return this.type;
 };
-
-
-/**
- * Create new path or get if from pool and return it.
- * @return {acgraph.vector.Path}
- * */
-anychart.graphModule.elements.Base.prototype.getPath = function() {
-  var path = this.pathPool_.pop();
-  if (!path) {
-    path = acgraph.path();
-  }
-  path.clear();
-  return path;
-};
-
-
-/**
- * Create new text or get if from pool and return it.
- * @return {anychart.core.ui.OptimizedText}
- * */
-anychart.graphModule.elements.Base.prototype.getText = function() {
-  var text = this.textPool_.pop();
-  if (!text) {
-    text = new anychart.core.ui.OptimizedText();
-  }
-  return text;
-};
-
-
-/**
- * @param {(anychart.graphModule.Chart.Edge|anychart.graphModule.Chart.Node)} element
- * @return {anychart.core.ui.OptimizedText}
- * */
-anychart.graphModule.elements.Base.prototype.getTextElement = function(element) {
-  if (!element.textElement) {
-    element.textElement = this.getText();
-  }
-  return element.textElement;
-};
-
-
-/**
- * Supported signals.
- * @type {number}
- * */
-anychart.graphModule.elements.Base.prototype.SUPPORTED_SIGNALS =
-  anychart.Signal.NEEDS_REDRAW_APPEARANCE |
-  anychart.Signal.MEASURE_COLLECT | //Signal for Measuriator to collect labels to measure.
-  anychart.Signal.MEASURE_BOUNDS | //Signal for Measuriator to measure the bounds of collected labels.
-  anychart.Signal.NEEDS_REDRAW_LABELS | //Signal for DG to change the labels placement.
-  anychart.Signal.NEEDS_REDRAW |
-  anychart.Signal.BOUNDS_CHANGED |
-  anychart.Signal.NEEDS_REAPPLICATION |
-  anychart.Signal.ENABLED_STATE_CHANGED;
-
-
-/**
- * Reset DOM of passed element and add it in pool.
- * @param {anychart.graphModule.Chart.Edge|anychart.graphModule.Chart.Node} element
- * */
-anychart.graphModule.elements.Base.prototype.clear = function(element) {
-  var domElement = element.domElement;
-  if (domElement) {
-    domElement.tag = null;
-    domElement.clear();
-    domElement.parent(null);
-    this.pathPool_.push(domElement);
-    element.domElement = null;
-  }
-
-  var textElement = element.textElement;
-  if (textElement) {
-    element.textElement = null;
-    textElement.renderTo(null);
-    this.textPool_.push(textElement);
-  }
-};
-
-
-/**
- * Returns iterator.
- * @return {!anychart.data.Iterator} iterator
- * */
-anychart.graphModule.elements.Base.prototype.getIterator = goog.abstractMethod;
 
 
 /**
@@ -320,6 +258,7 @@ anychart.graphModule.elements.Base.prototype.resolveLabelSettings = function(ele
 
 
 /**
+ * Setup or return state for element.
  * @param {anychart.graphModule.Chart.Node | anychart.graphModule.Chart.Edge} element
  * @param {anychart.SettingsState=} opt_state
  * @return {anychart.graphModule.Chart.Node | anychart.graphModule.Chart.Edge |anychart.SettingsState}
@@ -333,6 +272,55 @@ anychart.graphModule.elements.Base.prototype.state = function(element, opt_state
 };
 
 
+//endregion
+//region Utils
+/**
+ * Create new path or get if from pool and return it.
+ * @return {acgraph.vector.Path}
+ * */
+anychart.graphModule.elements.Base.prototype.getPath = function() {
+  var path = this.pathPool_.pop();
+  if (!path) {
+    path = acgraph.path();
+  }
+  path.clear();
+  return path;
+};
+
+
+/**
+ * Create new text or get if from pool and return it.
+ * @return {anychart.core.ui.OptimizedText}
+ * */
+anychart.graphModule.elements.Base.prototype.getText = function() {
+  var text = this.textPool_.pop();
+  if (!text) {
+    text = new anychart.core.ui.OptimizedText();
+  }
+  return text;
+};
+
+
+/**
+ * Return text of element if exist or create new and return it.
+ * @param {(anychart.graphModule.Chart.Edge|anychart.graphModule.Chart.Node)} element
+ * @return {anychart.core.ui.OptimizedText}
+ * */
+anychart.graphModule.elements.Base.prototype.getTextElement = function(element) {
+  if (!element.textElement) {
+    element.textElement = this.getText();
+  }
+  return element.textElement;
+};
+
+
+/**
+ * Returns iterator.
+ * @return {!anychart.data.Iterator} iterator
+ * */
+anychart.graphModule.elements.Base.prototype.getIterator = goog.abstractMethod;
+
+
 /**
  * Dispatch signal we need measure labels.
  * */
@@ -341,6 +329,8 @@ anychart.graphModule.elements.Base.prototype.needsMeasureLabels = function() {
 };
 
 
+//endregion
+//region Setup and dispose
 /** @inheritDoc */
 anychart.graphModule.elements.Base.prototype.setupByJSON = function(config, opt_default) {
   anychart.graphModule.elements.Base.base(this, 'setupByJSON', config, opt_default);
@@ -388,6 +378,29 @@ anychart.graphModule.elements.Base.prototype.serialize = function() {
 
 
 /**
+ * Reset DOM of passed element and add it in pool.
+ * @param {anychart.graphModule.Chart.Edge|anychart.graphModule.Chart.Node} element
+ * */
+anychart.graphModule.elements.Base.prototype.clear = function(element) {
+  var domElement = element.domElement;
+  if (domElement) {
+    domElement.tag = null;
+    domElement.clear();
+    domElement.parent(null);
+    this.pathPool_.push(domElement);
+    element.domElement = null;
+  }
+
+  var textElement = element.textElement;
+  if (textElement) {
+    element.textElement = null;
+    textElement.renderTo(null);
+    this.textPool_.push(textElement);
+  }
+};
+
+
+/**
  * Dispose all created labels settings.
  * */
 anychart.graphModule.elements.Base.prototype.resetLabelSettings = function() {
@@ -407,8 +420,10 @@ anychart.graphModule.elements.Base.prototype.resetLabelSettings = function() {
 
 /** @inheritDoc */
 anychart.graphModule.elements.Base.prototype.disposeInternal = function() {
-  goog.disposeAll(this.textPool_);
-  goog.disposeAll(this.pathPool_);
+  goog.disposeAll(
+    this.textPool_,
+    this.pathPool_
+  );
 
   this.textPool_ = [];
   this.pathPool_ = [];
@@ -416,9 +431,13 @@ anychart.graphModule.elements.Base.prototype.disposeInternal = function() {
   this.resetLabelSettings();
 };
 
+
+//endregion
+//region Export
 (function() {
   var proto = anychart.graphModule.elements.Base.prototype;
   proto['normal'] = proto.normal;
   proto['hovered'] = proto.hovered;
   proto['selected'] = proto.selected;
 })();
+//endregion

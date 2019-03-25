@@ -8,6 +8,7 @@ goog.require('anychart.graphModule.elements.Base');
 goog.require('anychart.reflow.IMeasurementsTargetProvider');
 
 
+
 /**
  * @constructor
  * @param {anychart.graphModule.Chart} chart
@@ -513,6 +514,8 @@ anychart.graphModule.elements.Node.prototype.disposeInternal = function() {
   //Dispose all elements in pools and dispose all label settings.
   anychart.graphModule.elements.Node.base(this, 'disposeInternal');
 };
+
+
 //endregion
 //region Exports
 (function() {
