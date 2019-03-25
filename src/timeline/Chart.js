@@ -381,8 +381,7 @@ anychart.timelineModule.Chart.prototype.calculate = function() {
   }
 
   //region populate array of intersecting bounds
-  /** @type {anychart.timelineModule.Chart.SeriesIntersectionBounds} */
-
+  /** @type {anychart.timelineModule.Intersections.Range} */
   var pointBounds;
   var sX, eX, sY, eY, direction, pointId;
   var k, point;
@@ -447,6 +446,7 @@ anychart.timelineModule.Chart.prototype.calculate = function() {
       var bounds = label.getTextElement().getBounds();
       if (factory.background().enabled())
         bounds = factory.padding().widenBounds(bounds);
+      
 
       point = data[k];
       sX = this.scale().transform(point.data['x']) * this.dataBounds.width;
@@ -506,6 +506,7 @@ anychart.timelineModule.Chart.prototype.calculate = function() {
   goog.array.sort(intersectingBoundsEventUp, eventSortCallback);
   goog.array.sort(intersectingBoundsEventDown, eventSortCallback);
 
+  //region upper range and event overlap calculation
   var rangeSeries = [];
 
   var intersectionsUpper = new anychart.timelineModule.Intersections();
@@ -524,9 +525,6 @@ anychart.timelineModule.Chart.prototype.calculate = function() {
 
     var id = range.pointId;
     var drawingPlanData = range.drawingPlan.data[id];
-    // var it = range.series.getResetIterator();
-    // it.select(id);
-    // var text = it.get('name');
     intersectionsUpper.add(range, true);
     drawingPlanData.meta['startY'] = range.sY;
     drawingPlanData.meta['endY'] = range.eY;
@@ -540,7 +538,9 @@ anychart.timelineModule.Chart.prototype.calculate = function() {
     var drawingPlanData = range.drawingPlan.data[id];
     drawingPlanData.meta['minLength'] = range.sY + (range.eY - range.sY) / 2;
   }
+  //endregion
 
+  //region lower range and event overlap calculation
   var intersectionsLower = new anychart.timelineModule.Intersections();
 
   rangeSeries = [];
@@ -571,142 +571,8 @@ anychart.timelineModule.Chart.prototype.calculate = function() {
     var drawingPlanData = range.drawingPlan.data[id];
     drawingPlanData.meta['minLength'] = range.sY + (range.eY - range.sY) / 2;
   }
-
-  console.log('end');
+  //endregion
 };
-
-
-/**
- *
- * @param {Array.<anychart.timelineModule.Chart.SeriesIntersectionBounds>} ranges sorted array of range series point bounds
- */
-anychart.timelineModule.Chart.prototype.stackRanges = function(ranges) {
-  for (var i = 0; i < ranges.length; i++) {
-    var currentPoint = ranges[i];
-    var previousIntersecting = [];
-    var maxStack = 0;
-
-    for (var k = 0; k < i; k++) {
-      if (ranges[k].sX < currentPoint.sX && (ranges[k].eX > currentPoint.sX || isNaN(ranges[k].eX)) ||
-          (ranges[k].sX == currentPoint.sX && ranges[k].eX == currentPoint.eX)) {
-        previousIntersecting.push(ranges[k]);
-        var id = ranges[k].pointId;
-        var stack = ranges[k].drawingPlan.data[id].meta['stackLevel'];
-        if (stack > maxStack) {
-          maxStack = stack;
-        }
-      }
-    }
-
-    maxStack++;
-    currentPoint.drawingPlan.data[currentPoint.pointId].meta['stackLevel'] = maxStack;
-    currentPoint.eY = maxStack * (currentPoint.eY - currentPoint.sY);
-    currentPoint.drawingPlan.data[currentPoint.pointId].meta['stateZIndex'] = 1 - maxStack / 1000;
-  }
-};
-
-
-/**
- * Events and ranges should be of one direction.
- * @param {Array.<anychart.timelineModule.Chart.SeriesIntersectionBounds>} events
- * @param {Array.<anychart.timelineModule.Chart.SeriesIntersectionBounds>} ranges
- */
-anychart.timelineModule.Chart.prototype.stackOverlapEvents = function(events, ranges) {
-  /**
-   * debug range: {min: 1030110818057.4343, max: 1327969734452.1423}
-   * and take a look at "28 Days Later" in the left part
-   * chart.zoomTo(1030110818057.4343, 1327969734452.1423)
-   */
-  /**
-   *
-   * @param {{sY: number, eY: number}} a
-   * @param {{sY: number, eY: number}} b
-   * @return {boolean}
-   */
-  var checkYIntersection = function(a, b) {
-    var intersect = (a.sY <= b.eY && a.sY >= b.sY) || (a.eY <= b.eY && a.eY >= b.sY) ||
-        (b.sY <= a.eY && b.sY >= a.sY) || (b.eY <= a.eY && b.eY >= a.sY);
-    return intersect;
-  };
-  //check case, when there is one event and some ranges, that should up the event
-  if (events.length >= 1) {
-    /*
-    Here we start from the item before last and go to the first one (backwards),
-    checking intersections with items in front of us.
-    */
-    for (var i = events.length - 1; i >= 0; i--) {
-      var currentPoint = events[i];
-      var intersections = [];
-      var maxY = -Infinity;
-      var maxYRange = 0; //heighest range for given event labels box
-      for (var k = i + 1; k < events.length; k++) {
-        var pointToCompare = events[k];
-        if ((pointToCompare.sX <= currentPoint.eX && pointToCompare.sX >= currentPoint.sX) ||//find intersections over x axis
-            (pointToCompare.eX <= currentPoint.eX && pointToCompare.eX >= currentPoint.sX)) {
-          intersections.push(pointToCompare);
-          if (pointToCompare.eY > maxY)
-            maxY = pointToCompare.eY;
-        }
-      }
-
-      for (var ri = 0; ri < ranges.length; ri++) {
-        // intersections with ranges
-        var pointToCompare = ranges[ri];
-        if (((currentPoint.sX <= pointToCompare.eX || isNaN(pointToCompare.eX)) && currentPoint.sX >= pointToCompare.sX) ||
-            ((currentPoint.eX <= pointToCompare.eX || isNaN(pointToCompare.eX)) && currentPoint.eX >= pointToCompare.sX) ||
-            (pointToCompare.sX <= currentPoint.eX && pointToCompare.sX >= currentPoint.sX) ||
-            (pointToCompare.eX <= currentPoint.eX && pointToCompare.eX >= currentPoint.sX)) {
-          // intersections.push(pointToCompare);
-          if (pointToCompare.eY > maxYRange)
-            maxYRange = pointToCompare.eY;
-        }
-      }
-
-      //checking if we can put currentPoint somewhere down, to not grow very tall event grass
-      goog.array.sort(intersections, function(a, b) {
-        return a.sY - b.sY;
-      });
-      var yDelta = currentPoint.eY - currentPoint.sY;
-      var okBox = {
-        sY: maxYRange + 3,
-        eY: maxYRange + yDelta + 3,
-        sX: currentPoint.sX,
-        eX: currentPoint.eX
-      };
-      for (var ii = 0; ii < intersections.length; ii++) {
-        var currentIntersectionPoint = intersections[ii];
-        if (checkYIntersection(okBox, currentIntersectionPoint)) {
-          okBox.sY = currentIntersectionPoint.eY + 3;
-          okBox.eY = okBox.sY + yDelta + 3;
-        }
-      }
-
-      maxY = okBox.sY;
-
-      if (maxYRange > maxY)
-        maxY = maxYRange;
-
-      yDelta = currentPoint.eY - currentPoint.sY;
-      currentPoint.sY = maxY;
-      currentPoint.eY = maxY + yDelta;
-      currentPoint.drawingPlan.data[currentPoint.pointId].meta['minLength'] = maxY + yDelta / 2;
-    }
-  }
-};
-
-
-/** @typedef {{
- * sX: number,
- * eX: number,
- * sY: number,
- * eY: number,
- * direction: anychart.enums.EventMarkerDirection,
- * series: anychart.core.series.Base,
- * pointId: number,
- * drawingPlan: Object
- * }}
- */
-anychart.timelineModule.Chart.SeriesIntersectionBounds;
 
 
 /** @inheritDoc */
