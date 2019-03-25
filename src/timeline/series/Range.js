@@ -109,11 +109,13 @@ anychart.timelineModule.series.Range.prototype.createPositionProvider = function
   var axisHeight = /** @type {number} */(iterator.meta('axisHeight'));
   var startX = /** @type {number} */(iterator.meta('startX'));
   var direction = /** @type {anychart.enums.EventMarkerDirection} */(this.getFinalDirection());
+  var startY = /** @type {number} */(iterator.meta('startY'));
+  var endY = /** @type {number} */(iterator.meta('endY'));
 
   var halfAxisHeight = axisHeight / 2;
   zero += direction == anychart.enums.EventMarkerDirection.UP ? -halfAxisHeight : halfAxisHeight;
 
-  var yOffset = height * (stackLevel - 1) + height / 2;
+  var yOffset = endY - height / 2;
   x = startX;
   y = zero + (direction == anychart.enums.EventMarkerDirection.UP ? -yOffset : yOffset);
   var point = {'x': x, 'y': y};

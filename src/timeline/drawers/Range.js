@@ -83,7 +83,6 @@ anychart.timelineModule.drawers.Range.prototype.drawPointShape = function(point,
 
   var startY = point.meta('startY');
   var endY = point.meta('endY');
-  debugger;
 
   if (!goog.isDef(stackLevel)) {
     stackLevel = 1;
@@ -95,12 +94,12 @@ anychart.timelineModule.drawers.Range.prototype.drawPointShape = function(point,
   var pointZero, pointUpperLine;
   if (direction == anychart.enums.EventMarkerDirection.UP) {
     zero -= axisHeight / 2;
-    pointZero = zero - pointZeroOffset;
-    pointUpperLine = pointZero - height;
+    pointZero = zero - startY;
+    pointUpperLine = pointZero - endY;
   } else {
     zero += axisHeight / 2;
-    pointZero = zero + pointZeroOffset;
-    pointUpperLine = pointZero + height;
+    pointZero = zero + startY;
+    pointUpperLine = pointZero + endY;
   }
 
   var thickness = anychart.utils.extractThickness(/** @type {acgraph.vector.Stroke}*/(path.stroke()));

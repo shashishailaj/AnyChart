@@ -265,7 +265,7 @@ anychart.timelineModule.Chart.prototype.markerInvalidated_ = function(event) {
  * Base z index of range series, used for z index calculation.
  * @type {number}
  */
-anychart.timelineModule.Chart.RANGE_BASE_Z_INDEX = 32;
+anychart.timelineModule.Chart.RANGE_BASE_Z_INDEX = 34;
 
 
 /** @inheritDoc */
@@ -391,10 +391,12 @@ anychart.timelineModule.Chart.prototype.calculate = function() {
     var drawingPlan = this.drawingPlansRange[i];
     data = drawingPlan.data;
     series = drawingPlan.series;
+    var maxTotalRange = this.scale().getTotalRange()['max'];
     for (k = 0; k < data.length; k++) {
       point = data[k];
       sX = this.scale().transform(point.data['start']) * this.dataBounds.width;
-      eX = this.scale().transform(point.data['end']) * this.dataBounds.width;
+      eX = isNaN(point.data['end']) ? this.scale().transform(maxTotalRange) * this.dataBounds.width :
+              this.scale().transform(point.data['end']) * this.dataBounds.width;
       sY = 0;
       eY = anychart.utils.normalizeSize(series.getOption('height'), this.dataBounds.height);
       direction = series.getFinalDirection();
@@ -482,7 +484,6 @@ anychart.timelineModule.Chart.prototype.calculate = function() {
     }
   }
   //endregion
-  debugger;
 
   var sortCallback = function(a, b) {
     var diff = a.sX - b.sX;
@@ -495,9 +496,6 @@ anychart.timelineModule.Chart.prototype.calculate = function() {
   goog.array.sort(intersectingBoundsRangeUp, sortCallback);
   goog.array.sort(intersectingBoundsRangeDown, sortCallback);
 
-  this.stackRanges(intersectingBoundsRangeUp);
-  this.stackRanges(intersectingBoundsRangeDown);
-
   var eventSortCallback = function(a, b) {
     var diff = a.sX - b.sX;
     if (diff == 0) {
@@ -508,29 +506,75 @@ anychart.timelineModule.Chart.prototype.calculate = function() {
   goog.array.sort(intersectingBoundsEventUp, eventSortCallback);
   goog.array.sort(intersectingBoundsEventDown, eventSortCallback);
 
-  var intersections = new anychart.timelineModule.Intersections();
+  var rangeSeries = [];
+
+  var intersectionsUpper = new anychart.timelineModule.Intersections();
+
   for (var i = 0; i < intersectingBoundsRangeUp.length; i++) {
     var range = intersectingBoundsRangeUp[i];
+
+    /*
+    Note! Per point zIndex doesn't work cross series. We have to set zIndexes by series first
+    and then inside series we can use per point zIndex.
+     */
+    if (!rangeSeries.includes(range.series)) {
+      range.series.zIndex(anychart.timelineModule.Chart.RANGE_BASE_Z_INDEX - rangeSeries.length / 100);
+      rangeSeries.push(range.series);
+    }
+
     var id = range.pointId;
-    intersections.add(range);
     var drawingPlanData = range.drawingPlan.data[id];
+    // var it = range.series.getResetIterator();
+    // it.select(id);
+    // var text = it.get('name');
+    intersectionsUpper.add(range, true);
     drawingPlanData.meta['startY'] = range.sY;
     drawingPlanData.meta['endY'] = range.eY;
+    drawingPlanData.meta['stateZIndex'] = 1 - range.eY / 1000000;
   }
 
   for (var i = intersectingBoundsEventUp.length - 1; i >= 0; i--) {
     var range = intersectingBoundsEventUp[i];
     var id = range.pointId;
-    intersections.add(range);
+    if (range.text == 'Ring') debugger;
+    intersectionsUpper.add(range);
     var drawingPlanData = range.drawingPlan.data[id];
     drawingPlanData.meta['minLength'] = range.sY + (range.eY - range.sY) / 2;
   }
 
+  var intersectionsLower = new anychart.timelineModule.Intersections();
 
-  // console.timeStamp('Start');
-  // this.stackOverlapEvents(intersectingBoundsEventUp, intersectingBoundsRangeUp);
-  // console.timeStamp('End');
-  // this.stackOverlapEvents(intersectingBoundsEventDown, intersectingBoundsRangeDown);
+  rangeSeries = [];
+  for (var i = 0; i < intersectingBoundsRangeDown.length; i++) {
+    var range = intersectingBoundsRangeDown[i];
+
+    /*
+    Note! Per point zIndex doesn't work cross series. We have to set zIndexes by series first
+    and then inside series we can use per point zIndex.
+     */
+    if (!rangeSeries.includes(range.series)) {
+      range.series.zIndex(anychart.timelineModule.Chart.RANGE_BASE_Z_INDEX - rangeSeries.length / 100);
+      rangeSeries.push(range.series);
+    }
+
+    var id = range.pointId;
+    var drawingPlanData = range.drawingPlan.data[id];
+    intersectionsLower.add(range, true);
+    drawingPlanData.meta['startY'] = range.sY;
+    drawingPlanData.meta['endY'] = range.eY;
+    drawingPlanData.meta['stateZIndex'] = 1 - range.eY / 1000000;
+  }
+
+  for (var i = intersectingBoundsEventDown.length - 1; i >= 0; i--) {
+    var range = intersectingBoundsEventDown[i];
+    var id = range.pointId;
+    if (range.text == 'Ring') debugger;
+    intersectionsLower.add(range);
+    var drawingPlanData = range.drawingPlan.data[id];
+    drawingPlanData.meta['minLength'] = range.sY + (range.eY - range.sY) / 2;
+  }
+
+  console.log('end');
 };
 
 

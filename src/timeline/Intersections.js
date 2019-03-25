@@ -23,6 +23,14 @@ anychart.timelineModule.Intersections = function() {
  * @private
  */
 anychart.timelineModule.Intersections.prototype.insertCompareByX_ = function(a, b) {
+  var diff = a.sX - b.sX;
+  if (diff == 0) {
+    diff = a.eX - b.eX;
+    if (diff == 0) {
+      return -1;
+    }
+    return diff;
+  }
   return a.sX - b.sX;
 };
 
@@ -35,6 +43,10 @@ anychart.timelineModule.Intersections.prototype.insertCompareByX_ = function(a, 
  * @private
  */
 anychart.timelineModule.Intersections.prototype.insertCompareByY_ = function(a, b) {
+  var diff = a.sY - b.sY;
+  if (diff == 0) {// this fixes ranges that start from 0
+    return a.eY - b.eY;
+  }
   return a.sY - b.sY;
 };
 
@@ -54,13 +66,17 @@ anychart.timelineModule.Intersections.prototype.intersectByY = function(a, b) {
 /**
  *
  * @param {anychart.timelineModule.Intersections.Range} range
+ * @param {boolean=} opt_startsFromZero - if we should keep sY 0, needed for ranges
  */
-anychart.timelineModule.Intersections.prototype.add = function(range) {
+anychart.timelineModule.Intersections.prototype.add = function(range, opt_startsFromZero) {
   var height = range.eY - range.sY;
   range.sY = 0;
   range.eY = height;
 
-  goog.array.binaryInsert(this.ranges_, range, this.insertCompareByX_);
+  var failed = false;
+  if (!goog.array.binaryInsert(this.ranges_, range, this.insertCompareByX_)) {
+    failed = true;
+  }
 
   var xIntersections = [];
   var sortedY = [];
@@ -69,6 +85,7 @@ anychart.timelineModule.Intersections.prototype.add = function(range) {
   for (i = 0; i < this.ranges_.length; i++) {
     var r = this.ranges_[i];
     if (r != range) {
+      if (range.text == 'Katasumi and 4444444444' && r.text == 'Ring') debugger;
       if ((r.eX >= range.sX && halfBeforeRange) || (r.sX <= range.eX && !halfBeforeRange)) {
         xIntersections.push(r);
         goog.array.binaryInsert(sortedY, r, this.insertCompareByY_);
@@ -78,11 +95,19 @@ anychart.timelineModule.Intersections.prototype.add = function(range) {
     }
   }
 
+
   for (i = 0; i < sortedY.length; i++) {
     var r = sortedY[i];
     if (this.intersectByY(range, r)) {
-      range.sY = r.eY;
-      range.eY = range.sY + height;
+      if (!opt_startsFromZero) {
+        if (range.text == 'Katasumi and 4444444444') {
+          console.log(r.text, r.eY);
+        }
+        range.sY = r.eY;
+        range.eY = range.sY + height;
+      } else {
+        range.eY += height;
+      }
     }
   }
 };
