@@ -536,7 +536,6 @@ anychart.timelineModule.Chart.prototype.calculate = function() {
   for (var i = intersectingBoundsEventUp.length - 1; i >= 0; i--) {
     var range = intersectingBoundsEventUp[i];
     var id = range.pointId;
-    if (range.text == 'Ring') debugger;
     intersectionsUpper.add(range);
     var drawingPlanData = range.drawingPlan.data[id];
     drawingPlanData.meta['minLength'] = range.sY + (range.eY - range.sY) / 2;
@@ -568,7 +567,6 @@ anychart.timelineModule.Chart.prototype.calculate = function() {
   for (var i = intersectingBoundsEventDown.length - 1; i >= 0; i--) {
     var range = intersectingBoundsEventDown[i];
     var id = range.pointId;
-    if (range.text == 'Ring') debugger;
     intersectionsLower.add(range);
     var drawingPlanData = range.drawingPlan.data[id];
     drawingPlanData.meta['minLength'] = range.sY + (range.eY - range.sY) / 2;

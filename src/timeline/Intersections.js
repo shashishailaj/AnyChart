@@ -85,7 +85,6 @@ anychart.timelineModule.Intersections.prototype.add = function(range, opt_starts
   for (i = 0; i < this.ranges_.length; i++) {
     var r = this.ranges_[i];
     if (r != range) {
-      if (range.text == 'Katasumi and 4444444444' && r.text == 'Ring') debugger;
       if ((r.eX >= range.sX && halfBeforeRange) || (r.sX <= range.eX && !halfBeforeRange)) {
         xIntersections.push(r);
         goog.array.binaryInsert(sortedY, r, this.insertCompareByY_);
@@ -100,9 +99,6 @@ anychart.timelineModule.Intersections.prototype.add = function(range, opt_starts
     var r = sortedY[i];
     if (this.intersectByY(range, r)) {
       if (!opt_startsFromZero) {
-        if (range.text == 'Katasumi and 4444444444') {
-          console.log(r.text, r.eY);
-        }
         range.sY = r.eY;
         range.eY = range.sY + height;
       } else {

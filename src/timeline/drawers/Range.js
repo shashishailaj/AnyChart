@@ -81,14 +81,12 @@ anychart.timelineModule.drawers.Range.prototype.drawPointShape = function(point,
   var stackLevel = /** @type {number} */(point.meta('stackLevel'));
   var direction = /** @type {anychart.enums.EventMarkerDirection} */(point.meta('direction'));
 
-  var startY = point.meta('startY');
-  var endY = point.meta('endY');
+  var startY = /** @type {number} */(point.meta('startY'));
+  var endY = /** @type {number} */(point.meta('endY'));
 
   if (!goog.isDef(stackLevel)) {
     stackLevel = 1;
   }
-
-  var pointZeroOffset = height * (stackLevel - 1);
 
   // upper line is bottom line if direction is down
   var pointZero, pointUpperLine;
