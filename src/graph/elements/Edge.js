@@ -106,6 +106,7 @@ anychart.graphModule.elements.Edge.prototype.drawLabel = function(edge) {
       textElement.finalizeComplexity();
       this.rotateLabel(edge);
     } else {
+      textElement.resetComplexity();
       textElement.renderTo(null);
     }
   }

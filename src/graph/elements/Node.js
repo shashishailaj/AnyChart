@@ -122,7 +122,7 @@ anychart.graphModule.elements.Node.prototype.tooltip = function(opt_value) {
  * @return {string} id of element.
  */
 anychart.graphModule.elements.Node.prototype.getElementId = function(node) {
-  return node.nodeId;
+  return node.id;
 };
 
 
@@ -276,6 +276,7 @@ anychart.graphModule.elements.Node.prototype.drawLabel = function(node) {
     textElement.putAt(cellBounds);
     textElement.finalizeComplexity();
   } else {
+    textElement.resetComplexity();
     textElement.renderTo(null);
   }
 
@@ -319,7 +320,7 @@ anychart.graphModule.elements.Node.prototype.createFormatProvider = function(nod
     this.formatProvider_ = new anychart.format.Context();
   }
   var values = {};
-  values['id'] = {value: node.nodeId, type: anychart.enums.TokenType.STRING};
+  values['id'] = {value: node.id, type: anychart.enums.TokenType.STRING};
   values['type'] = {value: anychart.graphModule.Chart.Element.NODE, type: anychart.enums.TokenType.STRING};
 
   return /** @type {anychart.format.Context} */(this.formatProvider_.propagate(values));
@@ -339,7 +340,7 @@ anychart.graphModule.elements.Node.prototype.stickNode = function(node) {
   var y = node.position.y;
 
   for (var i = 0; i < node_.length; i++) {
-    if (node.nodeId != node_[i]) {
+    if (node.id != node_[i]) {
       var neib = this.chart_.getNodeById(node_[i]);
       var neibPosition = neib.position;
 
@@ -495,7 +496,7 @@ anychart.graphModule.elements.Node.prototype.createDOM = function(node) {
 
   domElement.tag = /**@type {anychart.graphModule.Chart.Tag}*/({});
   domElement.tag.type = this.getType();
-  domElement.tag.id = node.nodeId;
+  domElement.tag.id = this.getElementId(node);
   domElement.tag.currentState = /**@type {anychart.SettingsState}*/(this.state(node));
   node.currentState = /**@type {anychart.SettingsState}*/(this.state(node));
   node.domElement = domElement;

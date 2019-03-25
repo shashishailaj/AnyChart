@@ -92,11 +92,11 @@ anychart.graphModule.elements.Layout.prototype.explicitLayout_ = function() {
 
     if (!goog.isDefAndNotNull(x)) {
       x = 0;
-      anychart.core.reporting.warning(anychart.enums.WarningCode.GRAPH_NO_COORDINATE_FOR_FIXED_MODE, null, [node.nodeId, 'x'], true);
+      anychart.core.reporting.warning(anychart.enums.WarningCode.GRAPH_NO_COORDINATE_FOR_FIXED_MODE, null, [node.id, 'x'], true);
     }
     if (!goog.isDefAndNotNull(y)) {
       y = 0;
-      anychart.core.reporting.warning(anychart.enums.WarningCode.GRAPH_NO_COORDINATE_FOR_FIXED_MODE, null, [node.nodeId, 'y'], true);
+      anychart.core.reporting.warning(anychart.enums.WarningCode.GRAPH_NO_COORDINATE_FOR_FIXED_MODE, null, [node.id, 'y'], true);
     }
 
     node.position.x = x;
