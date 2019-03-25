@@ -823,61 +823,35 @@ anychart.graphModule.Chart.prototype.proceedEdge_ = function(edgeRow, i) {
  * */
 anychart.graphModule.Chart.prototype.setupGroupsForChart_ = function() {
   var nodes = this.getNodesArray();
+  //todo refactor
+  var nodesForProceed = [];
+  var proceededNodes = [];
+  var i = 0;
+  var node;
+  var nodesfor = {};
+  var gid = 0;
 
-  /**
-   * Returns array with sibling of passed node and node id
-   * @param {anychart.graphModule.Chart.Node} node
-   * @return {Array.<string>}
-   * */
-  function getSiblings (node) {
-    return [node.id].concat(node.siblings);
-  }
-
-  if (nodes.length) {
-    /**
-     * @type {Array.<goog.structs.Set>}
-     * */
-    var allNodes = [new goog.structs.Set(getSiblings(nodes[0]))];
-
-    for (var i = 1, length = nodes.length; i < length; i++) {
-      var currentNode = nodes[i];
-      var siblings = getSiblings(currentNode);
-      var isSubSet = false;
-      var setCount;
-      var setLength = allNodes.length;
-      for (setCount = 0; setCount < setLength; setCount++) {
-        for (var element = 0, siblingsLength = siblings.length; element < siblingsLength; element++) {
-          if (allNodes[setCount].contains(siblings[element])) {
-            isSubSet = true;
-            break;
-          }
-        }
-        if (isSubSet) {
-          break;
+  for(var i = 0, length = nodes.length; i < length; i++) {
+    node = nodes[i];
+    if (proceededNodes.indexOf(node) == -1) {
+      var groupId = String(gid);
+      this.subGraphGroups_[groupId] = [];
+      nodesForProceed.push(node.id);
+      nodesForProceed.push.apply(nodesForProceed, node.siblings);
+      var n;
+      while(n = nodesForProceed.pop()){
+        var n_ = this.getNodeById(n);
+        if (proceededNodes.indexOf(n_) == -1) {
+          nodesForProceed.push.apply(nodesForProceed, n_.siblings);
+          proceededNodes.push(n_);
+          this.subGraphGroups_[groupId].push(n);
+          n_.subGraphId = String(gid);
         }
       }
-      if (isSubSet) {
-        allNodes[setCount].addAll(siblings);
-      } else {
-        allNodes.push((new goog.structs.Set(siblings)));
-      }
-
-    }
-    for (var groupNumber = 0; groupNumber < allNodes.length; groupNumber++) {
-      var groupElements = allNodes[groupNumber].getValues();
-      for (var groupElement = 0; groupElement < groupElements.length; groupElement++) {
-        var id = groupElements[groupElement];
-        var node = this.getNodeById(id);
-        node.subGraphId = groupNumber.toString();
-
-        var graphId = groupNumber.toString();
-        if (!(graphId in this.subGraphGroups_)) {
-          this.subGraphGroups_[graphId] = [];
-        }
-        this.subGraphGroups_[graphId].push(node.id);
-      }
+      gid++;
     }
   }
+  console.log(gid);
 };
 
 
