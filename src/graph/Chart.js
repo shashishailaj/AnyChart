@@ -1350,6 +1350,10 @@ anychart.graphModule.Chart.prototype.drawContent = function(bounds) {
 
   if (!this.rootLayer) {
     this.rootLayer = this.rootElement.layer();
+    this.nodes();
+    this.edges();
+    this.layout();
+    this.interactivity();
     // this.eventsInterceptor_ = this.rootLayer.rect(bounds.x, bounds.y, bounds.width, bounds.height);
     // this.eventsInterceptor_.fill(anychart.color.TRANSPARENT_HANDLER);
     // this.eventsInterceptor_.stroke(null);
@@ -1362,6 +1366,7 @@ anychart.graphModule.Chart.prototype.drawContent = function(bounds) {
     this.edges_.getLabelsLayer().parent(this.rootLayer);
     this.nodes_.getLabelsLayer().parent(this.rootLayer);
     this.nodesLayer_.parent(this.rootLayer);
+
   }
 
   if (this.hasStateInvalidation(anychart.enums.Store.GRAPH, anychart.enums.State.LAYOUT)) {
@@ -1567,7 +1572,7 @@ anychart.graphModule.Chart.prototype.data = function(opt_value) {
     };
 
     var dataElement = data['nodes'];
-    if (this.rawDataForNodes != dataElement) {
+    if (this.rawDataForNodes !== dataElement) {
       this.rawDataForNodes = dataElement;
       if (this.data_ && this.data_['nodes']) {
         this.data_['nodes'].unlistenSignals(this.dataInvalidated_);
@@ -1584,7 +1589,7 @@ anychart.graphModule.Chart.prototype.data = function(opt_value) {
     }
 
     dataElement = data['edges'];
-    if (this.rawDataForEdges != dataElement) {
+    if (this.rawDataForEdges !== dataElement) {
       this.rawDataForEdges = dataElement;
       if (this.data_ && this.data_['edges']) {
         this.data_['edges'].unlistenSignals(this.dataInvalidated_);
