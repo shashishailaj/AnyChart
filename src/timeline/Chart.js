@@ -435,9 +435,6 @@ anychart.timelineModule.Chart.prototype.calculate = function() {
         intersectingBoundsRangeDown.push(pointBounds);
       }
       point.meta['axisHeight'] = axisHeight;
-
-      // todo(i.kurnoy) temporary!!!!!
-      point.meta['stackLevel'] = 1;
     }
   }
 
@@ -493,9 +490,6 @@ anychart.timelineModule.Chart.prototype.calculate = function() {
       }
 
       point.meta['axisHeight'] = axisHeight;
-
-      //todo(i.kurnoy) temporary!!!!!!
-      point.meta['minLength'] = 50;
     }
   }
   //endregion

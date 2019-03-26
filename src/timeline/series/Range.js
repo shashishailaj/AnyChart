@@ -69,7 +69,7 @@ anychart.timelineModule.series.Range.prototype.makeTimelineMeta = function(rowIn
   var startX = bounds.left + bounds.width * startXRatio;
   var endXRatio = rowInfo.meta('endXRatio');
   if (!goog.isNumber(endXRatio) || isNaN(endXRatio)) {
-    var scale = /** @type {anychart.scales.GanttDateTime} */(this.getXScale()) ;
+    var scale = /** @type {anychart.scales.GanttDateTime} */(this.getXScale());
     var endX = scale.getTotalRange()['max'];
     endXRatio = scale.transform(endX);
   }
