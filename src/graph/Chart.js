@@ -707,57 +707,56 @@ anychart.graphModule.Chart.prototype.updateEdgeStateById = function(edgeId, stat
 //region Data manipulation
 /**
  * Crete node object from data.
- * @param {Object} dataRow Data row with settings for node.
  * @param {number} i Row number.
  * @private
  * */
-anychart.graphModule.Chart.prototype.proceedNode_ = function(dataRow, i) {
-  var id = dataRow['id'];
-  if (goog.isDef(id)) {
+anychart.graphModule.Chart.prototype.proceedNode_ = function(i) {
+  var nodes = this.data_['nodes'];
+  var id = nodes.get(i, 'id');
+  if (goog.isDefAndNotNull(id)) {
     id = String(id);
-  } else {
-    id = 'node_' + i;
-    dataRow['id'] = id;
-  }
-  if (!this.getNodeById(id)) {
-    /**
-     * @type {anychart.graphModule.Chart.Node}
-     * */
-    var nodeObj;
-    nodeObj = this.nodesMap_[id] = {};
-    nodeObj.id = id;
-    nodeObj.dataRow = i;
-    nodeObj.connectedEdges = [];
-    nodeObj.siblings = [];
-    nodeObj.currentState = anychart.SettingsState.NORMAL;
-    nodeObj.position = {
-      x: dataRow['x'],
-      y: dataRow['y']
-    };
+    if (!this.getNodeById(id)) {
+      /**
+       * @type {anychart.graphModule.Chart.Node}
+       * */
+      var nodeObj;
+      nodeObj = this.nodesMap_[id] = {};
+      nodeObj.id = id;
+      nodeObj.dataRow = i;
+      nodeObj.connectedEdges = [];
+      nodeObj.siblings = [];
+      nodeObj.currentState = anychart.SettingsState.NORMAL;
+      nodeObj.position = {
+        x: nodes.get(i, 'x'),
+        y: nodes.get(i, 'y')
+      };
 
-    var groupId = dataRow['group'];
-    if (goog.isDefAndNotNull(groupId)) {
-      if (!this.groupsMap_[groupId]) {
-        this.groupsMap_[groupId] = null;
+      var groupId = nodes.get(i, 'group');
+      if (goog.isDefAndNotNull(groupId)) {
+        if (!this.groupsMap_[groupId]) {
+          this.groupsMap_[groupId] = null;
+        }
+        nodeObj.groupId = groupId;
       }
-      nodeObj.groupId = groupId;
+    } else {
+      anychart.core.reporting.warning(anychart.enums.WarningCode.GRAPH_NODE_ALREADY_EXIST, null, [id], true);
     }
   } else {
-    anychart.core.reporting.warning(anychart.enums.WarningCode.GRAPH_NODE_ALREADY_EXIST, null, [id], true);
+
   }
 };
 
 
 /**
  * Create edge object from dataRow.
- * @param {Object} edgeRow Data row with settings for edge.
  * @param {number} i Row number.
  * @private
  * */
-anychart.graphModule.Chart.prototype.proceedEdge_ = function(edgeRow, i) {
-  var fromId = edgeRow['from'];
-  var toId = edgeRow['to'];
-  var edgeId = edgeRow['id'];
+anychart.graphModule.Chart.prototype.proceedEdge_ = function(i) {
+  var edges = this.data_['edges'];
+  var fromId = edges.get(i, 'from');
+  var toId = edges.get(i, 'to');
+  var edgeId = edges.get(i, 'id');
 
   if (goog.isDefAndNotNull(edgeId)) {
     edgeId = String(edgeId);
@@ -865,14 +864,14 @@ anychart.graphModule.Chart.prototype.prepareNewData_ = function() {
   for (i = 0, length = nodes.getRowsCount(); i < length; i++) {
     dataRow = /**@type {Object}*/(nodes.getRow(i));
     if (dataRow) {
-      this.proceedNode_(dataRow, i);
+      this.proceedNode_(i);
     }
   }
 
   for (i = 0, length = edges.getRowsCount(); i < length; i++) {
     dataRow = /**@type {Object}*/(edges.getRow(i));
     if (dataRow) {
-      this.proceedEdge_(dataRow, i);
+      this.proceedEdge_(i);
     }
   }
 };
