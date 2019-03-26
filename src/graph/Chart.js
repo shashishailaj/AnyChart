@@ -99,6 +99,7 @@ anychart.graphModule.Chart = function(opt_data) {
 
   this.dragger_ = null;
 
+  this.data_ = {}; //todo typedef
 
   this.zoom_ = [1];
   this.move_ = [0, 0];
@@ -219,7 +220,7 @@ anychart.graphModule.Chart.prototype.getType = function() {
 
 /** @inheritDoc */
 anychart.graphModule.Chart.prototype.isNoData = function() {
-  return !this.data_ || !this.data_['nodes'] || (!this.data_['nodes'].getRowsCount());
+  return !this.data_['nodes'].getRowsCount();
 };
 
 
@@ -1563,63 +1564,65 @@ anychart.graphModule.Chart.prototype.rotate = function(opt_degree) {
  * */
 anychart.graphModule.Chart.prototype.data = function(opt_value) {
   if (goog.isDef(opt_value)) {
-    var nodes = opt_value && opt_value['nodes'] ? opt_value['nodes'] : null;
-    var edges = opt_value && opt_value['edges'] && nodes ? opt_value['edges'] : null;
+    if ((goog.isDef(opt_value['nodes']) && goog.isDef(opt_value['edges']) || goog.isNull(opt_value))) {
+      var nodes = opt_value && opt_value['nodes'] ? opt_value['nodes'] : null;
+      var edges = opt_value && opt_value['edges'] ? opt_value['edges'] : null;
+      var data;
 
-    var data = {
-      'nodes': nodes,
-      'edges': edges
-    };
+      var dataElement = nodes;
+      if (this.rawDataForNodes !== dataElement) {
+        this.rawDataForNodes = dataElement;
+        if (this.data_ && this.data_['nodes']) {
+          this.data_['nodes'].unlistenSignals(this.dataInvalidated_);
+          goog.dispose(this.data_['nodes']);
+        }
 
-    var dataElement = data['nodes'];
-    if (this.rawDataForNodes !== dataElement) {
-      this.rawDataForNodes = dataElement;
-      if (this.data_ && this.data_['nodes']) {
-        this.data_['nodes'].unlistenSignals(this.dataInvalidated_);
-        goog.dispose(this.data_['nodes']);
+        if (anychart.utils.instanceOf(dataElement, anychart.data.Set)) {
+          data = dataElement.mapAs();
+        } else if (anychart.utils.instanceOf(dataElement, anychart.data.View)) {
+          data = dataElement.derive();
+        } else {
+          data = anychart.data.set(dataElement).mapAs();
+        }
+        data.listenSignals(this.dataInvalidated_, this);
+        this.data_['nodes'] = data;
       }
-      if (anychart.utils.instanceOf(dataElement, anychart.data.Set)) {
-        data['nodes'] = dataElement.mapAs();
-      } else if (anychart.utils.instanceOf(dataElement, anychart.data.View)) {
-        data['nodes'] = dataElement.derive();
-      } else {
-        data['nodes'] = anychart.data.set(dataElement).mapAs();
+
+      dataElement = edges;
+      if (this.rawDataForEdges !== dataElement) {
+        this.rawDataForEdges = dataElement;
+        if (this.data_ && this.data_['edges']) {
+          this.data_['edges'].unlistenSignals(this.dataInvalidated_);
+          goog.dispose(this.data_['edges']);
+        }
+        if (anychart.utils.instanceOf(dataElement, anychart.data.Set)) {
+          data = dataElement.mapAs();
+        } else if (anychart.utils.instanceOf(dataElement, anychart.data.View)) {
+          data = dataElement.derive();
+        } else {
+          data = anychart.data.set(dataElement).mapAs();
+        }
+        data.listenSignals(this.dataInvalidated_, this);
+        this.data_['edges'] = data;
       }
-      data['nodes'].listenSignals(this.dataInvalidated_, this);
+
+      this.dropCurrentData_();
+      this.prepareNewData_();
+      this.setupGroupsForChart_();
+
+      var statesForInvalidate = [
+        anychart.enums.State.DATA,
+        anychart.enums.State.APPEARANCE,
+        anychart.enums.State.LABELS_STYLE,
+        anychart.enums.State.LABELS_BOUNDS,
+        anychart.enums.State.LABELS_ENABLED,
+        anychart.enums.State.LAYOUT
+      ];
+      this.invalidate(anychart.ConsistencyState.BOUNDS);
+      this.invalidateMultiState(anychart.enums.Store.GRAPH, statesForInvalidate, anychart.Signal.NEEDS_REDRAW);
+    } else {
+      anychart.core.reporting.warning(anychart.enums.WarningCode.GRAPH_DATA_HAS_NO_FIELD, null, [], true);
     }
-
-    dataElement = data['edges'];
-    if (this.rawDataForEdges !== dataElement) {
-      this.rawDataForEdges = dataElement;
-      if (this.data_ && this.data_['edges']) {
-        this.data_['edges'].unlistenSignals(this.dataInvalidated_);
-        goog.dispose(this.data_['edges']);
-      }
-      if (anychart.utils.instanceOf(dataElement, anychart.data.Set)) {
-        data['edges'] = dataElement.mapAs();
-      } else if (anychart.utils.instanceOf(dataElement, anychart.data.View)) {
-        data['edges'] = dataElement.derive();
-      } else {
-        data['edges'] = anychart.data.set(dataElement).mapAs();
-      }
-      data['edges'].listenSignals(this.dataInvalidated_, this);
-    }
-
-    this.dropCurrentData_();
-    this.data_ = data;
-    this.prepareNewData_();
-    this.setupGroupsForChart_();
-
-    var statesForInvalidate = [
-      anychart.enums.State.DATA,
-      anychart.enums.State.APPEARANCE,
-      anychart.enums.State.LABELS_STYLE,
-      anychart.enums.State.LABELS_BOUNDS,
-      anychart.enums.State.LABELS_ENABLED,
-      anychart.enums.State.LAYOUT
-    ];
-    this.invalidate(anychart.ConsistencyState.BOUNDS);
-    this.invalidateMultiState(anychart.enums.Store.GRAPH, statesForInvalidate, anychart.Signal.NEEDS_REDRAW);
     return this;
   }
   return this.data_;
@@ -1755,5 +1758,6 @@ anychart.graphModule.Chart.prototype.disposeInternal = function() {
   proto['nodes'] = proto.nodes;
   proto['layout'] = proto.layout;
   proto['interactivity'] = proto.interactivity;
+  proto['noData'] = proto.noData;
 })();
 //endregion
