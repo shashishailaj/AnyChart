@@ -1823,6 +1823,7 @@ anychart.ganttModule.BaseGrid.prototype.dragEndHandler_ = function(e) {
 
     this.draggingItem = null;
   }
+
   this.denyDragScrolling = false;
 
   goog.Timer.callOnce(function() {
