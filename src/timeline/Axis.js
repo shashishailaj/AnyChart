@@ -235,11 +235,13 @@ anychart.timelineModule.Axis.prototype.draw = function() {
       axisTicks.draw();
 
       var ticksArray = this.getTicks();
+      var totalRange = this.scale().getTotalRange();
 
       for (var i = 0; i < ticksArray.length; i++) {
-        var tickRatio = this.scale().transform(ticksArray[i]['start']);
-        // if (tickRatio <= 1 && tickRatio >= 0)
-        axisTicks.drawTick(tickRatio, this.axisBounds_);
+        var tick = ticksArray[i];
+        var tickRatio = this.scale().transform(tick['start']);
+        if (tick['start'] >= totalRange.min && tick['start'] < totalRange['max'])
+          axisTicks.drawTick(tickRatio, this.axisBounds_);
       }
     }
 
@@ -328,16 +330,18 @@ anychart.timelineModule.Axis.prototype.drawLabels = function() {
 
   var bounds = this.parentBounds();
   var height = /** @type {number} */(this.getOption('height'));
+  var totalRange = this.scale().getTotalRange();
 
   for (var i = 0; i < ticksArray.length; i++) {
     var text = this.texts_[i];
-    var tick = ticksArray[i]['start'];
-    var tickRatio = this.scale_.transform(tick);
-    var nextTickRatio = (i == ticksArray.length - 1 ? 1 : this.scale_.transform(ticksArray[i + 1]['start']));
+    var tick = ticksArray[i];
+    if (tick['start'] < totalRange['min'])
+      continue;
+    var tickRatio = this.scale_.transform(tick['start']);
+    var tickEndTimestamp = Math.min(tick['end'], totalRange['max']);
+    var nextTickRatio = (this.scale_.transform(tickEndTimestamp));
 
-    if (this.labels()['enabled']() && tickRatio <= 1) {
-      if (nextTickRatio > 1)
-        nextTickRatio = 1;
+    if (this.labels()['enabled']()) {
       text.renderTo(this.labelsLayerEl_);
 
       var x = bounds.left + bounds.width * tickRatio;
