@@ -272,11 +272,12 @@ anychart.timelineModule.Axis.prototype.draw = function() {
  * @return {Array}
  */
 anychart.timelineModule.Axis.prototype.getTicks = function() {
+  var i;
   var ticksArray = [];
   var zoomLevels = this.scale().getLevelsData();
   var totalRange = this.scale().getTotalRange();
 
-  for (var i = 0; i < zoomLevels.length; i++) {
+  for (i = 0; i < zoomLevels.length; i++) {
     ticksArray = this.scale().getTicks(void 0, void 0, zoomLevels[i].unit, zoomLevels[i].count);
     /*
     We do not want to have more than 10 ticks, normally.
@@ -335,6 +336,8 @@ anychart.timelineModule.Axis.prototype.drawLabels = function() {
   for (var i = 0; i < ticksArray.length; i++) {
     var text = this.texts_[i];
     var tick = ticksArray[i];
+    /*getTicks method almost always returns one tick that is below total range minimum.
+    For now we skip it.*/
     if (tick['start'] < totalRange['min'])
       continue;
     var tickRatio = this.scale_.transform(tick['start']);
@@ -344,7 +347,7 @@ anychart.timelineModule.Axis.prototype.drawLabels = function() {
     if (this.labels()['enabled']()) {
       text.renderTo(this.labelsLayerEl_);
 
-      var x = bounds.left + bounds.width * tickRatio;
+      var x = anychart.utils.applyPixelShift(bounds.left + bounds.width * tickRatio, 1);
       var y = Math.floor(this.zero_ - height / 2);
       var width = (bounds.left + bounds.width * nextTickRatio) - x;
       var textBounds = new anychart.math.Rect(x, y, width, height);
