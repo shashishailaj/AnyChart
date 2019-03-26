@@ -379,8 +379,8 @@ anychart.timelineModule.Axis.prototype.drawAxis = function() {
   min = bounds.width * min;
   max = bounds.width * max;
 
-  var left = min;
-  var right = max;
+  var left = min + bounds.left;
+  var right = max + bounds.left;
   var top = center - halfHeight;
   var bottom = center + halfHeight;
 
