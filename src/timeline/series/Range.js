@@ -50,8 +50,9 @@ anychart.core.settings.populate(anychart.timelineModule.series.Range, anychart.t
 //region --- Meta
 /** @inheritDoc */
 anychart.timelineModule.series.Range.prototype.makePointMeta = function(rowInfo, yNames, yColumns) {
-  var startXRatio = this.getXScale().transform(rowInfo.get('start'));
-  var endXRatio = this.getXScale().transform(rowInfo.get('end'));
+  var scale = this.getXScale();
+  var startXRatio = scale.transform(rowInfo.get('start'));
+  var endXRatio = scale.transform(rowInfo.get('end'));
   rowInfo.meta('startXRatio', startXRatio);
   rowInfo.meta('endXRatio', endXRatio);
   for (var i = 0; i < this.metaMakers.length; i++) {
@@ -68,7 +69,9 @@ anychart.timelineModule.series.Range.prototype.makeTimelineMeta = function(rowIn
   var startX = bounds.left + bounds.width * startXRatio;
   var endXRatio = rowInfo.meta('endXRatio');
   if (!goog.isNumber(endXRatio) || isNaN(endXRatio)) {
-    endXRatio = 1;
+    var scale = this.getXScale();
+    var endX = scale.getTotalRange()['max'];
+    endXRatio = scale.transform(endX);
   }
   var endX = bounds.left + bounds.width * endXRatio;
   rowInfo.meta('startX', startX);

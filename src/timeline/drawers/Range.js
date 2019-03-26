@@ -73,7 +73,6 @@ anychart.timelineModule.drawers.Range.prototype.drawSubsequentPoint = function(p
  * @param {acgraph.vector.Path} path
  */
 anychart.timelineModule.drawers.Range.prototype.drawPointShape = function(point, path) {
-  var height = /** @type {number} */(point.meta('height'));
   var startX = /** @type {number}*/(point.meta('startX'));
   var endX = /** @type {number} */(point.meta('endX'));
   var zero = /** @type {number} */(point.meta('zero'));
