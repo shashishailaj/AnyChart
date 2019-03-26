@@ -1042,6 +1042,7 @@ anychart.ganttModule.ScrollBar.prototype.getSlider_ = function() {
  * @private
  */
 anychart.ganttModule.ScrollBar.prototype.sliderMouseUpHandler_ = function(event) {
+  event.stopPropagation();
   event.preventDefault();
   this.handleBrowserEvent(event);
 };
@@ -1053,6 +1054,7 @@ anychart.ganttModule.ScrollBar.prototype.sliderMouseUpHandler_ = function(event)
  * @private
  */
 anychart.ganttModule.ScrollBar.prototype.dragHandler_ = function(e) {
+  e.stopPropagation();
   this.drawWrapper_(true);
   this.dispatchEvent(anychart.enums.EventType.SCROLLING);
 };
@@ -1064,6 +1066,7 @@ anychart.ganttModule.ScrollBar.prototype.dragHandler_ = function(e) {
  * @private
  */
 anychart.ganttModule.ScrollBar.prototype.dragEndHandler_ = function(e) {
+  e.stopPropagation();
   this.drawWrapper_(false);
   this.dispatchEvent(anychart.enums.EventType.SCROLL_END);
 };
