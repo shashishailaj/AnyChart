@@ -1564,7 +1564,7 @@ anychart.graphModule.Chart.prototype.rotate = function(opt_degree) {
  * */
 anychart.graphModule.Chart.prototype.data = function(opt_value) {
   if (goog.isDef(opt_value)) {
-    if ((goog.isDef(opt_value['nodes']) && goog.isDef(opt_value['edges']) || goog.isNull(opt_value))) {
+    if (goog.isNull(opt_value) || (goog.isDef(opt_value['nodes']) && goog.isDef(opt_value['edges']))) {
       var nodes = opt_value && opt_value['nodes'] ? opt_value['nodes'] : null;
       var edges = opt_value && opt_value['edges'] ? opt_value['edges'] : null;
       var data;
