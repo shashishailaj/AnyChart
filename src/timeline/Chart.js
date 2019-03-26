@@ -65,6 +65,18 @@ anychart.timelineModule.Chart = function() {
    * @private
    */
   this.rangeAxesMarkers_ = [];
+
+  /**
+   * Saved vertical translate.
+   * @type {number}
+   */
+  this.verticalTranslate = 0;
+
+  /**
+   * Saved horizontal translate.
+   * @type {number}
+   */
+  this.horizontalTranslate = 0;
 };
 goog.inherits(anychart.timelineModule.Chart, anychart.core.ChartWithSeries);
 
@@ -326,6 +338,9 @@ anychart.timelineModule.Chart.prototype.calculate = function() {
       if (series.getOption('direction') == anychart.enums.EventMarkerDirection.AUTO) {
         if (series.seriesType() == anychart.enums.TimelineSeriesType.RANGE) {
           series.autoDirection(directions[rangeNum & 1]);
+          // if (directions[rangeNum & 1] == anychart.enums.EventMarkerDirection.DOWN) {
+          //   series.labels().anchor(anychart.enums.Anchor.LEFT_BOTTOM);
+          // } else {}
           rangeNum++;
         } else if (series.seriesType() == anychart.enums.TimelineSeriesType.EVENT) {
           series.autoDirection(directions[eventNum & 1]);
@@ -694,6 +709,7 @@ anychart.timelineModule.Chart.prototype.handleMouseWheel_ = function(event) {
     var cutOutPart = (range['max'] - range['min']) * ratio;
     var mouseX = event['clientX'];
     mouseX -= this.dataBounds.left;
+    mouseX -= this.horizontalTranslate;
     var currentDate = this.scale().inverseTransform(mouseX / this.dataBounds.width);
 
     var leftDelta, rightDelta;
@@ -718,26 +734,32 @@ anychart.timelineModule.Chart.prototype.handleMouseWheel_ = function(event) {
     matrix = this.timelineLayer.getTransformationMatrix();
     if (horizontalScroll) {
       if (horizontalScrollForward) {
-        matrix[4] -= 0.1 * (matrix[3] * this.dataBounds.width);
+        this.horizontalTranslate -= 0.1 * (matrix[3] * this.dataBounds.width);
+        // matrix[4] -= 0.1 * (matrix[3] * this.dataBounds.width);
         // if (matrix[4] < -(matrix[3] * this.dataBounds.width - this.dataBounds.width))
         //   matrix[4] = -(matrix[3] * this.dataBounds.width - this.dataBounds.width);
       } else {
-        matrix[4] += 0.1 * (matrix[3] * this.dataBounds.width);
+        this.horizontalTranslate += 0.1 * (matrix[3] * this.dataBounds.width);
+        // matrix[4] += 0.1 * (matrix[3] * this.dataBounds.width);
         // if (matrix[4] > 0)
         //   matrix[4] = 0;
       }
+      matrix[4] = this.horizontalTranslate;
     }
 
     if (verticalScroll) {
       if (verticalScrollDown) {
-        matrix[5] -= 0.1 * (matrix[0] * this.dataBounds.height);
+        this.verticalTranslate -= 0.1 * (matrix[0] * this.dataBounds.height);
+        // matrix[5] -= 0.1 * (matrix[0] * this.dataBounds.height);
         // if (matrix[5] < -(matrix[0] * this.dataBounds.height - this.dataBounds.height))
         //   matrix[5] = -(matrix[0] * this.dataBounds.height - this.dataBounds.height);
       } else {
-        matrix[5] += 0.1 * (matrix[0] * this.dataBounds.height);
+        this.verticalTranslate += 0.1 * (matrix[0] * this.dataBounds.height);
+        // matrix[5] += 0.1 * (matrix[0] * this.dataBounds.height);
         // if (matrix[5] > 0)
         //   matrix[5] = 0;
       }
+      matrix[5] = this.verticalTranslate;
     }
 
     this.timelineLayer.setTransformationMatrix.apply(this.timelineLayer, matrix);

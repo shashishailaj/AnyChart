@@ -73,7 +73,7 @@ anychart.timelineModule.AxisTicks.prototype.draw = function() {
  * @param {anychart.math.Rect} bounds
  */
 anychart.timelineModule.AxisTicks.prototype.drawTick = function(ratio, bounds) {
-  var thickness = anychart.utils.extractThickness(this.getOption('stroke'));
+  var thickness = anychart.utils.extractThickness(/** @type {acgraph.vector.Stroke} */(this.getOption('stroke')));
   var x = anychart.utils.applyPixelShift(bounds.left + ratio * bounds.width, thickness);
   var top = Math.floor(anychart.utils.applyPixelShift(bounds.top, 1));
   var bottom = Math.ceil(anychart.utils.applyPixelShift(bounds.getBottom(), 1));

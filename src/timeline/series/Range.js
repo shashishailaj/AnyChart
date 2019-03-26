@@ -69,7 +69,7 @@ anychart.timelineModule.series.Range.prototype.makeTimelineMeta = function(rowIn
   var startX = bounds.left + bounds.width * startXRatio;
   var endXRatio = rowInfo.meta('endXRatio');
   if (!goog.isNumber(endXRatio) || isNaN(endXRatio)) {
-    var scale = this.getXScale();
+    var scale = /** @type {anychart.scales.GanttDateTime} */(this.getXScale()) ;
     var endX = scale.getTotalRange()['max'];
     endXRatio = scale.transform(endX);
   }
@@ -107,12 +107,10 @@ anychart.timelineModule.series.Range.prototype.createPositionProvider = function
   var iterator = this.getIterator();
   var x, y;
   var height = /** @type {number} */(iterator.meta('height'));
-  var stackLevel = /** @type {number} */(iterator.meta('stackLevel'));
   var zero = /** @type {number} */(iterator.meta('zero'));
   var axisHeight = /** @type {number} */(iterator.meta('axisHeight'));
   var startX = /** @type {number} */(iterator.meta('startX'));
   var direction = /** @type {anychart.enums.EventMarkerDirection} */(this.getFinalDirection());
-  var startY = /** @type {number} */(iterator.meta('startY'));
   var endY = /** @type {number} */(iterator.meta('endY'));
 
   var halfAxisHeight = axisHeight / 2;
