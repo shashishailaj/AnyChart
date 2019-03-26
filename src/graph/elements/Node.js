@@ -292,21 +292,6 @@ anychart.graphModule.elements.Node.prototype.drawLabels = function() {
     var node = nodes[i];
     this.drawLabel(node);
   }
-  // this.resetComplexityForTexts();
-};
-
-
-/**
- * Reset complexity for all drawn nodes.
- * Remove all temp text was create for measure.
- * */
-anychart.graphModule.elements.Node.prototype.resetComplexityForTexts = function() {
-  for (var node in this.chart_.getNodesMap()) {
-    node = this.chart_.getNodeById(node);
-    if (node.textElement) {
-      node.textElement.resetComplexity();
-    }
-  }
 };
 
 
@@ -333,29 +318,29 @@ anychart.graphModule.elements.Node.prototype.createFormatProvider = function(nod
  * */
 anychart.graphModule.elements.Node.prototype.stickNode = function(node) {
   var gap = 5;
-  var node_ = this.chart_.getSubGraphsMap()[/**@type {string}*/(node.subGraphId)];
-  var newX, newY;
-  newX = newY = Infinity;
+  var subGraph = this.chart_.getSubGraphsMap()[/**@type {string}*/(node.subGraphId)];
+  var closestX, closestY;
+  closestX = closestY = Infinity;
   var x = node.position.x;
   var y = node.position.y;
 
-  for (var i = 0; i < node_.length; i++) {
-    if (node.id != node_[i]) {
-      var neib = this.chart_.getNodeById(node_[i]);
+  for (var i = 0; i < subGraph.length; i++) {
+    if (node.id != subGraph[i]) {
+      var neib = this.chart_.getNodeById(subGraph[i]);
       var neibPosition = neib.position;
 
       if (node.position.x > (neibPosition.x - gap) && node.position.x < (neibPosition.x + gap)) {
         var distanceX = node.position.x - neibPosition.x;
-        if (distanceX < newX) {
-          newX = distanceX;
+        if (distanceX < closestX) {
+          closestX = distanceX;
           x = neibPosition.x;
         }
       }
 
       if (node.position.y > (neibPosition.y - gap) && node.position.y < (neibPosition.y + gap)) {
         var distanceY = node.position.y - neibPosition.y;
-        if (distanceY < newY) {
-          newY = distanceY;
+        if (distanceY < closestY) {
+          closestY = distanceY;
           y = neibPosition.y;
         }
       }
@@ -367,7 +352,7 @@ anychart.graphModule.elements.Node.prototype.stickNode = function(node) {
 
 
 /**
- * Return height of node
+ * Return height of node.
  * @param {anychart.graphModule.Chart.Node} node
  * @return {number}
  * */
@@ -377,7 +362,7 @@ anychart.graphModule.elements.Node.prototype.getHeight = function(node) {
 
 
 /**
- * Return width of node
+ * Return width of node.
  * @param {anychart.graphModule.Chart.Node} node
  * @return {number}
  * */
