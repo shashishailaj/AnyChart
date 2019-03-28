@@ -778,11 +778,11 @@ anychart.pyramidFunnelModule.Chart.prototype.drawContent = function(bounds) {
       this.connectorsLayer_.clear();
     }
 
-    // var themePart = this.isInsideLabels() ?
-    //     anychart.getFullTheme('pieFunnelPyramidBase.insideLabels') :
-    //     anychart.getFullTheme('pieFunnelPyramidBase.outsideLabels');
-    // this.labels().setAutoColor(themePart['autoColor']);
-    // this.labels()['disablePointerEvents'](themePart['disablePointerEvents']);
+    var themePart = this.isInsideLabels() ?
+        anychart.getFlatTheme('pieFunnelPyramidBase.insideLabels') :
+        anychart.getFlatTheme('pieFunnelPyramidBase.outsideLabels');
+    this.labels().setAutoColor(themePart['autoColor']);
+    this.labels()['disablePointerEvents'](themePart['disablePointerEvents']);
 
     if (!this.isInsideLabels()) {
       this.connectorLengthValue_ = anychart.utils.normalizeSize(
