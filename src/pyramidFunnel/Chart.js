@@ -781,6 +781,7 @@ anychart.pyramidFunnelModule.Chart.prototype.drawContent = function(bounds) {
     var themePart = this.isInsideLabels() ?
         anychart.getFlatTheme('pieFunnelPyramidBase.insideLabels') :
         anychart.getFlatTheme('pieFunnelPyramidBase.outsideLabels');
+
     this.labels().setAutoColor(themePart['autoColor']);
     this.labels()['disablePointerEvents'](themePart['disablePointerEvents']);
 
