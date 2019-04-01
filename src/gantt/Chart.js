@@ -837,19 +837,25 @@ anychart.ganttModule.Chart.prototype.rowSelect = function(event) {
     var period = event['period'];
     var periodIndex = event['periodIndex'];
 
+    var selection = this.selection();
     var isSelected = this.isResourcesChart_ ?
-        this.selection().isPeriodSelected(item, periodIndex) :
-        this.selection().isRowSelected(item);
+        selection.isPeriodSelected(item, periodIndex) :
+        selection.isRowSelected(item);
 
     if (item && !isSelected) {
       var eventObj = {
         'type': anychart.enums.EventType.ROW_SELECT,
         'item': item,
-        'prevItem': this.selection().getSelectedItem()
+        'prevItem': selection.getSelectedItem()
       };
       if (goog.isDef(period)) {
         eventObj['period'] = period;
         eventObj['periodIndex'] = periodIndex;
+      }
+      if (selection.hasSelectedPeriod()) {
+        var pIndex = selection.getSelectedPeriodIndex();
+        eventObj['prevPeriodIndex'] = pIndex;
+        eventObj['prevPeriod'] = selection.getSelectedItem().get(anychart.enums.GanttDataFields.PERIODS, pIndex);
       }
 
       if (this.dispatchEvent(eventObj)) {
@@ -897,6 +903,7 @@ anychart.ganttModule.Chart.prototype.rowMouseDown = function(event) {
  * @inheritDoc
  */
 anychart.ganttModule.Chart.prototype.rowUnselect = function(event) {
+  var selection = this.selection();
   //NOTE: this event will not be dispatched by dg_ or tl_ because their interactivity handler is chart but not they are.
   var newEvent = {
     'type': anychart.enums.EventType.ROW_SELECT,
@@ -904,8 +911,14 @@ anychart.ganttModule.Chart.prototype.rowUnselect = function(event) {
     'target': this,
     'originalEvent': event,
     'item': null, //This is a real difference between 'select' and 'unselect' events.
-    'prevItem': this.selection().getSelectedItem()
+    'prevItem': selection.getSelectedItem()
   };
+
+  if (selection.hasSelectedPeriod()) {
+    var pIndex = selection.getSelectedPeriodIndex();
+    newEvent['prevPeriodIndex'] = pIndex;
+    newEvent['prevPeriod'] = selection.getSelectedItem().get(anychart.enums.GanttDataFields.PERIODS, pIndex);
+  }
 
   if (this.dispatchEvent(newEvent)) {
     this.dg_.rowUnselect(event);

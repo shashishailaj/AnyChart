@@ -154,6 +154,15 @@ anychart.ganttModule.Selection.prototype.isPeriodSelected = function(item, perio
 
 
 /**
+ * Gets selected period index.
+ * @return {?(number|undefined)}
+ */
+anychart.ganttModule.Selection.prototype.getSelectedPeriodIndex = function() {
+  return this.selectedPeriodIndex_;
+};
+
+
+/**
  *
  * @return {boolean}
  */
