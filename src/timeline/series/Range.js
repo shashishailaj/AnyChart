@@ -138,4 +138,13 @@ anychart.timelineModule.series.Range.prototype.getContextProviderValues = functi
   };
   return values;
 };
+
+
+/** @inheritDoc */
+anychart.timelineModule.series.Range.prototype.applyAdditionalLabelSettings = function(label, index) {
+  var it = this.getDetachedIterator();
+  it.select(index);
+  label.width(/** @type {number} */(it.meta('endX') - it.meta('startX')));
+  label.height(/** @type {number} */(it.meta('height')));
+};
 //endregion
