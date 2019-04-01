@@ -834,10 +834,14 @@ anychart.ganttModule.Chart.prototype.rowMouseOut = function(event) {
 anychart.ganttModule.Chart.prototype.rowSelect = function(event) {
   if (!this.tl_.checkRowSelection(event)) {
     var item = event['item'];
+    var period = event['period'];
+    var periodIndex = event['periodIndex'];
 
-    if (item && !this.selection().isRowSelected(item)) {
-      var period = event['period'];
-      var periodIndex = event['periodIndex'];
+    var isSelected = this.isResourcesChart_ ?
+        this.selection().isPeriodSelected(item, periodIndex) :
+        this.selection().isRowSelected(item);
+
+    if (item && !isSelected) {
       var eventObj = {
         'type': anychart.enums.EventType.ROW_SELECT,
         'item': item,
