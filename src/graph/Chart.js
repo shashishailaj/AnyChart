@@ -3,16 +3,14 @@ goog.provide('anychart.graphModule.Chart');
 
 goog.require('anychart.core.Chart');
 goog.require('anychart.core.ui.LabelsSettings');
+goog.require('anychart.graphModule.elements.Dragger');
 goog.require('anychart.graphModule.elements.Edge');
 goog.require('anychart.graphModule.elements.Group');
 goog.require('anychart.graphModule.elements.Interactivity');
 goog.require('anychart.graphModule.elements.Layout');
 goog.require('anychart.graphModule.elements.Node');
 goog.require('goog.events.MouseWheelHandler');
-goog.require('goog.fx.Dragger');
 goog.require('goog.math.Coordinate');
-goog.require('goog.structs.Set');
-
 
 
 //endregion
@@ -34,7 +32,8 @@ anychart.graphModule.Chart = function(opt_data) {
     this.handleMouseClick,
     this.handleMouseMove,
     null,
-    this.handleMouseDown);
+    null);
+
 
   /**
    * Map where key is nodeId, value is node data.
@@ -93,14 +92,25 @@ anychart.graphModule.Chart = function(opt_data) {
   this.mouseWheelHandler_ = null;
 
   /**
-   * @type {?acgraph.vector.Path}
+   * Events interceptor rectangle.
+   * @type {acgraph.vector.Rect}
+   * @private
    * */
-  this.eventsInterceptor_;
+  this.eventsInterceptor_ = null;
 
+  /**
+   * Dragger
+   * @type {anychart.graphModule.elements.Dragger}
+   * @private
+   * */
   this.dragger_ = null;
 
   this.data_ = {}; //todo typedef
 
+  /**
+   *
+   * */
+  this.transformationMatrix = [1, 0, 0, 1, 0, 0];
   this.zoom_ = [1];
   this.move_ = [0, 0];
   this.rotateDegree_ = 0;
@@ -284,18 +294,21 @@ anychart.graphModule.Chart.prototype.handleMouseClick = function(event) {
   }
   var tag = /**@type {anychart.graphModule.Chart.Tag}*/(event['domTarget'].tag);
   if (tag) {
-    if (tag.type == anychart.graphModule.Chart.Element.NODE) {
-      this.updateNodeStateById(tag.id, anychart.SettingsState.SELECTED);
-      this.selectedElement_ = {
-        type: anychart.graphModule.Chart.Element.NODE,
-        id: tag.id
-      };
-    } else if (tag.type == anychart.graphModule.Chart.Element.EDGE) {
-      this.updateEdgeStateById(tag.id, anychart.SettingsState.SELECTED);
-      this.selectedElement_ = {
-        type: anychart.graphModule.Chart.Element.EDGE,
-        id: tag.id
-      };
+    switch (tag.type) {
+      case anychart.graphModule.Chart.Element.NODE:
+        this.updateNodeStateById(tag.id, anychart.SettingsState.SELECTED);
+        this.selectedElement_ = {
+          type: anychart.graphModule.Chart.Element.NODE,
+          id: tag.id
+        };
+        break;
+      case anychart.graphModule.Chart.Element.EDGE:
+        this.updateEdgeStateById(tag.id, anychart.SettingsState.SELECTED);
+        this.selectedElement_ = {
+          type: anychart.graphModule.Chart.Element.EDGE,
+          id: tag.id
+        };
+        break;
     }
   }
 };
@@ -361,28 +374,54 @@ anychart.graphModule.Chart.prototype.handleMouseMove = function(event) {
 
 
 /**
+ * Scale up layer with elements.
+ * @param {number} scale Scale factor.
+ * @param {number} x
+ * @param {number} y
+ * @private
+ * */
+anychart.graphModule.Chart.prototype.doLayerScale_ = function(scale, x, y) {
+  this.mainLayer_.scale(scale, scale, x, y);
+  this.mainLayer_.scale(scale, scale, x, y);
+};
+
+
+/**
+ * Move layer with elements.
+ * @param {number} dx
+ * @param {number} dy
+ * */
+anychart.graphModule.Chart.prototype.doLayerTranslate = function(dx, dy) {
+  this.mainLayer_.translate(dx, dy);
+};
+
+
+/**
  * Mouse wheel handler.
  * @param {goog.events.MouseWheelEvent} event
  * @private
  * */
 anychart.graphModule.Chart.prototype.handleMouseWheel_ = function(event) {
-  if (this.interactivity().getOption('enabled')) {
-    var dy = goog.math.clamp(event.deltaY, -5, 5) || 1;
-    if (this.interactivity().getOption('zoomOnMouseWheel')) {
-      var scale = 1;
-      var step = .3 / Math.abs(dy);
-      if (dy > 0) {
-        scale = 1 - step;
-      } else {
-        scale = 1 + step;
+  if (!this.dragger_.isDragging()) {
+    var interactivity = this.interactivity();
+    if (interactivity.getOption('enabled')) {
+      var dy = goog.math.clamp(event.deltaY, -5, 5) || 1;
+      if (interactivity.getOption('zoomOnMouseWheel')) {
+        var scale = 1;
+        var step = .3 / Math.abs(dy);
+        if (dy > 0) {
+          scale = 1 - step;
+        } else {
+          scale = 1 + step;
+        }
+        this.doLayerScale_(scale, event.clientX, event.clientY);
       }
-      this.rootLayer.scale(scale, scale, event.clientX, event.clientY);
-    }
 
-    if (this.interactivity().getOption('scrollOnMouseWheel')) {
-      this.rootLayer.translate(0, dy);
+      if (interactivity.getOption('scrollOnMouseWheel')) {
+        this.doLayerTranslate(0, dy);
+      }
+      event.preventDefault();
     }
-    event.preventDefault();
   }
 };
 
@@ -433,23 +472,6 @@ anychart.graphModule.Chart.prototype.updateNodeDOMElementPosition = function(nod
   y -= (height / 2);
 
   node.domElement.setPosition(x, y);
-};
-
-
-/** @inheritDoc */
-anychart.graphModule.Chart.prototype.handleMouseDown = function(event) {
-  if (event['button'] != acgraph.events.BrowserEvent.MouseButton.LEFT) return;
-  var domTarget = event['domTarget'];
-  var tag = domTarget.tag;
-
-  if (this.interactivity().getOption('enabled')) {
-    if (tag && tag.type == anychart.graphModule.Chart.Element.NODE && this.interactivity().getOption('node')) {
-      var node = this.getNodeById(tag.id);
-      this.nodeDragInteractivity(node, domTarget, event);
-    } else if (!tag) {
-      this.layerDragInteractivity(domTarget, event);
-    }
-  }
 };
 
 
@@ -539,12 +561,21 @@ anychart.graphModule.Chart.prototype.updtateNodePosition = function(node, dx, dy
 
 
 /**
+ * Return transformation matrix of layer with elements.
+ * @return {Array.<number>}
+ * */
+anychart.graphModule.Chart.prototype.getTransformationMatrix = function() {
+  return this.mainLayer_.getTransformationMatrix();
+};
+
+
+/**
  * Return absolute x value
  * @param {number} x
  * @return {number}
  * */
 anychart.graphModule.Chart.prototype.getXWithTranslate = function(x) {
-  var matrix = this.rootLayer.getTransformationMatrix();
+  var matrix = this.getTransformationMatrix();
   var scale = matrix[0];
   var offsetX = matrix[4];
   return (-offsetX * scale + x / scale);
@@ -557,84 +588,10 @@ anychart.graphModule.Chart.prototype.getXWithTranslate = function(x) {
  * @return {number}
  * */
 anychart.graphModule.Chart.prototype.getYWithTranslate = function(y) {
-  var matrix = this.rootLayer.getTransformationMatrix();
+  var matrix = this.getTransformationMatrix();
   var scale = matrix[0];
   var offsetY = matrix[5];
   return (-offsetY * scale + y / scale);
-};
-
-
-/**
- * Change position of dragged node.
- * @param {anychart.graphModule.Chart.Node} node Current dragged node.
- * @param {acgraph.vector.Path} domTarget
- * @param {anychart.core.MouseEvent} event
- * */
-anychart.graphModule.Chart.prototype.nodeDragInteractivity = function(node, domTarget, event) {
-  var dragger = new goog.fx.Dragger(domTarget['domElement']());
-  var startX, startY;
-
-  dragger.listen(goog.fx.Dragger.EventType.START, /** @this {anychart.graphModule.Chart}*/ function(e) {
-    startX = this.getXWithTranslate(event.clientX);
-    startY = this.getYWithTranslate(event.clientY);
-  }, false, this);
-
-  dragger.listen(goog.fx.Dragger.EventType.DRAG, /** @this {anychart.graphModule.Chart}*/ function(e) {
-    var x = this.getXWithTranslate(e.clientX);
-    var y = this.getYWithTranslate(e.clientY);
-    //this.edges().getLabelsLayer().parent(null);
-    var dx = x - startX;
-    var dy = y - startY;
-    startX = x;
-    startY = y;
-
-    this.updtateNodePosition(node, dx, dy);
-    this.updateNodeDOMElementPosition(node);
-    this.updateEdgesConnectedToNode(node);
-    this.updateNode(node, anychart.SettingsState.HOVERED);
-  }, false, this);
-
-  dragger.listen(goog.fx.Dragger.EventType.END, /** @this {anychart.graphModule.Chart}*/ function(e) {
-    if (this.interactivity().getOption('magnetize')) {
-      this.nodes_.stickNode(node);
-      this.updateNodeDOMElementPosition(node);
-      this.updateEdgesConnectedToNode(node);
-    }
-    dragger.dispose();
-  }, false, this);
-
-  dragger.startDrag(event['getOriginalEvent']());
-};
-
-
-/**
- * @param {acgraph.vector.Path} domTarget
- * @param {anychart.core.MouseEvent} event
- * */
-anychart.graphModule.Chart.prototype.layerDragInteractivity = function(domTarget, event) {
-  var dragger = new goog.fx.Dragger(domTarget['domElement']());
-  var startX = 0, startY = 0;
-
-  dragger.listen(goog.fx.Dragger.EventType.START, function(e) {
-    startX = event.clientX;
-    startY = event.clientY;
-  }, false, this);
-  dragger.listen(goog.fx.Dragger.EventType.DRAG, function(e) {
-    var scale = this.rootLayer.getTransformationMatrix()[0];
-    var x = e.clientX;
-    var y = e.clientY;
-    var dx = (x - startX) / scale; //slowdown drag when zoom are used
-    var dy = (y - startY) / scale;
-    startX = x;
-    startY = y;
-
-    this.rootLayer.translate(dx, dy);
-
-  }, false, this);
-  dragger.listen(goog.fx.Dragger.EventType.END, /** @this {anychart.graphModule.Chart}*/ function(e) {
-    dragger.dispose();
-  }, false, this);
-  dragger.startDrag(event['getOriginalEvent']());
 };
 
 
@@ -1334,14 +1291,121 @@ anychart.graphModule.Chart.prototype.appendEdgesOnLayer = function() {
   this.edges_.needsMeasureLabels();
 };
 
-//
-// anychart.graphModule.Chart.prototype.initDragger_ = function(event) {
-//   this.drag = new goog.fx.Dragger(this.rootLayer.domElement());
-//   this.drag.listen(acgraph.events.EventType.DRAG_START, function(e) {
-//     console.log(e.target);
-//   });
-//   //this.drag.startDrag(event.getOriginalEvent());
-// };
+
+/**
+ * Init dragger
+ * @param {acgraph.events.BrowserEvent} event
+ * @private
+ * */
+anychart.graphModule.Chart.prototype.initDragger_ = function(event) {
+  this.dragger_ = new anychart.graphModule.elements.Dragger(this.rootLayer.domElement(), this.rootLayer);
+  var startX, startY;
+  var element = null;
+  var tag, x, y, dx, dy;
+  var node;
+  var interactivityEnabled;
+  var nodeInteractivityEnabled;
+  this.dragger_.listen(goog.fx.Dragger.EventType.START, function(e) {
+    interactivityEnabled = this.interactivity().getOption('enabled');
+    nodeInteractivityEnabled = this.interactivity().getOption('node');
+    if (interactivityEnabled) {
+      element = this.dragger_.getTargetElement();
+      tag = element.tag;
+
+      if (tag && tag.type == anychart.graphModule.Chart.Element.NODE) {
+        if (nodeInteractivityEnabled) {
+          node = this.getNodeById(tag.id);
+          startX = this.getXWithTranslate(e.clientX);
+          startY = this.getYWithTranslate(e.clientY);
+        }
+      } else {
+        startX = e.clientX;
+        startY = e.clientY;
+      }
+
+    }
+  }, false, this);
+  this.dragger_.listen(goog.fx.Dragger.EventType.DRAG, function(e) {
+    if (interactivityEnabled) {
+      var scale = this.getTransformationMatrix()[0];
+
+      var x = e.clientX;
+      var y = e.clientY;
+
+      if (tag && tag.type == anychart.graphModule.Chart.Element.NODE) {
+        if (nodeInteractivityEnabled) {
+          x = this.getXWithTranslate(x);
+          y = this.getYWithTranslate(y);
+          //this.edges().getLabelsLayer().parent(null);
+          dx = x - startX;
+          dy = y - startY;
+          startX = x;
+          startY = y;
+
+          this.updtateNodePosition(node, dx, dy);
+          this.updateNodeDOMElementPosition(node);
+          this.updateEdgesConnectedToNode(node);
+          this.updateNode(node, anychart.SettingsState.HOVERED);
+        }
+      } else {
+        dx = (x - startX) / scale; //slowdown drag when zoom are used
+        dy = (y - startY) / scale;
+        startX = x;
+        startY = y;
+        this.doLayerTranslate(dx, dy);
+      }
+
+    }
+  }, false, this);
+  this.dragger_.listen(goog.fx.Dragger.EventType.END, /** @this {anychart.graphModule.Chart}*/ function(e) {
+    if (interactivityEnabled) {
+      if (tag && tag.type == anychart.graphModule.Chart.Element.NODE) {
+        if (nodeInteractivityEnabled) {
+          if (this.interactivity().getOption('magnetize')) {
+            this.nodes_.stickNode(node);
+            this.updateNodeDOMElementPosition(node);
+            this.updateEdgesConnectedToNode(node);
+          }
+        }
+      } else {
+
+      }
+    }
+  }, false, this);
+};
+
+
+/**
+ * Initialize mouseWheel handler.
+ * @private
+ * */
+anychart.graphModule.Chart.prototype.initMouseWheel_ = function() {
+  if (!this.mouseWheelHandler_) {
+    var element = this.rootLayer.domElement();
+    this.mouseWheelHandler_ = new goog.events.MouseWheelHandler(element, false);
+    this.mouseWheelHandler_.listen(goog.events.MouseWheelHandler.EventType.MOUSEWHEEL, this.handleMouseWheel_, false, this);
+  }
+};
+
+
+/**
+ * Update bounds of elements.
+ * @param {anychart.math.Rect} bounds
+ * @private
+ * */
+anychart.graphModule.Chart.prototype.updateBoundsOfElements_ = function(bounds) {
+  var clipShape = this.clipArea_.shape();
+
+  clipShape.setX(bounds.left);
+  clipShape.setY(bounds.top);
+  clipShape.setWidth(bounds.width);
+  clipShape.setHeight(bounds.height);
+
+  this.eventsInterceptor_.setX(bounds.left);
+  this.eventsInterceptor_.setY(bounds.top);
+  this.eventsInterceptor_.setWidth(bounds.width);
+  this.eventsInterceptor_.setHeight(bounds.height);
+};
 
 
 /** @inheritDoc */
@@ -1355,19 +1419,32 @@ anychart.graphModule.Chart.prototype.drawContent = function(bounds) {
     this.edges();
     this.layout();
     this.interactivity();
-    // this.eventsInterceptor_ = this.rootLayer.rect(bounds.x, bounds.y, bounds.width, bounds.height);
-    // this.eventsInterceptor_.fill(anychart.color.TRANSPARENT_HANDLER);
-    // this.eventsInterceptor_.stroke(null);
-    // this.eventsInterceptor_.zIndex(10);
-    // this.eventsHandler.listenOnce(this.eventsInterceptor_, acgraph.events.EventType.MOUSEMOVE, this.initDragger_);
+    console.log(bounds);
+    this.mainLayer_ = acgraph.layer();
+    this.clipArea_ = acgraph.clip(bounds);
+    this.interceptorLayer_ = acgraph.layer();
+    this.eventsInterceptor_ = acgraph.rect(bounds.left, bounds.top, bounds.width, bounds.height);
+    this.eventsInterceptor_.fill(anychart.color.TRANSPARENT_HANDLER);
+    this.eventsInterceptor_.stroke(null);
+
+    this.eventsHandler.listenOnce(this.eventsInterceptor_, acgraph.events.EventType.MOUSEMOVE, this.initDragger_);
+    this.eventsHandler.listenOnce(this.eventsInterceptor_, acgraph.events.EventType.MOUSEMOVE, this.initMouseWheel_);
     this.rootLayer.zIndex(anychart.graphModule.Chart.Z_INDEX);
+
+    this.leayerForElements_ = acgraph.layer();
     this.nodesLayer_ = acgraph.layer();
     this.edgesLayer_ = acgraph.layer();
-    this.edgesLayer_.parent(this.rootLayer);
-    this.edges_.getLabelsLayer().parent(this.rootLayer);
-    this.nodes_.getLabelsLayer().parent(this.rootLayer);
-    this.nodesLayer_.parent(this.rootLayer);
+    this.edgesLayer_.parent(this.leayerForElements_);
+    this.nodesLayer_.parent(this.leayerForElements_);
+    this.edges_.getLabelsLayer().parent(this.leayerForElements_);
+    this.nodes_.getLabelsLayer().parent(this.leayerForElements_);
+    this.leayerForElements_.parent(this.mainLayer_);
 
+    this.rootLayer.clip(this.clipArea_);
+    this.eventsInterceptor_.parent(this.interceptorLayer_);
+
+    this.interceptorLayer_.parent(this.rootLayer);
+    this.mainLayer_.parent(this.rootLayer);
   }
 
   if (this.hasStateInvalidation(anychart.enums.Store.GRAPH, anychart.enums.State.LAYOUT)) {
@@ -1389,7 +1466,7 @@ anychart.graphModule.Chart.prototype.drawContent = function(bounds) {
   }
 
   if (this.hasInvalidationState(anychart.ConsistencyState.BOUNDS)) {
-    // this.eventsInterceptor_.setBounds(bounds)
+    this.updateBoundsOfElements_(bounds);
     if (this.layout().type() == anychart.graphModule.elements.LayoutType.FORCE) {
       this.fitNodesCoordinatesIntoContentBounds();
     }
@@ -1450,8 +1527,9 @@ anychart.graphModule.Chart.prototype.drawContent = function(bounds) {
   }
 
   if (this.hasStateInvalidation(anychart.enums.Store.GRAPH, anychart.enums.State.TRANSFORM)) {
-    this.rootLayer.scale(this.zoom_[0], this.zoom_[0], this.zoom_[1], this.zoom_[2]);
-    this.rootLayer.translate(this.move_[0], this.move_[1]);
+    this.doLayerScale_(this.zoom_[0], this.zoom_[1], this.zoom_[2]);
+    this.doLayerTranslate(this.move_[0], this.move_[1]);
+
     this.zoom_[0] = 1;
     this.zoom_[1] = this.contentBounds.width / 2;
     this.zoom_[2] = this.contentBounds.height / 2;
@@ -1459,15 +1537,11 @@ anychart.graphModule.Chart.prototype.drawContent = function(bounds) {
     this.move_[1] = 0;
     this.markStateConsistent(anychart.enums.Store.GRAPH, anychart.enums.State.TRANSFORM);
   }
-
-  if (!this.mouseWheelHandler_) {
-    this.mouseWheelHandler_ = new goog.events.MouseWheelHandler(this.container().getStage().getDomWrapper(), false);
-    this.mouseWheelHandler_.listen(goog.events.MouseWheelHandler.EventType.MOUSEWHEEL, this.handleMouseWheel_, false, this);
-  }
-
 };
 
+
 //endregion
+//region Chart transform
 /**
  * Increase zoom on passed value.
  * @param {number=} opt_value Zoom factor.
@@ -1525,7 +1599,7 @@ anychart.graphModule.Chart.prototype.move = function(opt_dx, opt_dy) {
  * Reset zoom and move of chart.
  * */
 anychart.graphModule.Chart.prototype.fit = function() {
-  this.rootLayer.setTransformationMatrix(1, 0, 0, 1, 0, 0);
+  this.mainLayer_.setTransformationMatrix(1, 0, 0, 1, 0, 0);
 };
 
 
@@ -1724,7 +1798,8 @@ anychart.graphModule.Chart.prototype.disposeInternal = function() {
     this.edges_,
     this.nodes_,
     this.interactivity_,
-    this.layout_
+    this.layout_,
+    this.dragger_
   );
   this.edges().disposeInternal();
   this.nodes().disposeInternal();
