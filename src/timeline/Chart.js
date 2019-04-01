@@ -77,6 +77,17 @@ anychart.timelineModule.Chart = function() {
    * @type {number}
    */
   this.horizontalTranslate = 0;
+
+  /**
+   *
+   * @type {anychart.timelineModule.Intersections.Range}
+   */
+  this.totalRange = {
+    sX: +Infinity,
+    eX: -Infinity,
+    sY: +Infinity,
+    eY: -Infinity
+  };
 };
 goog.inherits(anychart.timelineModule.Chart, anychart.core.ChartWithSeries);
 
@@ -515,6 +526,17 @@ anychart.timelineModule.Chart.prototype.calculate = function() {
   goog.array.sort(intersectingBoundsEventUp, eventSortCallback);
   goog.array.sort(intersectingBoundsEventDown, eventSortCallback);
 
+  var scaleTotalRange = this.scale().getTotalRange();
+
+  this.totalRange = {
+    sX: +Infinity,
+    eX: -Infinity,
+    sY: +Infinity,
+    eY: -Infinity
+  };
+  this.totalRange.sX = Math.min(this.totalRange.sX, this.scale().transform(scaleTotalRange.min) * this.dataBounds.width);
+  this.totalRange.eX = Math.max(this.totalRange.eX, this.scale().transform(scaleTotalRange.max) * this.dataBounds.width);
+
   //region upper range and event overlap calculation
   var rangeSeries = [];
 
@@ -535,6 +557,7 @@ anychart.timelineModule.Chart.prototype.calculate = function() {
     var id = range.pointId;
     var drawingPlanData = range.drawingPlan.data[id];
     intersectionsUpper.add(range, true);
+    this.enlargeTotalRange_(range);
     drawingPlanData.meta['startY'] = range.sY;
     drawingPlanData.meta['endY'] = range.eY;
     drawingPlanData.meta['stateZIndex'] = 1 - range.eY / 1000000;
@@ -544,6 +567,7 @@ anychart.timelineModule.Chart.prototype.calculate = function() {
     var range = intersectingBoundsEventUp[i];
     var id = range.pointId;
     intersectionsUpper.add(range);
+    this.enlargeTotalRange_(range);
     var drawingPlanData = range.drawingPlan.data[id];
     drawingPlanData.meta['minLength'] = range.sY + (range.eY - range.sY) / 2;
   }
@@ -571,6 +595,7 @@ anychart.timelineModule.Chart.prototype.calculate = function() {
     drawingPlanData.meta['startY'] = range.sY;
     drawingPlanData.meta['endY'] = range.eY;
     drawingPlanData.meta['stateZIndex'] = 1 - range.eY / 1000000;
+    this.enlargeTotalRange_({sX: range.sX, eX: range.eX, sY: -range.eY, eY: -range.sY});
   }
 
   for (var i = intersectingBoundsEventDown.length - 1; i >= 0; i--) {
@@ -579,9 +604,19 @@ anychart.timelineModule.Chart.prototype.calculate = function() {
     intersectionsLower.add(range);
     var drawingPlanData = range.drawingPlan.data[id];
     drawingPlanData.meta['minLength'] = range.sY + (range.eY - range.sY) / 2;
+    this.enlargeTotalRange_({sX: range.sX, eX: range.eX, sY: -range.eY, eY: -range.sY});
   }
   //endregion
 };
+
+
+anychart.timelineModule.Chart.prototype.enlargeTotalRange_ = function(range) {
+  this.totalRange.sX = Math.min(this.totalRange.sX, range.sX);
+  this.totalRange.eX = Math.max(this.totalRange.eX, range.eX);
+  this.totalRange.sY = Math.min(this.totalRange.sY, range.sY);
+  this.totalRange.eY = Math.max(this.totalRange.eY, range.eY);
+};
+
 
 
 /** @inheritDoc */
@@ -870,6 +905,8 @@ anychart.timelineModule.Chart.prototype.zoomTo = function(startDate, endDate) {
  */
 anychart.timelineModule.Chart.prototype.fit = function() {
   this.suspendSignalsDispatching();
+  this.horizontalTranslate = 0;
+  this.verticalTranslate = 0;
   this.scale().fitAll();
   this.timelineLayer.setTransformationMatrix.apply(this.timelineLayer, this.baseTransform);// cleaning up transformations
   this.scroll(0);
