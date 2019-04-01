@@ -364,10 +364,14 @@ anychart.ganttModule.Column.prototype.controllerListener_ = function(event) {
     }
     this.texts_.length = 0;
     var state = anychart.ConsistencyState.DATA_GRID_COLUMN_DATA;
-    var labels = this.hasLabelsOverrider() ?
-        this.labelsOverrider() :
-        this.labels();
-    if (labels.needsBoundsCalculation())
+
+    /*
+      Here we consider this.hasLabelsOverrider() because
+      we can't guarantee that labels overriding doesn't require
+      the text measurement.
+      Also fixes https://anychart.atlassian.net/browse/TS-710
+     */
+    if (this.labels().needsBoundsCalculation() || this.hasLabelsOverrider())
       state |= anychart.ConsistencyState.DATA_GRID_COLUMN_LABELS_BOUNDS;
 
     /*
