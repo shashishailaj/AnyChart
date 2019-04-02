@@ -327,7 +327,6 @@ anychart.timelineModule.Chart.prototype.calculate = function() {
     return;
   }
 
-
   if (this.hasInvalidationState(anychart.ConsistencyState.SERIES_CHART_SERIES | anychart.ConsistencyState.SCALE_CHART_SCALES)) {
     this.eventSeriesList = [];
     this.rangeSeriesList = [];
@@ -503,7 +502,7 @@ anychart.timelineModule.Chart.prototype.calculate = function() {
     }
     //endregion
 
-    var sortCallback = function (a, b) {
+    var sortCallback = function(a, b) {
       var diff = a.sX - b.sX;
       if (diff == 0) {
         return b.eX - a.eX;
