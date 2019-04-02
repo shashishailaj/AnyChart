@@ -761,8 +761,8 @@ anychart.timelineModule.Chart.prototype.handleMouseWheel_ = function(event) {
     var rightDate = this.scale().inverseTransform((this.horizontalTranslate + this.dataBounds.width) / this.dataBounds.width);
 
     this.suspendSignalsDispatching();
-    this.zoomTo(currentDate - ((currentDate - leftDate) * 0.9),
-        currentDate + ((rightDate - currentDate) * 0.9));
+    this.zoomTo(currentDate - ((currentDate - leftDate) * (1 + dy / 100)),
+        currentDate + ((rightDate - currentDate) * (1 + dy / 100)));
     this.horizontalTranslate = 0;
     this.invalidateState(anychart.enums.Store.TIMELINE_CHART, anychart.timelineModule.Chart.States.SCROLL, anychart.Signal.NEEDS_REDRAW);
     this.resumeSignalsDispatching(true);
