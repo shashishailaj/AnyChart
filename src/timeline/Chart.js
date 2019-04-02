@@ -659,16 +659,25 @@ anychart.timelineModule.Chart.prototype.drawContent = function(bounds) {
 
   if (this.hasStateInvalidation(anychart.enums.Store.TIMELINE_CHART, anychart.timelineModule.Chart.States.SCROLL)) {
     var matrix = this.timelineLayer.getTransformationMatrix();
+
+    //fix horizontal translate going places
+    if (this.horizontalTranslate + this.dataBounds.getRight() > this.totalRange.eX) {
+      this.horizontalTranslate = (this.totalRange.eX - this.dataBounds.getRight());
+    }
+    else if (this.horizontalTranslate + this.dataBounds.getLeft() < this.totalRange.sX) {
+      this.horizontalTranslate = (this.totalRange.sX - this.dataBounds.getLeft());
+    }
+
+    //fix vertical translate going places
+    if (this.verticalTranslate + this.dataBounds.height / 2 > this.totalRange.eY) {
+      this.verticalTranslate = Math.max(this.totalRange.eY - this.dataBounds.height / 2, 0);
+    } else if (this.verticalTranslate - this.dataBounds.height / 2 < Math.min(this.totalRange.sY, -(this.dataBounds.height / 2))) {
+      this.verticalTranslate = Math.min(this.totalRange.sY + this.dataBounds.height / 2, 0);
+    }
+
     matrix[4] = -this.horizontalTranslate;
     matrix[5] = this.verticalTranslate;
     this.timelineLayer.setTransformationMatrix.apply(this.timelineLayer, matrix);
-    // this.timelineLayer.setTransformationMatrix.apply(this.timelineLayer, this.baseTransform);// cleaning up transformations
-    //
-    // if (this.scroll_ < 0) {
-    //   this.timelineLayer.translate(0, this.dataBounds.height / 2);
-    // } else if (this.scroll_ > 0) {
-    //   this.timelineLayer.translate(0, -this.dataBounds.height / 2);
-    // }
     this.markStateConsistent(anychart.enums.Store.TIMELINE_CHART, anychart.timelineModule.Chart.States.SCROLL);
   }
 
