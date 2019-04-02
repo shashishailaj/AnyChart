@@ -323,6 +323,10 @@ anychart.timelineModule.Chart.prototype.calculate = function() {
   var intersectingBoundsEventUp = [];
   var intersectingBoundsEventDown = [];
 
+  if (this.getSeriesCount() == 0) {
+    return;
+  }
+
 
   if (this.hasInvalidationState(anychart.ConsistencyState.SERIES_CHART_SERIES | anychart.ConsistencyState.SCALE_CHART_SCALES)) {
     this.eventSeriesList = [];
@@ -661,17 +665,17 @@ anychart.timelineModule.Chart.prototype.drawContent = function(bounds) {
     var matrix = this.timelineLayer.getTransformationMatrix();
 
     //fix horizontal translate going places
-    if (this.horizontalTranslate + this.dataBounds.getRight() > this.totalRange.eX) {
+    if (this.totalRange && (this.horizontalTranslate + this.dataBounds.getRight() > this.totalRange.eX)) {
       this.horizontalTranslate = (this.totalRange.eX - this.dataBounds.getRight());
     }
-    else if (this.horizontalTranslate + this.dataBounds.getLeft() < this.totalRange.sX) {
+    else if (this.totalRange && (this.horizontalTranslate + this.dataBounds.getLeft() < this.totalRange.sX)) {
       this.horizontalTranslate = (this.totalRange.sX - this.dataBounds.getLeft());
     }
 
     //fix vertical translate going places
-    if (this.verticalTranslate + this.dataBounds.height / 2 > this.totalRange.eY) {
+    if (this.totalRange && (this.verticalTranslate + this.dataBounds.height / 2 > this.totalRange.eY)) {
       this.verticalTranslate = Math.max(this.totalRange.eY - this.dataBounds.height / 2, 0);
-    } else if (this.verticalTranslate - this.dataBounds.height / 2 < Math.min(this.totalRange.sY, -(this.dataBounds.height / 2))) {
+    } else if (this.totalRange &&  (this.verticalTranslate - this.dataBounds.height / 2 < Math.min(this.totalRange.sY, -(this.dataBounds.height / 2)))) {
       this.verticalTranslate = Math.min(this.totalRange.sY + this.dataBounds.height / 2, 0);
     }
 
