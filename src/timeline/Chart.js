@@ -742,6 +742,7 @@ anychart.timelineModule.Chart.prototype.handleMouseWheel_ = function(event) {
     }
     this.zoomTo(range['min'] + leftDelta, range['max'] + rightDelta);
   } else if (!event['shiftKey'] && this.interactivity().getOption('scrollOnMouseWheel')) {//scrolling
+    var preventDefault = true;
     var dx = event['deltaX'];
     var dy = event['deltaY'];
 
@@ -755,18 +756,29 @@ anychart.timelineModule.Chart.prototype.handleMouseWheel_ = function(event) {
     this.verticalTranslate -= dy;
 
     if (dx != 0) {
-      if (this.horizontalTranslate + this.dataBounds.getRight() > this.totalRange.eX)
+      if (this.horizontalTranslate + this.dataBounds.getRight() > this.totalRange.eX) {
         this.horizontalTranslate = (this.totalRange.eX - this.dataBounds.getRight());
-      else if (this.horizontalTranslate + this.dataBounds.getLeft() < this.totalRange.sX)
+        preventDefault = false;
+      }
+      else if (this.horizontalTranslate + this.dataBounds.getLeft() < this.totalRange.sX) {
         this.horizontalTranslate = (this.totalRange.sX - this.dataBounds.getLeft());
+        preventDefault = false;
+      }
     }
 
     if (dy != 0) {
-      if (this.verticalTranslate + this.dataBounds.height / 2 > this.totalRange.eY)
-        this.verticalTranslate = this.totalRange.eY - this.dataBounds.height / 2;
-      else if (this.verticalTranslate - this.dataBounds.height / 2 < Math.min(this.totalRange.sY, -(this.dataBounds.height / 2)))
+      if (this.verticalTranslate + this.dataBounds.height / 2 > Math.max(this.totalRange.eY, (this.dataBounds.height / 2))) {
+        this.verticalTranslate = Math.max(this.totalRange.eY, (this.dataBounds.height / 2)) - this.dataBounds.height / 2;
+        preventDefault = false;
+      }
+      else if (this.verticalTranslate - this.dataBounds.height / 2 < Math.min(this.totalRange.sY, -(this.dataBounds.height / 2))) {
         this.verticalTranslate = Math.min(this.totalRange.sY, -(this.dataBounds.height / 2)) + this.dataBounds.height / 2;
+        preventDefault = false;
+      }
     }
+
+    if (preventDefault)
+      event.preventDefault();
 
     matrix[4] = -this.horizontalTranslate;
     matrix[5] = this.verticalTranslate;
