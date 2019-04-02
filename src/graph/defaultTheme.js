@@ -16,7 +16,7 @@ goog.mixin(goog.global['anychart']['themes']['defaultTheme'], {
         'bottom' : 0
       }
     },
-
+    'padding': 10,
     'tooltip': {
       'displayMode': 'single',
       'positionMode': 'float',

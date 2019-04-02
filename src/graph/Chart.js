@@ -51,7 +51,7 @@ anychart.graphModule.Chart = function(opt_data) {
   this.groupsMap_ = {};
 
   /**
-   *
+   * Map where key is graph, value is array with ids of node of this graph.
    * @type {Object.<string, Array.<string>>}
    * @private
    * */
@@ -289,34 +289,16 @@ anychart.graphModule.Chart.prototype.createContextProvider = function(type, id) 
  * */
 anychart.graphModule.Chart.prototype.handleMouseClick = function(event) {
   if (this.selectedElement_) { //deselect previous selected element
-    switch (this.selectedElement_.type) {
-      case anychart.graphModule.Chart.Element.EDGE:
-        this.updateEdgeStateById(this.selectedElement_.id, anychart.SettingsState.NORMAL);
-        break;
-      case anychart.graphModule.Chart.Element.NODE:
-        this.updateNodeStateById(this.selectedElement_.id, anychart.SettingsState.NORMAL);
-        break;
-    }
+    this.updateElementStateById(this.selectedElement_.id, this.selectedElement_.type, anychart.SettingsState.NORMAL);
     this.selectedElement_ = null;
   }
   var tag = /**@type {anychart.graphModule.Chart.Tag}*/(event['domTarget'].tag);
   if (tag) {
-    switch (tag.type) {
-      case anychart.graphModule.Chart.Element.NODE:
-        this.updateNodeStateById(tag.id, anychart.SettingsState.SELECTED);
-        this.selectedElement_ = {
-          type: anychart.graphModule.Chart.Element.NODE,
-          id: tag.id
-        };
-        break;
-      case anychart.graphModule.Chart.Element.EDGE:
-        this.updateEdgeStateById(tag.id, anychart.SettingsState.SELECTED);
-        this.selectedElement_ = {
-          type: anychart.graphModule.Chart.Element.EDGE,
-          id: tag.id
-        };
-        break;
-    }
+    this.updateElementStateById(tag.id, tag.type, anychart.SettingsState.SELECTED);
+    this.selectedElement_ = {
+      type: tag.type,
+      id: tag.id
+    };
   }
 };
 
@@ -336,15 +318,12 @@ anychart.graphModule.Chart.prototype.handleMouseOver = function(event) {
     var id = tag.id;
     var state = tag.currentState;
     this.tooltip().hide();
+    if (state != anychart.SettingsState.SELECTED) {
+      this.updateElementStateById(id, type, anychart.SettingsState.HOVERED);
+    }
     if (type == anychart.graphModule.Chart.Element.NODE) {
-      if (state != anychart.SettingsState.SELECTED) {
-        this.updateNodeStateById(id, anychart.SettingsState.HOVERED);
-      }
       tooltip = this.nodes_.tooltip();
     } else if (type == anychart.graphModule.Chart.Element.EDGE) {
-      if (state != anychart.SettingsState.SELECTED) {
-        this.updateEdgeStateById(id, anychart.SettingsState.HOVERED);
-      }
       tooltip = this.edges_.tooltip();
     }
     tooltip.showFloat(event['clientX'], event['clientY'], this.createContextProvider(type, id));
@@ -383,14 +362,14 @@ anychart.graphModule.Chart.prototype.handleMouseMove = function(event) {
 /**
  * Scale up layer with elements.
  * @param {number} scale Scale factor.
- * @param {number} x
- * @param {number} y
+ * @param {number} x scaling point x.
+ * @param {number} y scaling point y.
  * @private
  * */
 anychart.graphModule.Chart.prototype.doLayerScale_ = function(scale, x, y) {
   this.transformationMatrix_.preScale(scale, scale);
   this.transformationMatrix_.preTranslate((x || 0) * (1 - scale), (y || 0) * (1 - scale));
-  this.updateTransformationMatrixForLayer_();
+  this.updateTransformationMatrixForLayer_(); //update it here instead drawContent method because that works smoother
 };
 
 
@@ -398,10 +377,11 @@ anychart.graphModule.Chart.prototype.doLayerScale_ = function(scale, x, y) {
  * Move layer with elements.
  * @param {number} dx
  * @param {number} dy
+ * @private
  * */
 anychart.graphModule.Chart.prototype.doLayerTranslate_ = function(dx, dy) {
   this.transformationMatrix_.translate(dx, dy);
-  this.updateTransformationMatrixForLayer_();
+  this.updateTransformationMatrixForLayer_(); //update it here instead drawContent method because that works smoother
 };
 
 
@@ -436,7 +416,7 @@ anychart.graphModule.Chart.prototype.handleMouseWheel_ = function(event) {
 
 
 /**
- * Update edges appearance
+ * Update edges appearance.
  * */
 anychart.graphModule.Chart.prototype.updateEdgesAppearance = function() {
   for (var edge in this.getEdgesMap()) {
@@ -531,28 +511,17 @@ anychart.graphModule.Chart.prototype.fitNodesCoordinatesIntoContentBounds = func
     x *= scaleFactor;
     y *= scaleFactor;
     //calculate offset from center of bounds.
-    if (x < centerX) {
-      offsetX += centerX - x;
-    } else {
-      offsetX -= x - centerX;
-    }
-
-    if (y < centerY) {
-      offsetY += centerY - y;
-    } else {
-      offsetY -= y - centerY;
-    }
     nodes[i].position.x = x;
     nodes[i].position.y = y;
   }
-  //average offset
-  offsetX /= nodes.length;
-  offsetY /= nodes.length;
-
-  //push all nodes to center.
+  mostBottom *= scaleFactor;
+  mostRight *= scaleFactor;
+  offsetX = mostRight / 2;
+  offsetY = mostBottom / 2;
+  //push all nodes close to center.
   for (i = 0; i < length; i++) {
-    nodes[i].position.x += offsetX;
-    nodes[i].position.y += offsetY;
+    nodes[i].position.x += centerX - offsetX;
+    nodes[i].position.y += centerY - offsetY;
   }
 };
 
@@ -579,7 +548,8 @@ anychart.graphModule.Chart.prototype.getTransformationMatrix = function() {
 
 
 /**
- * Return absolute x value
+ * Return absolute x value.
+ * Translate x coordinate, depend on scale and layer translate.
  * @param {number} x
  * @return {number}
  * */
@@ -592,7 +562,8 @@ anychart.graphModule.Chart.prototype.getXWithTranslate = function(x) {
 
 
 /**
- * Return absolute y value
+ * Return absolute y value.
+ * Translate y coordinate, depend on scale and layer translate.
  * @param {number} y
  * @return {number}
  * */
@@ -608,16 +579,8 @@ anychart.graphModule.Chart.prototype.getYWithTranslate = function(y) {
 anychart.graphModule.Chart.prototype.handleMouseOut = function(event) {
   var domTarget = event['domTarget'];
   var tag = /**@type {anychart.graphModule.Chart.Tag}*/(domTarget.tag);
-  if (tag) {
-    if (tag.type == anychart.graphModule.Chart.Element.NODE) {
-      if (tag.currentState != anychart.SettingsState.SELECTED) {
-        this.updateNodeStateById(tag.id, anychart.SettingsState.NORMAL);
-      }
-    } else if (tag.type == anychart.graphModule.Chart.Element.EDGE) {
-      if (tag.currentState != anychart.SettingsState.SELECTED) {
-        this.updateEdgeStateById(tag.id, anychart.SettingsState.NORMAL);
-      }
-    }
+  if (tag && tag.currentState != anychart.SettingsState.SELECTED) {
+    this.updateElementStateById(tag.id, tag.type, anychart.SettingsState.NORMAL);
   }
 };
 
@@ -670,114 +633,139 @@ anychart.graphModule.Chart.prototype.updateEdgeStateById = function(edgeId, stat
 };
 
 
-//endregion
-//region Data manipulation
 /**
- * Crete node object from data.
- * @param {number} i Row number.
- * @private
+ * Update element by tag.
+ * @param {string} id
+ * @param {anychart.graphModule.Chart.Element} type
+ * @param {anychart.SettingsState} state
  * */
-anychart.graphModule.Chart.prototype.proceedNode_ = function(i) {
-  var nodes = this.data_['nodes'];
-  var id = nodes.get(i, 'id');
-  if (goog.isDefAndNotNull(id)) {
-    id = String(id);
-    if (!this.getNodeById(id)) {
-      /**
-       * @type {anychart.graphModule.Chart.Node}
-       * */
-      var nodeObj;
-      nodeObj = this.nodesMap_[id] = {};
-      nodeObj.id = id;
-      nodeObj.dataRow = i;
-      nodeObj.connectedEdges = [];
-      nodeObj.siblings = [];
-      nodeObj.currentState = anychart.SettingsState.NORMAL;
-      nodeObj.position = {
-        x: nodes.get(i, 'x'),
-        y: nodes.get(i, 'y')
-      };
-
-      var groupId = nodes.get(i, 'group');
-      if (goog.isDefAndNotNull(groupId)) {
-        if (!this.groupsMap_[groupId]) {
-          this.groupsMap_[groupId] = null;
-        }
-        nodeObj.groupId = groupId;
-      }
-    } else {
-      anychart.core.reporting.warning(anychart.enums.WarningCode.GRAPH_NODE_ALREADY_EXIST, null, [id], true);
-    }
-  } else {
-    anychart.core.reporting.warning(anychart.enums.WarningCode.GRAPH_NO_ID, null, [], true);
+anychart.graphModule.Chart.prototype.updateElementStateById = function(id, type, state) {
+  switch (type) {
+    case anychart.graphModule.Chart.Element.EDGE:
+      this.updateEdgeStateById(id, state);
+      break;
+    case anychart.graphModule.Chart.Element.NODE:
+      this.updateNodeStateById(id, state);
+      break;
   }
 };
 
 
+//endregion
+//region Data manipulation
 /**
- * Create edge object from dataRow.
- * @param {number} i Row number.
+ * Create object for each node.
  * @private
  * */
-anychart.graphModule.Chart.prototype.proceedEdge_ = function(i) {
-  var edges = this.data_['edges'];
-  var fromId = edges.get(i, 'from');
-  var toId = edges.get(i, 'to');
-  var edgeId = edges.get(i, 'id');
+anychart.graphModule.Chart.prototype.proceedNodes_ = function() {
+  var iterator = this.data_['nodes'].getIterator();
+  iterator.reset();
+  while (iterator.advance()) {
+    var id = iterator.get('id');
+    if (goog.isDefAndNotNull(id)) {
+      id = String(id);
+      if (!this.getNodeById(id)) {
+        /**
+         * @type {anychart.graphModule.Chart.Node}
+         * */
+        var nodeObj;
+        nodeObj = this.nodesMap_[id] = {};
+        nodeObj.id = id;
+        nodeObj.dataRow = iterator.getIndex();
+        nodeObj.connectedEdges = [];
+        nodeObj.siblings = [];
+        nodeObj.currentState = anychart.SettingsState.NORMAL;
+        nodeObj.position = {
+          x: iterator.get('x'),
+          y: iterator.get('y')
+        };
 
-  if (goog.isDefAndNotNull(edgeId)) {
-    edgeId = String(edgeId);
-  } else {
-    edgeId = anychart.graphModule.Chart.Element.EDGE + '_' + i;
-  }
-
-  if (fromId != toId) {
-    var from = this.getNodeById(fromId);
-    var to = this.getNodeById(toId);
-
-    if (from && to) {
-      var edge = {};
-
-      edge.id = edgeId;
-      edge.from = from.id;
-      edge.to = to.id;
-      edge.dataRow = i;
-      edge.currentState = anychart.SettingsState.NORMAL;
-
-      var sibling;
-      //check if two node already connected
-      for (i = 0; i < from.siblings.length; i++) {
-        sibling = from.siblings[i];
-        if (sibling == from.id || sibling == to.id) {
-          anychart.core.reporting.warning(anychart.enums.WarningCode.GRAPH_NODES_ALREADY_CONNECTED, null, [from.id, to.id], true);
-          return;
+        var groupId = iterator.get('group');
+        if (goog.isDefAndNotNull(groupId)) {
+          if (!this.groupsMap_[groupId]) {
+            this.groupsMap_[groupId] = null;
+          }
+          nodeObj.groupId = groupId;
         }
+      } else {
+        anychart.core.reporting.warning(anychart.enums.WarningCode.GRAPH_NODE_ALREADY_EXIST, null, [id], true);
       }
-      //check if two node already connected
-      for (i = 0; i < to.siblings.length; i++) {
-        sibling = to.siblings[i];
-        if (sibling == from.id || sibling == to.id) {
-          anychart.core.reporting.warning(anychart.enums.WarningCode.GRAPH_NODES_ALREADY_CONNECTED, null, [to.id, from.id], true);
-          return;
-        }
-      }
-      from.connectedEdges.push(edge.id);
-      to.connectedEdges.push(edge.id);
-      from.siblings.push(to.id);
-      to.siblings.push(from.id);
-
-      this.edgesMap_[edgeId] = edge;
     } else {
-      if (!from) {
-        anychart.core.reporting.warning(anychart.enums.WarningCode.GRAPH_NO_NODE_TO_CONNECT_EDGE, null, [edgeId, fromId], true);
-      }
-      if (!to) {
-        anychart.core.reporting.warning(anychart.enums.WarningCode.GRAPH_NO_NODE_TO_CONNECT_EDGE, null, [edgeId, toId], true);
-      }
+      anychart.core.reporting.warning(anychart.enums.WarningCode.GRAPH_NO_ID, null, [], true);
     }
-  } else {
-    anychart.core.reporting.warning(anychart.enums.WarningCode.GRAPH_CONNECT_SAME_NODE, null, [edgeId, toId], true);
   }
+  iterator.reset();
+};
+
+
+/**
+ * Create object for each edge.
+ * @private
+ * */
+anychart.graphModule.Chart.prototype.proceedEdges_ = function() {
+  var iterator = this.data_['edges'].getIterator();
+  iterator.reset();
+  var i = 0;
+  while (iterator.advance()) {
+    var fromId = iterator.get('from');
+    var toId = iterator.get('to');
+    var edgeId = iterator.get('id');
+
+    if (goog.isDefAndNotNull(edgeId)) {
+      edgeId = String(edgeId);
+    } else {
+      edgeId = anychart.graphModule.Chart.Element.EDGE + '_' + iterator.getIndex();
+    }
+
+    if (fromId != toId) {
+      var from = this.getNodeById(fromId);
+      var to = this.getNodeById(toId);
+
+      if (from && to) {
+        var edge = {};
+
+        edge.id = edgeId;
+        edge.from = from.id;
+        edge.to = to.id;
+        edge.dataRow = iterator.getIndex();
+        edge.currentState = anychart.SettingsState.NORMAL;
+
+        var sibling;
+        //check if two node already connected
+        for (i = 0; i < from.siblings.length; i++) {
+          sibling = from.siblings[i];
+          if (sibling == from.id || sibling == to.id) {
+            anychart.core.reporting.warning(anychart.enums.WarningCode.GRAPH_NODES_ALREADY_CONNECTED, null, [from.id, to.id], true);
+            return;
+          }
+        }
+        //check if two node already connected
+        for (i = 0; i < to.siblings.length; i++) {
+          sibling = to.siblings[i];
+          if (sibling == from.id || sibling == to.id) {
+            anychart.core.reporting.warning(anychart.enums.WarningCode.GRAPH_NODES_ALREADY_CONNECTED, null, [to.id, from.id], true);
+            return;
+          }
+        }
+        from.connectedEdges.push(edge.id);
+        to.connectedEdges.push(edge.id);
+        from.siblings.push(to.id);
+        to.siblings.push(from.id);
+
+        this.edgesMap_[edgeId] = edge;
+      } else {
+        if (!from) {
+          anychart.core.reporting.warning(anychart.enums.WarningCode.GRAPH_NO_NODE_TO_CONNECT_EDGE, null, [edgeId, fromId], true);
+        }
+        if (!to) {
+          anychart.core.reporting.warning(anychart.enums.WarningCode.GRAPH_NO_NODE_TO_CONNECT_EDGE, null, [edgeId, toId], true);
+        }
+      }
+    } else {
+      anychart.core.reporting.warning(anychart.enums.WarningCode.GRAPH_CONNECT_SAME_NODE, null, [edgeId, toId], true);
+    }
+  }
+  iterator.reset();
 };
 
 
@@ -824,22 +812,13 @@ anychart.graphModule.Chart.prototype.setupGroupsForChart_ = function() {
 anychart.graphModule.Chart.prototype.prepareNewData_ = function() {
   var edges = this.data_['edges'];
   var nodes = this.data_['nodes'];
-  var dataRow;
-  var length;
-  var i;
 
-  for (i = 0, length = nodes.getRowsCount(); i < length; i++) {
-    dataRow = /**@type {Object}*/(nodes.getRow(i));
-    if (dataRow) {
-      this.proceedNode_(i);
-    }
+  if (nodes.getRowsCount() > 0) {
+    this.proceedNodes_();
   }
 
-  for (i = 0, length = edges.getRowsCount(); i < length; i++) {
-    dataRow = /**@type {Object}*/(edges.getRow(i));
-    if (dataRow) {
-      this.proceedEdge_(i);
-    }
+  if (edges.getRowsCount() > 0) {
+    this.proceedEdges_();
   }
 };
 
@@ -880,11 +859,9 @@ anychart.graphModule.Chart.prototype.dropCurrentData_ = function() {
  * @private
  * */
 anychart.graphModule.Chart.prototype.onNodeSignal_ = function(event) {
-  // debugger
-  var states = [];
-  if (!event.hasSignal(anychart.Signal.MEASURE_COLLECT | anychart.Signal.MEASURE_BOUNDS))
-    states.push(anychart.enums.State.NODES);
+  if (event.hasSignal(anychart.Signal.MEASURE_COLLECT | anychart.Signal.MEASURE_BOUNDS)) return;
 
+  var states = [anychart.enums.State.NODES];
   if (event.hasSignal(anychart.Signal.NEEDS_REDRAW |
     anychart.Signal.BOUNDS_CHANGED |
     anychart.Signal.NEEDS_REAPPLICATION |
@@ -911,9 +888,9 @@ anychart.graphModule.Chart.prototype.onNodeSignal_ = function(event) {
  * @private
  * */
 anychart.graphModule.Chart.prototype.onEdgeSignal_ = function(event) {
-  var states = [];
-  if (!event.hasSignal(anychart.Signal.MEASURE_COLLECT | anychart.Signal.MEASURE_BOUNDS))
-    states.push(anychart.enums.State.EDGES);
+  if (event.hasSignal(anychart.Signal.MEASURE_COLLECT | anychart.Signal.MEASURE_BOUNDS)) return;
+
+  var states = [anychart.enums.State.EDGES];
   if (event.hasSignal(anychart.Signal.NEEDS_REDRAW |
     anychart.Signal.BOUNDS_CHANGED |
     anychart.Signal.NEEDS_REAPPLICATION |

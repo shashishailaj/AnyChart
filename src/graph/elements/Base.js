@@ -337,7 +337,7 @@ anychart.graphModule.elements.Base.prototype.setupByJSON = function(config, opt_
   if ('tooltip' in config) {
     this.tooltip().setup(config['tooltip']);
   }
-
+  this.normal_.setup(config);
   this.normal_.setup(config['normal']);
   this.hovered_.setup(config['hovered']);
   this.selected_.setup(config['selected']);
