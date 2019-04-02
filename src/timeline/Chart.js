@@ -546,7 +546,7 @@ anychart.timelineModule.Chart.prototype.calculate = function() {
       Note! Per point zIndex doesn't work cross series. We have to set zIndexes by series first
       and then inside series we can use per point zIndex.
        */
-      if (range && !rangeSeries.includes(range.series)) {
+      if (range && rangeSeries.indexOf(range.series) != -1) {
         range.series.zIndex(anychart.timelineModule.Chart.RANGE_BASE_Z_INDEX - rangeSeries.length / 100);
         rangeSeries.push(range.series);
       }
@@ -581,7 +581,7 @@ anychart.timelineModule.Chart.prototype.calculate = function() {
       Note! Per point zIndex doesn't work cross series. We have to set zIndexes by series first
       and then inside series we can use per point zIndex.
        */
-      if (range && !rangeSeries.includes(range.series)) {
+      if (range && rangeSeries.indexOf(range.series) != -1) {
         range.series.zIndex(anychart.timelineModule.Chart.RANGE_BASE_Z_INDEX - rangeSeries.length / 100);
         rangeSeries.push(range.series);
       }
