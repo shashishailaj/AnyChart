@@ -278,6 +278,31 @@ anychart.timelineModule.Chart.prototype.markerInvalidated_ = function(event) {
 };
 
 
+/**
+ * Returns instance of today marker. Today marker is line marker with current date, for now.
+ * @param {{Object|boolean|null}=} opt_value
+ */
+anychart.timelineModule.Chart.prototype.todayMarker = function(opt_value) {
+  if (!this.todayMarker_) {
+    this.todayMarker_ = this.createLineMarkerInstance();
+    var extendedThemes = this.createExtendedThemes(this.getThemes(), 'defaultLineMarkerSettings');
+    this.todayMarker_.addThemes(extendedThemes);
+    this.todayMarker_.setChart(this);
+    this.todayMarker_.setDefaultLayout(anychart.enums.Layout.VERTICAL);
+    this.todayMarker_.listenSignals(this.markerInvalidated_, this);
+    var curDate = new Date();
+    this.todayMarker_['value'](Date.UTC(curDate.getUTCFullYear(), curDate.getUTCMonth(), curDate.getUTCDay()));
+    this.invalidate(anychart.ConsistencyState.AXES_CHART_AXES_MARKERS, anychart.Signal.NEEDS_REDRAW);
+  }
+
+  if (goog.isDef(opt_value)) {
+    this.todayMarker_.setup(opt_value);
+    return this;
+  }
+  return this.todayMarker_;
+};
+
+
 //endregion
 //region -- Chart Infrastructure Overrides.
 /**
@@ -392,6 +417,12 @@ anychart.timelineModule.Chart.prototype.calculate = function() {
       //endregion
 
 
+    }
+
+    if (this.todayMarker_) {
+      var todayDate = this.todayMarker_.getOption('value');
+      dateMin = Math.min(dateMin, todayDate);
+      dateMax = Math.max(dateMax, todayDate);
     }
 
     if (dateMin == dateMax) {
@@ -513,7 +544,7 @@ anychart.timelineModule.Chart.prototype.calculate = function() {
     goog.array.sort(intersectingBoundsRangeUp, sortCallback);
     goog.array.sort(intersectingBoundsRangeDown, sortCallback);
 
-    var eventSortCallback = function (a, b) {
+    var eventSortCallback = function(a, b) {
       var diff = a.sX - b.sX;
       if (diff == 0) {
         return a.eX - b.eX;
@@ -621,7 +652,7 @@ anychart.timelineModule.Chart.prototype.calculate = function() {
 
 
 /**
- * Widens total range with passed range.
+ * Widens total range of chart with passed range.
  * @param {anychart.timelineModule.Intersections.Range} range
  * @private
  */
@@ -736,6 +767,16 @@ anychart.timelineModule.Chart.prototype.drawContent = function(bounds) {
         axesMarker.draw();
         axesMarker.resumeSignalsDispatching(false);
       }
+    }
+
+    if (this.todayMarker_) {
+      this.todayMarker_.suspendSignalsDispatching();
+      if (!this.todayMarker_.scale())
+        this.todayMarker_.autoScale(this.xScale_);
+      this.todayMarker_.parentBounds(this.dataBounds);
+      this.todayMarker_.container(this.timelineLayer);
+      this.todayMarker_.draw();
+      this.todayMarker_.resumeSignalsDispatching(false);
     }
     this.markConsistent(anychart.ConsistencyState.AXES_CHART_AXES_MARKERS);
   }
@@ -1232,6 +1273,7 @@ anychart.timelineModule.Chart.prototype.disposeInternal = function() {
   proto['lineMarker'] = proto.lineMarker;
   proto['textMarker'] = proto.textMarker;
   proto['rangeMarker'] = proto.rangeMarker;
+  proto['todayMarker'] = proto.todayMarker;
   proto['scroller'] = proto.scroller;
 })();
 //exports
