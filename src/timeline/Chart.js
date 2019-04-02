@@ -77,6 +77,13 @@ anychart.timelineModule.Chart = function() {
    * @type {number}
    */
   this.horizontalTranslate = 0;
+
+  /**
+   * Automagically translate chart so, that there are no white spaces.
+   * Works only if one side has free space and other don't.
+   * @type {boolean}
+   */
+  this.autoChartTranslating = true;
 };
 goog.inherits(anychart.timelineModule.Chart, anychart.core.ChartWithSeries);
 
@@ -594,6 +601,18 @@ anychart.timelineModule.Chart.prototype.calculate = function() {
       this.enlargeTotalRange_({sX: range.sX, eX: range.eX, sY: -range.eY, eY: -range.sY});
     }
     //endregion
+
+    if (this.autoChartTranslating) {
+      //fixing white space under the axis
+      if (this.totalRange.sY > -(this.dataBounds.height / 2) && this.totalRange.eY > (this.dataBounds.height / 2)) {
+        this.verticalTranslate = this.totalRange.sY + this.dataBounds.height / 2;
+        this.invalidateState(anychart.enums.Store.TIMELINE_CHART, anychart.timelineModule.Chart.States.SCROLL, anychart.Signal.NEEDS_REDRAW);
+      } else if (this.totalRange.eY < (this.dataBounds.height / 2) && this.totalRange.sY < -(this.dataBounds.height / 2)) {//white space over the axis
+        this.verticalTranslate = this.totalRange.eY - this.dataBounds.height / 2;
+        this.invalidateState(anychart.enums.Store.TIMELINE_CHART, anychart.timelineModule.Chart.States.SCROLL, anychart.Signal.NEEDS_REDRAW);
+      }
+    }
+
   }
 };
 
@@ -634,6 +653,10 @@ anychart.timelineModule.Chart.prototype.drawContent = function(bounds) {
   this.calculate();
 
   if (this.hasStateInvalidation(anychart.enums.Store.TIMELINE_CHART, anychart.timelineModule.Chart.States.SCROLL)) {
+    var matrix = this.timelineLayer.getTransformationMatrix();
+    matrix[4] = -this.horizontalTranslate;
+    matrix[5] = this.verticalTranslate;
+    this.timelineLayer.setTransformationMatrix.apply(this.timelineLayer, matrix);
     // this.timelineLayer.setTransformationMatrix.apply(this.timelineLayer, this.baseTransform);// cleaning up transformations
     //
     // if (this.scroll_ < 0) {
@@ -717,6 +740,15 @@ anychart.timelineModule.Chart.prototype.handleMouseWheel_ = function(event) {
   var totalRange = this.scale().getTotalRange();
   var ratio = 0.1;//how much of current range we want to cut after zoom
   var matrix;
+
+  var dx = event['deltaX'];
+  var dy = event['deltaY'];
+
+  if (goog.userAgent.WINDOWS) {
+    dx *= 15;
+    dy *= 15;
+  }
+
   if (event['shiftKey'] && this.interactivity().getOption('zoomOnMouseWheel')) {//zooming
     var zoomIn = event['deltaY'] < 0;
     if ((range['min']) <= totalRange['min'] && (range['max']) >= totalRange['max'] && !zoomIn)
@@ -724,32 +756,19 @@ anychart.timelineModule.Chart.prototype.handleMouseWheel_ = function(event) {
 
     var cutOutPart = (range['max'] - range['min']) * ratio;
     var mouseX = event['clientX'];
-    mouseX -= this.dataBounds.left;
-    mouseX -= this.horizontalTranslate;
-    var currentDate = this.scale().inverseTransform(mouseX / this.dataBounds.width);
+    var currentDate = this.scale().inverseTransform((mouseX + this.horizontalTranslate) / this.dataBounds.width);
+    var leftDate = this.scale().inverseTransform(this.horizontalTranslate / this.dataBounds.width);
+    var rightDate = this.scale().inverseTransform((this.horizontalTranslate + this.dataBounds.width) / this.dataBounds.width);
 
-    var leftDelta, rightDelta;
-    if (currentDate - range['min'] !== range['max'] - currentDate) {
-      leftDelta = cutOutPart * ((currentDate - range['min']) / (range['max'] - range['min']));
-      rightDelta = cutOutPart - leftDelta;
-    } else {
-      leftDelta = rightDelta = cutOutPart / 2;
-    }
-    rightDelta = -rightDelta;
-    if (event['deltaY'] > 0) {
-      leftDelta = -leftDelta;
-      rightDelta = -rightDelta;
-    }
-    this.zoomTo(range['min'] + leftDelta, range['max'] + rightDelta);
+    this.suspendSignalsDispatching();
+    this.zoomTo(currentDate - ((currentDate - leftDate) * 0.9),
+        currentDate + ((rightDate - currentDate) * 0.9));
+    this.horizontalTranslate = 0;
+    this.invalidateState(anychart.enums.Store.TIMELINE_CHART, anychart.timelineModule.Chart.States.SCROLL, anychart.Signal.NEEDS_REDRAW);
+    this.resumeSignalsDispatching(true);
   } else if (!event['shiftKey'] && this.interactivity().getOption('scrollOnMouseWheel')) {//scrolling
+    this.autoChartTranslating = false;
     var preventDefault = true;
-    var dx = event['deltaX'];
-    var dy = event['deltaY'];
-
-    if (goog.userAgent.WINDOWS) {
-      dx *= 15;
-      dy *= 15;
-    }
 
     matrix = this.timelineLayer.getTransformationMatrix();
     this.horizontalTranslate += dx;
@@ -777,13 +796,11 @@ anychart.timelineModule.Chart.prototype.handleMouseWheel_ = function(event) {
       }
     }
 
-    if (preventDefault)
+    if (preventDefault) {
       event.preventDefault();
+    }
 
-    matrix[4] = -this.horizontalTranslate;
-    matrix[5] = this.verticalTranslate;
-
-    this.timelineLayer.setTransformationMatrix.apply(this.timelineLayer, matrix);
+    this.invalidateState(anychart.enums.Store.TIMELINE_CHART, anychart.timelineModule.Chart.States.SCROLL, anychart.Signal.NEEDS_REDRAW);
   }
 };
 
