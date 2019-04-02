@@ -2563,7 +2563,7 @@ anychart.core.series.Base.prototype.setupLabelDrawingPlan = function(label,
  * Applies additional settings to the label, if needed.
  * Only used in Timeline chart.
  * @param {anychart.core.ui.LabelsFactory.Label} label
- * @param {number} index
+ * @param {number|undefined} index
  */
 anychart.core.series.Base.prototype.applyAdditionalLabelSettings = goog.nullFunction;
 
