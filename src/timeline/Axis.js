@@ -304,7 +304,7 @@ anychart.timelineModule.Axis.prototype.getTicks = function() {
   if ((this.currentCount != zoomLevels[i].count || this.currentUnit != zoomLevels[i].unit)) {
     this.currentCount = zoomLevels[i].count;
     this.currentUnit = zoomLevels[i].unit;
-    this.ticksArray = this.scale().getTicks(void 0, void 0, zoomLevels[i].unit, zoomLevels[i].count, totalRange);
+    this.ticksArray = this.scale().getTicks(void 0, void 0, zoomLevels[i].unit, zoomLevels[i].count/*, totalRange*/);
   }
 
   return this.ticksArray;

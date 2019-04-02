@@ -812,7 +812,6 @@ anychart.timelineModule.Chart.prototype.handleMouseWheel_ = function(event) {
     if ((range['min']) <= totalRange['min'] && (range['max']) >= totalRange['max'] && !zoomIn)
       return;
 
-    var cutOutPart = (range['max'] - range['min']) * ratio;
     var mouseX = event['clientX'];
     var currentDate = this.scale().inverseTransform((mouseX + this.horizontalTranslate) / this.dataBounds.width);
     var leftDate = this.scale().inverseTransform(this.horizontalTranslate / this.dataBounds.width);
@@ -858,7 +857,21 @@ anychart.timelineModule.Chart.prototype.handleMouseWheel_ = function(event) {
       event.preventDefault();
     }
 
+    var mouseX = event['clientX'];
+    var leftDate = this.scale().inverseTransform(this.horizontalTranslate / this.dataBounds.width);
+    var rightDate = this.scale().inverseTransform((this.horizontalTranslate + this.dataBounds.width) / this.dataBounds.width);
+
+    //this is hack to set scale up to current transform, make scroller move and the most important - redraw axis
+    this.suspendSignalsDispatching();
+    // this.scale().suspendSignalsDispatching();
+    //
+    // this.zoomTo(leftDate, rightDate);
     this.invalidateState(anychart.enums.Store.TIMELINE_CHART, anychart.timelineModule.Chart.States.SCROLL, anychart.Signal.NEEDS_REDRAW);
+    // this.axis_.invalidate(anychart.ConsistencyState.APPEARANCE | anychart.ConsistencyState.AXIS_TICKS | anychart.ConsistencyState.AXIS_LABELS);
+    // this.invalidate(anychart.ConsistencyState.AXES_CHART_AXES, anychart.Signal.NEEDS_REDRAW);
+    //
+    // this.scale().resumeSignalsDispatching(false);
+    this.resumeSignalsDispatching(true);
   }
 };
 
