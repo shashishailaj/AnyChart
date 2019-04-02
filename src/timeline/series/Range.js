@@ -144,7 +144,10 @@ anychart.timelineModule.series.Range.prototype.getContextProviderValues = functi
 anychart.timelineModule.series.Range.prototype.applyAdditionalLabelSettings = function(label, index) {
   var it = this.getDetachedIterator();
   it.select(index);
-  label.width(/** @type {number} */(it.meta('endX') - it.meta('startX')));
-  label.height(/** @type {number} */(it.meta('height')));
+  var startX = /** @type {number} */(it.meta('startX'));
+  var endX = /** @type {number} */(it.meta('endX'));
+  var height = /** @type {number} */(it.meta('height'));
+  label.width(endX - startX);
+  label.height(height);
 };
 //endregion
