@@ -1224,6 +1224,7 @@ anychart.timelineModule.Chart.prototype.disposeInternal = function() {
   proto['fit'] = proto.fit;
   proto['zoomTo'] = proto.zoomTo;
   proto['getSeriesAt'] = proto.getSeriesAt;
+  proto['removeAllSeries'] = proto.removeAllSeries;
   proto['scroll'] = proto.scroll;
   proto['lineMarker'] = proto.lineMarker;
   proto['textMarker'] = proto.textMarker;
