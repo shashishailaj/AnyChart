@@ -617,6 +617,11 @@ anychart.timelineModule.Chart.prototype.calculate = function() {
 };
 
 
+/**
+ * Widens total range with passed range.
+ * @param {anychart.timelineModule.Intersections.Range} range
+ * @private
+ */
 anychart.timelineModule.Chart.prototype.enlargeTotalRange_ = function(range) {
   this.totalRange.sX = Math.min(this.totalRange.sX, range.sX);
   this.totalRange.eX = Math.max(this.totalRange.eX, range.eX);
