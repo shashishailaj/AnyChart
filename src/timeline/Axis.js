@@ -308,7 +308,6 @@ anychart.timelineModule.Axis.prototype.getTicks = function() {
     this.ticksArray = this.scale().getTicks(void 0, void 0, zoomLevels[i].unit, zoomLevels[i].count, totalRange);
   }
 
-  console.log('Size is: ', this.ticksArray.length);
   return this.ticksArray;
 };
 
