@@ -300,7 +300,6 @@ anychart.timelineModule.Axis.prototype.getTicks = function() {
 
   var unit = zoomLevels[i].unit;
   var count = zoomLevels[i].count;
-  var forbiddenUnits = [anychart.enums.Interval.MILLISECOND, anychart.enums.Interval.SECOND, anychart.enums.Interval.MINUTE, anychart.enums.Interval.HOUR];
 
   if ((this.currentCount != zoomLevels[i].count || this.currentUnit != zoomLevels[i].unit)) {
     this.currentCount = zoomLevels[i].count;
