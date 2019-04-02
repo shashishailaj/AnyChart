@@ -308,6 +308,8 @@ anychart.core.reporting.getWarningDescription_ = function(code, opt_arguments) {
       return 'No group with id "' + opt_arguments[0] + '". At first set groups for nodes then use groups method.';
     case anychart.enums.WarningCode.GRAPH_DATA_HAS_NO_FIELD:
       return 'Data must contain "nodes" and "edges" fields';
+    case anychart.enums.WarningCode.GRAPH_NO_ID:
+      return 'Nodes data must have "id" field';
     default:
       return 'Unknown error. Please, contact support team at http://support.anychart.com/.\n' +
           'We will be very grateful for your report!';

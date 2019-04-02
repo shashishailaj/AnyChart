@@ -10,6 +10,7 @@ goog.require('anychart.graphModule.elements.Interactivity');
 goog.require('anychart.graphModule.elements.Layout');
 goog.require('anychart.graphModule.elements.Node');
 goog.require('goog.events.MouseWheelHandler');
+goog.require('goog.math.AffineTransform');
 goog.require('goog.math.Coordinate');
 
 
@@ -105,14 +106,20 @@ anychart.graphModule.Chart = function(opt_data) {
    * */
   this.dragger_ = null;
 
+  /**
+   * Data for chart.
+   * @type {Object}
+   * @private
+   * */
   this.data_ = {}; //todo typedef
 
   /**
-   *
+   * Transformation matrix for main layer.
+   * @type {goog.math.AffineTransform}
+   * @private
    * */
-  this.transformationMatrix = [1, 0, 0, 1, 0, 0];
-  this.zoom_ = [1];
-  this.move_ = [0, 0];
+  this.transformationMatrix_ = new goog.math.AffineTransform();
+
   this.rotateDegree_ = 0;
   this.chartRotation_ = 0;
   this.data(opt_data);
@@ -230,7 +237,7 @@ anychart.graphModule.Chart.prototype.getType = function() {
 
 /** @inheritDoc */
 anychart.graphModule.Chart.prototype.isNoData = function() {
-  return !this.data_['nodes'].getRowsCount();
+  return !this.data_['nodes'] || !this.data_['nodes'].getRowsCount();
 };
 
 
@@ -381,8 +388,9 @@ anychart.graphModule.Chart.prototype.handleMouseMove = function(event) {
  * @private
  * */
 anychart.graphModule.Chart.prototype.doLayerScale_ = function(scale, x, y) {
-  this.mainLayer_.scale(scale, scale, x, y);
-  this.mainLayer_.scale(scale, scale, x, y);
+  this.transformationMatrix_.preScale(scale, scale);
+  this.transformationMatrix_.preTranslate((x || 0) * (1 - scale), (y || 0) * (1 - scale));
+  this.updateTransformationMatrixForLayer_();
 };
 
 
@@ -391,8 +399,9 @@ anychart.graphModule.Chart.prototype.doLayerScale_ = function(scale, x, y) {
  * @param {number} dx
  * @param {number} dy
  * */
-anychart.graphModule.Chart.prototype.doLayerTranslate = function(dx, dy) {
-  this.mainLayer_.translate(dx, dy);
+anychart.graphModule.Chart.prototype.doLayerTranslate_ = function(dx, dy) {
+  this.transformationMatrix_.translate(dx, dy);
+  this.updateTransformationMatrixForLayer_();
 };
 
 
@@ -418,7 +427,7 @@ anychart.graphModule.Chart.prototype.handleMouseWheel_ = function(event) {
       }
 
       if (interactivity.getOption('scrollOnMouseWheel')) {
-        this.doLayerTranslate(0, dy);
+        this.doLayerTranslate_(0, dy);
       }
       event.preventDefault();
     }
@@ -561,11 +570,11 @@ anychart.graphModule.Chart.prototype.updtateNodePosition = function(node, dx, dy
 
 
 /**
- * Return transformation matrix of layer with elements.
- * @return {Array.<number>}
+ * Return transformation matrix.
+ * @return {goog.math.AffineTransform}
  * */
 anychart.graphModule.Chart.prototype.getTransformationMatrix = function() {
-  return this.mainLayer_.getTransformationMatrix();
+  return this.transformationMatrix_;
 };
 
 
@@ -576,8 +585,8 @@ anychart.graphModule.Chart.prototype.getTransformationMatrix = function() {
  * */
 anychart.graphModule.Chart.prototype.getXWithTranslate = function(x) {
   var matrix = this.getTransformationMatrix();
-  var scale = matrix[0];
-  var offsetX = matrix[4];
+  var scale = matrix.m00_;
+  var offsetX = matrix.m10_;
   return (-offsetX * scale + x / scale);
 };
 
@@ -589,8 +598,8 @@ anychart.graphModule.Chart.prototype.getXWithTranslate = function(x) {
  * */
 anychart.graphModule.Chart.prototype.getYWithTranslate = function(y) {
   var matrix = this.getTransformationMatrix();
-  var scale = matrix[0];
-  var offsetY = matrix[5];
+  var scale = matrix.m00_;
+  var offsetY = matrix.m12_;
   return (-offsetY * scale + y / scale);
 };
 
@@ -700,7 +709,7 @@ anychart.graphModule.Chart.prototype.proceedNode_ = function(i) {
       anychart.core.reporting.warning(anychart.enums.WarningCode.GRAPH_NODE_ALREADY_EXIST, null, [id], true);
     }
   } else {
-
+    anychart.core.reporting.warning(anychart.enums.WarningCode.GRAPH_NO_ID, null, [], true);
   }
 };
 
@@ -871,6 +880,7 @@ anychart.graphModule.Chart.prototype.dropCurrentData_ = function() {
  * @private
  * */
 anychart.graphModule.Chart.prototype.onNodeSignal_ = function(event) {
+  // debugger
   var states = [];
   if (!event.hasSignal(anychart.Signal.MEASURE_COLLECT | anychart.Signal.MEASURE_BOUNDS))
     states.push(anychart.enums.State.NODES);
@@ -1327,7 +1337,7 @@ anychart.graphModule.Chart.prototype.initDragger_ = function(event) {
   }, false, this);
   this.dragger_.listen(goog.fx.Dragger.EventType.DRAG, function(e) {
     if (interactivityEnabled) {
-      var scale = this.getTransformationMatrix()[0];
+      var scale = this.getTransformationMatrix().m00_;
 
       var x = e.clientX;
       var y = e.clientY;
@@ -1352,7 +1362,7 @@ anychart.graphModule.Chart.prototype.initDragger_ = function(event) {
         dy = (y - startY) / scale;
         startX = x;
         startY = y;
-        this.doLayerTranslate(dx, dy);
+        this.doLayerTranslate_(dx, dy);
       }
 
     }
@@ -1408,6 +1418,22 @@ anychart.graphModule.Chart.prototype.updateBoundsOfElements_ = function(bounds) 
 };
 
 
+/**
+ * Update transformation matrix for main layer.
+ * @private
+ * */
+anychart.graphModule.Chart.prototype.updateTransformationMatrixForLayer_ = function() {
+  this.mainLayer_.setTransformationMatrix(
+    this.transformationMatrix_.m00_,
+    this.transformationMatrix_.m10_,
+    this.transformationMatrix_.m01_,
+    this.transformationMatrix_.m11_,
+    this.transformationMatrix_.m02_,
+    this.transformationMatrix_.m12_
+  );
+};
+
+
 /** @inheritDoc */
 anychart.graphModule.Chart.prototype.drawContent = function(bounds) {
   if (this.isConsistent())
@@ -1415,35 +1441,37 @@ anychart.graphModule.Chart.prototype.drawContent = function(bounds) {
 
   if (!this.rootLayer) {
     this.rootLayer = this.rootElement.layer();
+
     this.nodes();
     this.edges();
     this.layout();
     this.interactivity();
-    console.log(bounds);
+
     this.mainLayer_ = acgraph.layer();
     this.clipArea_ = acgraph.clip(bounds);
+
     this.interceptorLayer_ = acgraph.layer();
     this.eventsInterceptor_ = acgraph.rect(bounds.left, bounds.top, bounds.width, bounds.height);
     this.eventsInterceptor_.fill(anychart.color.TRANSPARENT_HANDLER);
     this.eventsInterceptor_.stroke(null);
+    this.eventsInterceptor_.parent(this.interceptorLayer_);
+    this.interceptorLayer_.parent(this.rootLayer);
 
     this.eventsHandler.listenOnce(this.eventsInterceptor_, acgraph.events.EventType.MOUSEMOVE, this.initDragger_);
     this.eventsHandler.listenOnce(this.eventsInterceptor_, acgraph.events.EventType.MOUSEMOVE, this.initMouseWheel_);
-    this.rootLayer.zIndex(anychart.graphModule.Chart.Z_INDEX);
 
     this.leayerForElements_ = acgraph.layer();
     this.nodesLayer_ = acgraph.layer();
     this.edgesLayer_ = acgraph.layer();
     this.edgesLayer_.parent(this.leayerForElements_);
-    this.nodesLayer_.parent(this.leayerForElements_);
     this.edges_.getLabelsLayer().parent(this.leayerForElements_);
     this.nodes_.getLabelsLayer().parent(this.leayerForElements_);
+    this.nodesLayer_.parent(this.leayerForElements_);
     this.leayerForElements_.parent(this.mainLayer_);
 
+    this.rootLayer.zIndex(anychart.graphModule.Chart.Z_INDEX);
     this.rootLayer.clip(this.clipArea_);
-    this.eventsInterceptor_.parent(this.interceptorLayer_);
 
-    this.interceptorLayer_.parent(this.rootLayer);
     this.mainLayer_.parent(this.rootLayer);
   }
 
@@ -1527,14 +1555,7 @@ anychart.graphModule.Chart.prototype.drawContent = function(bounds) {
   }
 
   if (this.hasStateInvalidation(anychart.enums.Store.GRAPH, anychart.enums.State.TRANSFORM)) {
-    this.doLayerScale_(this.zoom_[0], this.zoom_[1], this.zoom_[2]);
-    this.doLayerTranslate(this.move_[0], this.move_[1]);
-
-    this.zoom_[0] = 1;
-    this.zoom_[1] = this.contentBounds.width / 2;
-    this.zoom_[2] = this.contentBounds.height / 2;
-    this.move_[0] = 0;
-    this.move_[1] = 0;
+    this.updateTransformationMatrixForLayer_();
     this.markStateConsistent(anychart.enums.Store.GRAPH, anychart.enums.State.TRANSFORM);
   }
 };
@@ -1550,47 +1571,41 @@ anychart.graphModule.Chart.prototype.drawContent = function(bounds) {
  * @return {number | anychart.graphModule.Chart}
  * */
 anychart.graphModule.Chart.prototype.zoom = function(opt_value, opt_cx, opt_cy) {
-  var matrix = this.rootLayer.getTransformationMatrix();
+  var matrix = this.getTransformationMatrix();
   if (goog.isDef(opt_value)) {
-    if (!goog.isNull(opt_value)) {
-      this.zoom_[0] = opt_value;
+    if (goog.isNull(opt_value)) {
+      this.fit();
     } else {
-      this.zoom_[0] = 1 / matrix[0];
+      this.transformationMatrix_.preScale(opt_value, opt_value);
+      this.transformationMatrix_.preTranslate((opt_cx || 0) * (1 - opt_value), (opt_cy || 0) * (1 - opt_value));
+      this.invalidateState(anychart.enums.Store.GRAPH, anychart.enums.State.TRANSFORM, anychart.Signal.NEEDS_REDRAW);
     }
-    this.zoom_[1] = opt_cx;
-    this.zoom_[2] = opt_cy;
-    this.invalidateState(anychart.enums.Store.GRAPH, anychart.enums.State.TRANSFORM, anychart.Signal.NEEDS_REDRAW);
     return this;
   }
-  return matrix[0];
+  return matrix.m00_;
 };
 
 
 /**
  * Move chart on passed values.
- * @param {number=} opt_dx movement x.
- * @param {number=} opt_dy movement y.
+ * @param {?number=} opt_dx movement x.
+ * @param {?number=} opt_dy movement y.
  * @return {Array.<number> | anychart.graphModule.Chart}
  * */
 anychart.graphModule.Chart.prototype.move = function(opt_dx, opt_dy) {
-  var matrix = this.rootLayer.getTransformationMatrix();
-  if (goog.isDef(opt_dx) || goog.isDef(opt_dx)) {
-    if (goog.isDef(opt_dx)) {
-      if (!goog.isNull(opt_dx))
-        this.move_[0] = opt_dx;
-      else
-        this.move_[0] = -matrix[4];
+  if (goog.isDef(opt_dx)) {
+    if (goog.isNull(opt_dx)) {
+      opt_dx = -this.transformationMatrix_.m02_;
+      opt_dy = -this.transformationMatrix_.m12_;
     }
-    if (goog.isDef(opt_dy)) {
-      if (!goog.isNull(opt_dy))
-        this.move_[1] = opt_dy;
-      else
-        this.move_[1] = -matrix[5];
-    }
+    opt_dx = opt_dx ? opt_dx : 0;
+    opt_dy = opt_dy ? opt_dy : 0;
+    this.transformationMatrix_.translate(opt_dx, opt_dy);
     this.invalidateState(anychart.enums.Store.GRAPH, anychart.enums.State.TRANSFORM, anychart.Signal.NEEDS_REDRAW);
     return this;
   }
-  return [matrix[4], matrix[5]];
+  var matrix = this.getTransformationMatrix();
+  return [matrix.m02_, matrix.m12_];
 };
 
 
@@ -1599,7 +1614,8 @@ anychart.graphModule.Chart.prototype.move = function(opt_dx, opt_dy) {
  * Reset zoom and move of chart.
  * */
 anychart.graphModule.Chart.prototype.fit = function() {
-  this.mainLayer_.setTransformationMatrix(1, 0, 0, 1, 0, 0);
+  this.transformationMatrix_.setTransform(1, 0, 0, 1, 0, 0);
+  this.invalidateState(anychart.enums.Store.GRAPH, anychart.enums.State.TRANSFORM, anychart.Signal.NEEDS_REDRAW);
 };
 
 
@@ -1737,8 +1753,14 @@ anychart.graphModule.Chart.prototype.serialize = function() {
   }
   json['layout'] = this.layout().serialize();
   json['interactivity'] = this.interactivity().serialize();
-  json['zoom'] = this.zoom();
-  json['move'] = this.move();
+  json['transformationMatrix'] = {
+    'm00_': this.transformationMatrix_.m00_,
+    'm10_': this.transformationMatrix_.m10_,
+    'm01_': this.transformationMatrix_.m01_,
+    'm11_': this.transformationMatrix_.m11_,
+    'm02_': this.transformationMatrix_.m02_,
+    'm12_': this.transformationMatrix_.m12_
+  };
   json['rotate'] = this.rotate();
   return {'chart': json};
 };
@@ -1758,11 +1780,17 @@ anychart.graphModule.Chart.prototype.setupByJSON = function(config, opt_default)
   if ('nodes' in config)
     this.nodes().setup(config['nodes']);
 
-  if ('zoom' in config)
-    this.zoom(config['zoom']);
-
-  if ('move' in config)
-    this.move(config['move'][0], config['move'][1]);
+  if ('transformationMatrix' in config) {
+    var matrix = config['transformationMatrix'];
+    this.transformationMatrix_.setTransform(
+      matrix['m00_'],
+      matrix['m10_'],
+      matrix['m01_'],
+      matrix['m11_'],
+      matrix['m02_'],
+      matrix['m12_']
+    );
+  }
 
   if ('rotate' in config)
     this.rotate(config['rotate']);

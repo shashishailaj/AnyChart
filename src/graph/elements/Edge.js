@@ -224,7 +224,7 @@ anychart.graphModule.elements.Edge.prototype.updateLabelStyle = function(edge) {
 
 
 /**
- * Calculates middle position for label
+ * Calculate position for label
  * @param {anychart.graphModule.Chart.Edge} edge
  * @return {{x: number, y:number}}
  * */
