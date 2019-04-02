@@ -34,6 +34,10 @@ anychart.timelineModule.Axis = function() {
    */
   this.texts_ = [];
 
+  this.currentUnit = null;
+  this.currentCount = null;
+  this.ticksArray = null;
+
 
   anychart.core.settings.createDescriptorsMeta(this.descriptorsMeta, [
     ['stroke', anychart.ConsistencyState.APPEARANCE, anychart.Signal.NEEDS_REDRAW],
@@ -113,7 +117,7 @@ anychart.timelineModule.Axis.prototype.scale = function(opt_value) {
  * @private
  */
 anychart.timelineModule.Axis.prototype.scaleInvalidated_ = function(event) {
-  this.invalidate(anychart.ConsistencyState.APPEARANCE | anychart.ConsistencyState.AXIS_TICKS | anychart.ConsistencyState.AXIS_LABELS, anychart.Signal.NEEDS_REDRAW);
+  this.invalidate(anychart.ConsistencyState.APPEARANCE | anychart.ConsistencyState.AXIS_TICKS | anychart.ConsistencyState.AXIS_LABELS, 0);
 };
 
 
@@ -294,8 +298,18 @@ anychart.timelineModule.Axis.prototype.getTicks = function() {
   if (i == zoomLevels.length)
     i--;
 
-  ticksArray = this.scale().getTicks(void 0, void 0, zoomLevels[i].unit, zoomLevels[i].count, totalRange);
-  return ticksArray;
+  var unit = zoomLevels[i].unit;
+  var count = zoomLevels[i].count;
+  var forbiddenUnits = [anychart.enums.Interval.MILLISECOND, anychart.enums.Interval.SECOND, anychart.enums.Interval.MINUTE, anychart.enums.Interval.HOUR];
+
+  if ((this.currentCount != zoomLevels[i].count || this.currentUnit != zoomLevels[i].unit)) {
+    this.currentCount = zoomLevels[i].count;
+    this.currentUnit = zoomLevels[i].unit;
+    this.ticksArray = this.scale().getTicks(void 0, void 0, zoomLevels[i].unit, zoomLevels[i].count, totalRange);
+  }
+
+  console.log('Size is: ', this.ticksArray.length);
+  return this.ticksArray;
 };
 
 
