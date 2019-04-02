@@ -420,7 +420,7 @@ anychart.timelineModule.Chart.prototype.calculate = function() {
         point = data[k];
         sX = this.scale().transform(point.data['start']) * this.dataBounds.width;
         eX = isNaN(point.data['end']) ? this.scale().transform(maxTotalRange) * this.dataBounds.width :
-          this.scale().transform(point.data['end']) * this.dataBounds.width;
+            this.scale().transform(point.data['end']) * this.dataBounds.width;
         sY = 0;
         eY = anychart.utils.normalizeSize(series.getOption('height'), this.dataBounds.height);
         direction = series.getFinalDirection();
@@ -547,7 +547,7 @@ anychart.timelineModule.Chart.prototype.calculate = function() {
       Note! Per point zIndex doesn't work cross series. We have to set zIndexes by series first
       and then inside series we can use per point zIndex.
        */
-      if (!rangeSeries.includes(range.series)) {
+      if (range && !rangeSeries.includes(range.series)) {
         range.series.zIndex(anychart.timelineModule.Chart.RANGE_BASE_Z_INDEX - rangeSeries.length / 100);
         rangeSeries.push(range.series);
       }
@@ -582,7 +582,7 @@ anychart.timelineModule.Chart.prototype.calculate = function() {
       Note! Per point zIndex doesn't work cross series. We have to set zIndexes by series first
       and then inside series we can use per point zIndex.
        */
-      if (!rangeSeries.includes(range.series)) {
+      if (range && !rangeSeries.includes(range.series)) {
         range.series.zIndex(anychart.timelineModule.Chart.RANGE_BASE_Z_INDEX - rangeSeries.length / 100);
         rangeSeries.push(range.series);
       }
@@ -675,7 +675,7 @@ anychart.timelineModule.Chart.prototype.drawContent = function(bounds) {
     //fix vertical translate going places
     if (this.totalRange && (this.verticalTranslate + this.dataBounds.height / 2 > this.totalRange.eY)) {
       this.verticalTranslate = Math.max(this.totalRange.eY - this.dataBounds.height / 2, 0);
-    } else if (this.totalRange &&  (this.verticalTranslate - this.dataBounds.height / 2 < Math.min(this.totalRange.sY, -(this.dataBounds.height / 2)))) {
+    } else if (this.totalRange && (this.verticalTranslate - this.dataBounds.height / 2 < Math.min(this.totalRange.sY, -(this.dataBounds.height / 2)))) {
       this.verticalTranslate = Math.min(this.totalRange.sY + this.dataBounds.height / 2, 0);
     }
 
