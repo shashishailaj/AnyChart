@@ -412,8 +412,10 @@ anychart.timelineModule.Axis.prototype.drawLabels = function() {
     var tick = ticksArray[i];
     /*getTicks method almost always returns one tick that is below total range minimum.
     For now we skip it.*/
-    if (tick['start'] < totalRange['min'])
+    if (tick['start'] < totalRange['min']) {
+      text.renderTo(null);
       continue;
+    }
 
     var textString = this.labels().getText(/** @type {anychart.format.Context} */(this.formatProvider_.propagate({
       'value': {
