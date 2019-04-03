@@ -2,7 +2,6 @@ goog.provide('anychart.graphModule.elements.Edge');
 
 goog.require('anychart.core.ui.OptimizedText');
 goog.require('anychart.core.ui.Tooltip');
-goog.require('anychart.format.Context');
 goog.require('anychart.graphModule.elements.Base');
 goog.require('anychart.reflow.IMeasurementsTargetProvider');
 
@@ -138,26 +137,6 @@ anychart.graphModule.elements.Edge.prototype.labelsInvalidated_ = function(event
 
 
 /**
- * Fills text with style and text value.
- * @param {anychart.graphModule.Chart.Edge} edge
- * @private
- */
-anychart.graphModule.elements.Edge.prototype.setupText_ = function(edge) {
-  var text = this.getTextElement(edge);
-  if (text) {
-    var labels = this.resolveLabelSettings(edge);
-    labels.resetFlatSettings();
-    var provider = this.createFormatProvider(edge);
-    var textVal = labels.getText(provider);
-    text.text(textVal);
-    text.style(labels.flatten());
-    text.prepareComplexity();
-    text.applySettings();
-  }
-};
-
-
-/**
  * Applies style to labels.
  * @param {boolean=} opt_needsToDropOldBounds - Whether to drop old bounds and reset complexity.
  */
@@ -165,7 +144,7 @@ anychart.graphModule.elements.Edge.prototype.applyLabelsStyle = function(opt_nee
   var edges = this.chart_.getEdgesArray();
   for (var i = 0; i < edges.length; i++) {
     var edge = edges[i];
-    this.setupText_(edge);
+    this.setupText(edge);
   }
 };
 
@@ -215,7 +194,7 @@ anychart.graphModule.elements.Edge.prototype.updateLabelStyle = function(edge) {
 
   if (edge.textElement) {
     edge.textElement.resetComplexity();//drop all old settings
-    this.setupText_(edge);
+    this.setupText(edge);
     edge.textElement.renderTo(this.labelsLayerEl_);
     edge.textElement.prepareBounds();
     this.drawLabel(edge);
@@ -251,27 +230,6 @@ anychart.graphModule.elements.Edge.prototype.getLabelPosition = function(edge) {
   return {x: x, y: y};
 };
 
-
-/**
- * Format provider for edge.
- * @param {anychart.graphModule.Chart.Edge} edge
- * @return {anychart.format.Context}
- * */
-anychart.graphModule.elements.Edge.prototype.createFormatProvider = function(edge) {
-  if (!this.formatProvider_) {
-    this.formatProvider_ = new anychart.format.Context();
-  }
-  var values = {};
-
-  var iterator = this.getIterator();
-  iterator.select(edge.dataRow);
-  this.formatProvider_.dataSource(iterator);
-  values['id'] = {value: edge.id, type: anychart.enums.TokenType.STRING};
-  values['to'] = {value: edge.to, type: anychart.enums.TokenType.STRING};
-  values['type'] = {value: anychart.graphModule.Chart.Element.EDGE, type: anychart.enums.TokenType.STRING};
-  values['from'] = {value: edge.from, type: anychart.enums.TokenType.STRING};
-  return /** @type {anychart.format.Context} */(this.formatProvider_.propagate(values));
-};
 
 /**
  * Getter for labels layer.

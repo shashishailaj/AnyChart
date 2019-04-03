@@ -106,11 +106,69 @@ anychart.graphModule.elements.Layout.prototype.explicitLayout_ = function() {
 
 
 /**
+ * Repel two nodes.
+ * @param {number} x1
+ * @param {number} y1
+ * @param {number} x2
+ * @param {number} y2
+ * @param {number} factor
+ * @return {Array.<number>} Array with force
+ * @private
+ * */
+anychart.graphModule.elements.Layout.prototype.coulomb_ = function(x1, y1, x2, y2, factor) {
+  var coulombX, coulombY;
+  var distanceX = x1 - x2;
+  var distanceY = y1 - y2;
+  var distance = Math.sqrt(distanceX * distanceX + distanceY * distanceY);
+  if (distance != 0) {
+    var directX = distanceX / distance;
+    var directY = distanceY / distance;
+    coulombX = directX / distance * factor;
+    coulombY = directY / distance * factor;
+  } else {
+    coulombX = Math.random() - 0.5;
+    coulombY = Math.random() - 0.5;
+  }
+  return [coulombX, coulombY];
+};
+
+
+/**
+ * Push two nodes.
+ * @param {number} x1
+ * @param {number} y1
+ * @param {number} x2
+ * @param {number} y2
+ * @param {number} factor
+ * @return {Array.<number>} Array with force
+ * @private
+ * */
+anychart.graphModule.elements.Layout.prototype.harmonic_ = function(x1, y1, x2, y2, factor) {
+  var harmonicX, harmonicY;
+  var distanceX = x1 - x2;
+  var distanceY = y1 - y2;
+  var distance = Math.sqrt(distanceX * distanceX + distanceY * distanceY);
+  if (distance != 0) {
+    var directX = -distanceX / distance;
+    var directY = -distanceY / distance;
+    var ml = distance * distance / 50;
+    harmonicX = directX * ml * factor;
+    harmonicY = directY * ml * factor;
+  } else {
+    harmonicX = Math.random() - 0.5;
+    harmonicY = Math.random() - 0.5;
+  }
+  return [harmonicX, harmonicY];
+};
+
+
+/**
+ * Automatically place nodes
  * @private
  * */
 anychart.graphModule.elements.Layout.prototype.forceLayout_ = function() {
   //manipulate this values you can achieve different results.
-  var MAXIMUM_VELOCITY = 0.150;
+  var MAXIMUM_VELOCITY = 0.12;
   var MINIMUM_VELOCITY = -MAXIMUM_VELOCITY;
   var INITIAL_POSITION_FACTOR = 10;
   var COULOMB_FORCE_FACTOR = 0.9;
@@ -132,44 +190,6 @@ anychart.graphModule.elements.Layout.prototype.forceLayout_ = function() {
     node.position.y = INITIAL_POSITION_FACTOR * Math.sin(pi2 / (i + 1));
   }
 
-
-  //repel two coordinates
-  function coulomb(x1, y1, x2, y2) {
-    var coulombX, coulombY;
-    var distanceX = x1 - x2;
-    var distanceY = y1 - y2;
-    var distance = Math.sqrt(distanceX * distanceX + distanceY * distanceY);
-    if (distance != 0) {
-      var directX = distanceX / distance;
-      var directY = distanceY / distance;
-      coulombX = directX / distance * COULOMB_FORCE_FACTOR;
-      coulombY = directY / distance * COULOMB_FORCE_FACTOR;
-    } else {
-      coulombX = Math.random() - 0.5;
-      coulombY = Math.random() - 0.5;
-    }
-    return [coulombX, coulombY];
-  }
-
-  //pull two coordinates
-  function harmonic(x1, y1, x2, y2) {
-    var harmonicX, harmonicY;
-    var distanceX = x1 - x2;
-    var distanceY = y1 - y2;
-    var distance = Math.sqrt(distanceX * distanceX + distanceY * distanceY);
-    if (distance != 0) {
-      var directX = -distanceX / distance;
-      var directY = -distanceY / distance;
-      var ml = distance * distance / 50;
-      harmonicX = directX * ml * HARMONIC_FORCE_FACTOR;
-      harmonicY = directY * ml * HARMONIC_FORCE_FACTOR;
-    } else {
-      harmonicX = Math.random() - 0.5;
-      harmonicY = Math.random() - 0.5;
-    }
-    return [harmonicX, harmonicY];
-  }
-
   for (var iteration = 0; iteration < ITERATION; iteration++) {
 
     for (i = 0, length = nodes.length; i < length; i++) {
@@ -179,7 +199,7 @@ anychart.graphModule.elements.Layout.prototype.forceLayout_ = function() {
       for (j = 0; j < length; j++) {
         node2 = nodes[j];
         if (node != node2 && node.subGraphId == node2.subGraphId) { //repel only nodes of same groups. That works faster.
-          force = coulomb(node.position.x, node.position.y, node2.position.x, node2.position.y);
+          force = this.coulomb_(node.position.x, node.position.y, node2.position.x, node2.position.y, COULOMB_FORCE_FACTOR);
           node.coulombX += force[0];
           node.coulombY += force[1];
         }
@@ -192,7 +212,7 @@ anychart.graphModule.elements.Layout.prototype.forceLayout_ = function() {
       var neighbour = node.siblings;
       for (j = 0; j < neighbour.length; j++) {
         node2 = this.chart_.getNodeById(neighbour[j]);
-        force = harmonic(node.position.x, node.position.y, node2.position.x, node2.position.y);
+        force = this.harmonic_(node.position.x, node.position.y, node2.position.x, node2.position.y, HARMONIC_FORCE_FACTOR);
         node.harmonicX += force[0];
         node.harmonicY += force[1];
       }

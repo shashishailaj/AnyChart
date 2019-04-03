@@ -5,7 +5,7 @@ goog.require('anychart.core.Base');
 goog.require('anychart.core.StateSettings');
 goog.require('anychart.core.ui.LabelsSettings');
 goog.require('anychart.core.ui.OptimizedText');
-
+goog.require('anychart.format.Context');
 
 
 //endregion
@@ -326,6 +326,54 @@ anychart.graphModule.elements.Base.prototype.getIterator = goog.abstractMethod;
  * */
 anychart.graphModule.elements.Base.prototype.needsMeasureLabels = function() {
   this.dispatchSignal(anychart.Signal.MEASURE_COLLECT | anychart.Signal.MEASURE_BOUNDS);
+};
+
+
+/**
+ * Return format provider for element.
+ * @param {(anychart.graphModule.Chart.Edge|anychart.graphModule.Chart.Node)} element
+ * @return {anychart.format.Context}
+ * */
+anychart.graphModule.elements.Base.prototype.createFormatProvider = function(element) {
+  if (!this.formatProvider_) {
+    this.formatProvider_ = new anychart.format.Context();
+  }
+  var values = {};
+
+  var iterator = this.getIterator();
+  iterator.select(element.dataRow);
+  this.formatProvider_.dataSource(iterator);
+  values['type'] = {value: this.type, type: anychart.enums.TokenType.STRING};
+
+  var mapping = element == anychart.graphModule.Chart.Element.EDGE ? this.chart_.data()['edges'].getMapping() : this.chart_.data()['nodes'].getMapping();
+  var keys = goog.object.getKeys(mapping);
+  for (var i = 0; i < keys.length; i++) {
+    var key = keys[i];
+    values[key] = {value: iterator.get(key), type: anychart.enums.TokenType.STRING};
+  }
+
+  return /** @type {anychart.format.Context} */(this.formatProvider_.propagate(values));
+};
+
+
+/**
+ * Fills text with style and text value.
+ * @param {!(anychart.graphModule.Chart.Edge|anychart.graphModule.Chart.Node)} element
+ * @protected
+ */
+anychart.graphModule.elements.Base.prototype.setupText = function(element) {
+  var enabled = this.resolveLabelSettings(element).enabled();
+  if (enabled) {
+    var text = this.getTextElement(element);
+    var labels = this.resolveLabelSettings(element);
+    labels.resetFlatSettings();
+    var provider = this.createFormatProvider(element);
+    var textVal = labels.getText(provider);
+    text.text(textVal);
+    text.style(labels.flatten());
+    text.prepareComplexity();
+    text.applySettings();
+  }
 };
 
 

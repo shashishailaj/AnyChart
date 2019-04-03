@@ -3,7 +3,6 @@ goog.provide('anychart.graphModule.elements.Node');
 goog.require('anychart.core.Base');
 goog.require('anychart.core.ui.OptimizedText');
 goog.require('anychart.core.ui.Tooltip');
-goog.require('anychart.format.Context');
 goog.require('anychart.graphModule.elements.Base');
 goog.require('anychart.reflow.IMeasurementsTargetProvider');
 
@@ -182,7 +181,7 @@ anychart.graphModule.elements.Node.prototype.updateLabelStyle = function(node) {
   }
   if (node.textElement) {
     node.textElement.resetComplexity();
-    this.setupText_(node);
+    this.setupText(node);
     node.textElement.renderTo(this.labelsLayerEl_);
     node.textElement.prepareBounds();
     this.drawLabel(node);
@@ -192,30 +191,11 @@ anychart.graphModule.elements.Node.prototype.updateLabelStyle = function(node) {
 
 
 /**
- * Fills text with style and text value.
- * @param {anychart.graphModule.Chart.Node} node
- * @private
- */
-anychart.graphModule.elements.Node.prototype.setupText_ = function(node) {
-  var text = this.getTextElement(node);
-  if (text) {
-    var labels = this.resolveLabelSettings(node);
-    var provider = this.createFormatProvider(node);
-    var textVal = labels.getText(provider);
-    text.text(textVal);
-    text.style(labels.flatten());
-    text.prepareComplexity();
-    text.applySettings();
-  }
-};
-
-
-/**
  * Setup text element.
  * @param {anychart.graphModule.Chart.Node} node
  * */
 anychart.graphModule.elements.Node.prototype.applyLabelStyle = function(node) {
-  this.setupText_(node);
+  this.setupText(node);
 };
 
 
@@ -292,23 +272,6 @@ anychart.graphModule.elements.Node.prototype.drawLabels = function() {
     var node = nodes[i];
     this.drawLabel(node);
   }
-};
-
-
-/**
- * Format provider for node.
- * @param {anychart.graphModule.Chart.Node} node
- * @return {anychart.format.Context}
- * */
-anychart.graphModule.elements.Node.prototype.createFormatProvider = function(node) {
-  if (!this.formatProvider_) {
-    this.formatProvider_ = new anychart.format.Context();
-  }
-  var values = {};
-  values['id'] = {value: node.id, type: anychart.enums.TokenType.STRING};
-  values['type'] = {value: anychart.graphModule.Chart.Element.NODE, type: anychart.enums.TokenType.STRING};
-
-  return /** @type {anychart.format.Context} */(this.formatProvider_.propagate(values));
 };
 
 

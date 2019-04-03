@@ -74,7 +74,7 @@ goog.mixin(goog.global['anychart']['themes']['defaultTheme'], {
       'zoomOnMouseWheel': true,
       'scrollOnMouseWheel': false,
       'node': true,
-      'magnetize': true
+      'magnetize': false
     }
   }
 });
