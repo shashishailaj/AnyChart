@@ -375,6 +375,28 @@ anychart.timelineModule.Axis.prototype.drawLabels = function() {
 
   for (var i = 0; i < ticksArray.length; i++) {
     var text = this.texts_[i];
+
+    /*
+    2 small lines of code and one big hack for the gradients.
+    While playing with axis labels redrawing on scroll, wild bug appeared.
+    If you zoom in and start scrolling to the right with enough axis labels being drawn
+    (they must almost touch start of the next tick), from time to time labels disappear.
+    While they are drawn, they lack the fade gradient. Fade gradient id is set
+    to the element, but it's not on the html page.
+    What happens:
+      1) we start drawing our label, set all the settings and call texts[i].putAt()
+      2) texts[i] removes it's own gradient while processing putAt(), to be precise, it happens in texts[i].setupFadeGradient()
+      3) while getting new gradient it grabs gradient of the texts[i + 1]
+        (this happens, because new bounds and FadeGradientKeys happen to equal to those of the next text)
+      4) i++
+      5) goto 1; (texts[i + 1] happily removes it's own gradient, which is already given to previous text)
+    Now, because we know all of that, we simply make first move and remove next text's gradient ourselves.
+    Performance shouldn't be an issue, as in current implementation there shouldn't be more than ~15 texts.
+     */
+    if (i < ticksArray.length - 1)
+      this.texts_[i + 1].removeFadeGradient();
+
+
     var tick = ticksArray[i];
     /*getTicks method almost always returns one tick that is below total range minimum.
     For now we skip it.*/
