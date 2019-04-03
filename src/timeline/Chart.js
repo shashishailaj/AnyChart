@@ -84,6 +84,8 @@ anychart.timelineModule.Chart = function() {
    * @type {boolean}
    */
   this.autoChartTranslating = true;
+
+  this.initInteractivity_();
 };
 goog.inherits(anychart.timelineModule.Chart, anychart.core.ChartWithSeries);
 
@@ -812,7 +814,7 @@ anychart.timelineModule.Chart.prototype.handleMouseWheel_ = function(event) {
 
   var currentDate, leftDate, rightDate;
 
-  if (event['shiftKey'] && this.interactivity().getOption('zoomOnMouseWheel')) {//zooming
+  if (!event['shiftKey'] && this.interactivity().getOption('zoomOnMouseWheel')) {//zooming
     var zoomIn = event['deltaY'] < 0;
     if ((range['min']) <= totalRange['min'] && (range['max']) >= totalRange['max'] && !zoomIn)
       return;
@@ -829,53 +831,119 @@ anychart.timelineModule.Chart.prototype.handleMouseWheel_ = function(event) {
     this.axis().offset(0);
     this.invalidateState(anychart.enums.Store.TIMELINE_CHART, anychart.timelineModule.Chart.States.SCROLL, anychart.Signal.NEEDS_REDRAW);
     this.resumeSignalsDispatching(true);
-  } else if (!event['shiftKey'] && this.interactivity().getOption('scrollOnMouseWheel')) {//scrolling
+  } else if (event['shiftKey'] && this.interactivity().getOption('scrollOnMouseWheel')) {//scrolling
     this.autoChartTranslating = false;
     var preventDefault = true;
-
-    matrix = this.timelineLayer.getTransformationMatrix();
-    this.horizontalTranslate += dx;
-    this.verticalTranslate -= dy;
-
-    if (dx != 0) {
-      if (this.horizontalTranslate + this.dataBounds.getRight() > this.totalRange.eX) {
-        this.horizontalTranslate = (this.totalRange.eX - this.dataBounds.getRight());
-        preventDefault = false;
-      }
-      else if (this.horizontalTranslate + this.dataBounds.getLeft() < this.totalRange.sX) {
-        this.horizontalTranslate = (this.totalRange.sX - this.dataBounds.getLeft());
-        preventDefault = false;
-      }
-    }
-
-    if (dy != 0) {
-      if (this.verticalTranslate + this.dataBounds.height / 2 > Math.max(this.totalRange.eY, (this.dataBounds.height / 2))) {
-        this.verticalTranslate = Math.max(this.totalRange.eY, (this.dataBounds.height / 2)) - this.dataBounds.height / 2;
-        preventDefault = false;
-      }
-      else if (this.verticalTranslate - this.dataBounds.height / 2 < Math.min(this.totalRange.sY, -(this.dataBounds.height / 2))) {
-        this.verticalTranslate = Math.min(this.totalRange.sY, -(this.dataBounds.height / 2)) + this.dataBounds.height / 2;
-        preventDefault = false;
-      }
-    }
-
-    if (preventDefault) {
+    if (preventDefault)
       event.preventDefault();
-    }
-    var scale = this.scale();
-
-    leftDate = this.scale().inverseTransform(this.horizontalTranslate / this.dataBounds.width);
-    var offset = leftDate - range['min'];
-
-    //this is hack to redraw axis ticks and labels using offset
-    this.suspendSignalsDispatching();
-
-    this.invalidate(anychart.ConsistencyState.AXES_CHART_AXES);
-    this.axis().offset(offset);
-    this.invalidateState(anychart.enums.Store.TIMELINE_CHART, anychart.timelineModule.Chart.States.SCROLL, anychart.Signal.NEEDS_REDRAW);
-
-    this.resumeSignalsDispatching(true);
+    this.move(dx, dy);
   }
+};
+
+
+/**
+ * Moves chart using given x and y deltas.
+ * @param {number} dx
+ * @param {number} dy
+ */
+anychart.timelineModule.Chart.prototype.move = function(dx, dy) {
+  this.autoChartTranslating = false;
+  var preventDefault = true;
+  var range = this.scale().getRange();
+
+  var matrix = this.timelineLayer.getTransformationMatrix();
+  this.horizontalTranslate += dx;
+  this.verticalTranslate -= dy;
+
+  if (dx != 0) {
+    if (this.horizontalTranslate + this.dataBounds.getRight() > this.totalRange.eX) {
+      this.horizontalTranslate = (this.totalRange.eX - this.dataBounds.getRight());
+      preventDefault = false;
+    }
+    else if (this.horizontalTranslate + this.dataBounds.getLeft() < this.totalRange.sX) {
+      this.horizontalTranslate = (this.totalRange.sX - this.dataBounds.getLeft());
+      preventDefault = false;
+    }
+  }
+
+  if (dy != 0) {
+    if (this.verticalTranslate + this.dataBounds.height / 2 > Math.max(this.totalRange.eY, (this.dataBounds.height / 2))) {
+      this.verticalTranslate = Math.max(this.totalRange.eY, (this.dataBounds.height / 2)) - this.dataBounds.height / 2;
+      preventDefault = false;
+    }
+    else if (this.verticalTranslate - this.dataBounds.height / 2 < Math.min(this.totalRange.sY, -(this.dataBounds.height / 2))) {
+      this.verticalTranslate = Math.min(this.totalRange.sY, -(this.dataBounds.height / 2)) + this.dataBounds.height / 2;
+      preventDefault = false;
+    }
+  }
+
+  var scale = this.scale();
+
+  var leftDate = this.scale().inverseTransform(this.horizontalTranslate / this.dataBounds.width);
+  var offset = leftDate - range['min'];
+
+  //this is hack to redraw axis ticks and labels using offset
+  this.suspendSignalsDispatching();
+
+  this.invalidate(anychart.ConsistencyState.AXES_CHART_AXES);
+  this.axis().offset(offset);
+  this.invalidateState(anychart.enums.Store.TIMELINE_CHART, anychart.timelineModule.Chart.States.SCROLL, anychart.Signal.NEEDS_REDRAW);
+
+  this.resumeSignalsDispatching(true);
+};
+
+
+/**
+ * Initialises mouse drag interactivity.
+ * @private
+ */
+anychart.timelineModule.Chart.prototype.initInteractivity_ = function() {
+  this.listen(goog.events.EventType.MOUSEDOWN, this.mouseDownHandler, false, this);
+};
+
+
+/**
+ *
+ * @param {anychart.core.MouseEvent} event
+ */
+anychart.timelineModule.Chart.prototype.mouseDownHandler = function(event) {
+  var bounds = this.dataBounds;
+  var containerPosition = this.container().getStage().getClientPosition();
+  var insideBounds = bounds &&
+      event.clientX >= bounds.left + containerPosition.x &&
+      event.clientX <= bounds.left + containerPosition.x + bounds.width &&
+      event.clientY >= bounds.top + containerPosition.y &&
+      event.clientY <= bounds.top + containerPosition.y + bounds.height;
+  if (insideBounds) {
+    this.startX = event.clientX;
+    this.startY = event.clientY;
+    this.startTranslateHorizontal = this.horizontalTranslate;
+    this.startTranslateVertical = this.verticalTranslate;
+
+    goog.events.listen(document, goog.events.EventType.MOUSEMOVE, this.mouseMoveHandler, true, this);
+    goog.events.listen(document, goog.events.EventType.MOUSEUP, this.mouseUpHandler, true, this);
+  }
+};
+
+
+/**
+ *
+ * @param {anychart.core.MouseEvent} event
+ */
+anychart.timelineModule.Chart.prototype.mouseMoveHandler = function(event) {
+  this.move((this.startX - event.clientX), (this.startY - event.clientY));
+  this.startX = event.clientX;
+  this.startY = event.clientY;
+};
+
+
+/**
+ *
+ * @param {anychart.core.MouseEvent} event
+ */
+anychart.timelineModule.Chart.prototype.mouseUpHandler = function(event) {
+  goog.events.unlisten(document, goog.events.EventType.MOUSEMOVE, this.mouseMoveHandler, true, this);
+  goog.events.unlisten(document, goog.events.EventType.MOUSEUP, this.mouseUpHandler, true, this);
 };
 
 
