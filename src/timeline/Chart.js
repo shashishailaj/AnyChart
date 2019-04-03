@@ -121,6 +121,13 @@ anychart.consistency.supportStates(anychart.timelineModule.Chart, anychart.enums
       anychart.timelineModule.Chart.States.SCROLL]);
 
 
+/**
+ * Base z index of range series, used for z index calculation.
+ * @type {number}
+ */
+anychart.timelineModule.Chart.RANGE_BASE_Z_INDEX = 34;
+
+
 //endregion
 //region -- Axis markers
 /**
@@ -306,11 +313,6 @@ anychart.timelineModule.Chart.prototype.todayMarker = function(opt_value) {
 
 //endregion
 //region -- Chart Infrastructure Overrides.
-/**
- * Base z index of range series, used for z index calculation.
- * @type {number}
- */
-anychart.timelineModule.Chart.RANGE_BASE_Z_INDEX = 34;
 
 
 /** @inheritDoc */
