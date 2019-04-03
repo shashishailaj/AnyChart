@@ -1097,6 +1097,20 @@ anychart.timelineModule.Chart.prototype.scrollerChangeHandler = function(event) 
 };
 
 
+/**
+ * Events overlap settings. Doesn't work and isn't public right now.
+ * @param {*=} opt_value
+ * @return {anychart.timelineModule.Chart|*}
+ */
+anychart.timelineModule.Chart.prototype.eventsOverlap = function(opt_value) {
+  if (goog.isDef(opt_value)) {
+    this.eventsOverlap_ = opt_value;
+    return this;
+  }
+  return this.eventsOverlap_;
+};
+
+
 //endregion
 //region -- Generating Series.
 /**
