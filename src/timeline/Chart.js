@@ -860,22 +860,16 @@ anychart.timelineModule.Chart.prototype.handleMouseWheel_ = function(event) {
     var scale = this.scale();
     var range = scale.getRange();
 
-    var mouseX = event['clientX'];
     var leftDate = this.scale().inverseTransform(this.horizontalTranslate / this.dataBounds.width);
-    var rightDate = this.scale().inverseTransform((this.horizontalTranslate + this.dataBounds.width) / this.dataBounds.width);
     var offset = leftDate - range['min'];
 
-    //this is hack to set scale up to current transform, make scroller move and the most important - redraw axis
+    //this is hack to redraw axis ticks and labels using offset
     this.suspendSignalsDispatching();
-    // this.scale().suspendSignalsDispatching();
 
-    // this.zoomTo(leftDate, rightDate);
-    this.invalidateState(anychart.enums.Store.TIMELINE_CHART, anychart.timelineModule.Chart.States.SCROLL, anychart.Signal.NEEDS_REDRAW);
-    this.axis().offset(offset);
     this.invalidate(anychart.ConsistencyState.AXES_CHART_AXES);
-    // this.axis_.invalidate(anychart.ConsistencyState.APPEARANCE | anychart.ConsistencyState.AXIS_TICKS | anychart.ConsistencyState.AXIS_LABELS);
-    //
-    // this.scale().resumeSignalsDispatching(false);
+    this.axis().offset(offset);
+    this.invalidateState(anychart.enums.Store.TIMELINE_CHART, anychart.timelineModule.Chart.States.SCROLL, anychart.Signal.NEEDS_REDRAW);
+
     this.resumeSignalsDispatching(true);
   }
 };
