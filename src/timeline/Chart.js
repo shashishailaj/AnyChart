@@ -280,7 +280,8 @@ anychart.timelineModule.Chart.prototype.markerInvalidated_ = function(event) {
 
 /**
  * Returns instance of today marker. Today marker is line marker with current date, for now.
- * @param {{Object|boolean|null}=} opt_value
+ * @param {(Object|boolean|null)=} opt_value
+ * @return {anychart.core.axisMarkers.Line|anychart.timelineModule.Chart}
  */
 anychart.timelineModule.Chart.prototype.todayMarker = function(opt_value) {
   if (!this.todayMarker_) {
@@ -807,15 +808,17 @@ anychart.timelineModule.Chart.prototype.handleMouseWheel_ = function(event) {
     dy *= 15;
   }
 
+  var currentDate, leftDate, rightDate;
+
   if (event['shiftKey'] && this.interactivity().getOption('zoomOnMouseWheel')) {//zooming
     var zoomIn = event['deltaY'] < 0;
     if ((range['min']) <= totalRange['min'] && (range['max']) >= totalRange['max'] && !zoomIn)
       return;
 
     var mouseX = event['clientX'];
-    var currentDate = this.scale().inverseTransform((mouseX + this.horizontalTranslate) / this.dataBounds.width);
-    var leftDate = this.scale().inverseTransform(this.horizontalTranslate / this.dataBounds.width);
-    var rightDate = this.scale().inverseTransform((this.horizontalTranslate + this.dataBounds.width) / this.dataBounds.width);
+    currentDate = this.scale().inverseTransform((mouseX + this.horizontalTranslate) / this.dataBounds.width);
+    leftDate = this.scale().inverseTransform(this.horizontalTranslate / this.dataBounds.width);
+    rightDate = this.scale().inverseTransform((this.horizontalTranslate + this.dataBounds.width) / this.dataBounds.width);
 
     this.suspendSignalsDispatching();
     this.zoomTo(currentDate - ((currentDate - leftDate) * (1 + dy / 100)),
@@ -858,9 +861,8 @@ anychart.timelineModule.Chart.prototype.handleMouseWheel_ = function(event) {
       event.preventDefault();
     }
     var scale = this.scale();
-    var range = scale.getRange();
 
-    var leftDate = this.scale().inverseTransform(this.horizontalTranslate / this.dataBounds.width);
+    leftDate = this.scale().inverseTransform(this.horizontalTranslate / this.dataBounds.width);
     var offset = leftDate - range['min'];
 
     //this is hack to redraw axis ticks and labels using offset

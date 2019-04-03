@@ -43,6 +43,7 @@ anychart.timelineModule.Axis = function() {
 
   /**
    * Format provider for labels
+   * @type {anychart.format.Context}
    * @private
    */
   this.formatProvider_ = new anychart.format.Context();
@@ -383,13 +384,6 @@ anychart.timelineModule.Axis.prototype.drawLabels = function() {
   for (var i = 0; i < ticksArray.length; i++) {
     var text = this.texts_[i];
 
-    var textString = this.labels().getText(this.formatProvider_.propagate({
-      'value': {
-        value: ticksArray[i]['start'],
-        type: anychart.enums.TokenType.DATE
-      }
-    }));
-
     text.text(textString);
     text.style(labelsSettings.flatten());
     // text.prepareComplexity();
@@ -421,12 +415,12 @@ anychart.timelineModule.Axis.prototype.drawLabels = function() {
     if (tick['start'] < totalRange['min'])
       continue;
 
-    var textString = this.labels().getText(this.formatProvider_.propagate({
+    var textString = this.labels().getText(/** @type {anychart.format.Context} */(this.formatProvider_.propagate({
       'value': {
         value: tick['start'],
         type: anychart.enums.TokenType.DATE
       }
-    }));
+    })));
 
     text.text(textString);
     text.style(labelsSettings.flatten());
@@ -549,40 +543,6 @@ anychart.timelineModule.Axis.prototype.provideMeasurements = function() {
   }
 
   return this.texts_;
-};
-
-
-/**
- * Applies labels style to texts.
- */
-anychart.timelineModule.Axis.prototype.applyLabelsStyle = function() {
-  var labelsSettings = this.labels();
-  var ticksArray = this.getTicks();
-  if (!this.formatProvider_)
-    this.formatProvider_ = new anychart.format.Context();
-
-  for (var i = 0; i < ticksArray.length; i++) {
-    var textString = this.labels().getText(this.formatProvider_.propagate({
-      'value': {
-        value: ticksArray[i]['start'],
-        type: anychart.enums.TokenType.DATE
-      }
-    }));
-    var text = this.texts_[i];
-    text.text(textString);
-    text.style(labelsSettings.flatten());
-    text.prepareComplexity();
-    text.applySettings();
-  }
-};
-
-
-/**
- * Prepares labels.
- */
-anychart.timelineModule.Axis.prototype.prepareLabels = function() {
-  this.provideMeasurements();
-  // this.applyLabelsStyle();
 };
 
 
