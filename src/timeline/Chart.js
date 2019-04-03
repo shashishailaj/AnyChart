@@ -821,6 +821,7 @@ anychart.timelineModule.Chart.prototype.handleMouseWheel_ = function(event) {
     this.zoomTo(currentDate - ((currentDate - leftDate) * (1 + dy / 100)),
         currentDate + ((rightDate - currentDate) * (1 + dy / 100)));
     this.horizontalTranslate = 0;
+    this.axis().offset(0);
     this.invalidateState(anychart.enums.Store.TIMELINE_CHART, anychart.timelineModule.Chart.States.SCROLL, anychart.Signal.NEEDS_REDRAW);
     this.resumeSignalsDispatching(true);
   } else if (!event['shiftKey'] && this.interactivity().getOption('scrollOnMouseWheel')) {//scrolling
@@ -856,19 +857,23 @@ anychart.timelineModule.Chart.prototype.handleMouseWheel_ = function(event) {
     if (preventDefault) {
       event.preventDefault();
     }
+    var scale = this.scale();
+    var range = scale.getRange();
 
     var mouseX = event['clientX'];
     var leftDate = this.scale().inverseTransform(this.horizontalTranslate / this.dataBounds.width);
     var rightDate = this.scale().inverseTransform((this.horizontalTranslate + this.dataBounds.width) / this.dataBounds.width);
+    var offset = leftDate - range['min'];
 
     //this is hack to set scale up to current transform, make scroller move and the most important - redraw axis
     this.suspendSignalsDispatching();
     // this.scale().suspendSignalsDispatching();
-    //
+
     // this.zoomTo(leftDate, rightDate);
     this.invalidateState(anychart.enums.Store.TIMELINE_CHART, anychart.timelineModule.Chart.States.SCROLL, anychart.Signal.NEEDS_REDRAW);
+    this.axis().offset(offset);
+    this.invalidate(anychart.ConsistencyState.AXES_CHART_AXES);
     // this.axis_.invalidate(anychart.ConsistencyState.APPEARANCE | anychart.ConsistencyState.AXIS_TICKS | anychart.ConsistencyState.AXIS_LABELS);
-    // this.invalidate(anychart.ConsistencyState.AXES_CHART_AXES, anychart.Signal.NEEDS_REDRAW);
     //
     // this.scale().resumeSignalsDispatching(false);
     this.resumeSignalsDispatching(true);

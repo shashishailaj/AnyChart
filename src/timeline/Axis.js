@@ -34,6 +34,13 @@ anychart.timelineModule.Axis = function() {
    */
   this.texts_ = [];
 
+  /**
+   * For reference take a look at {anychart.timelineModule.Axis.prototype.offset}
+   * @type {number}
+   * @private
+   */
+  this.offset_ = 0;
+
   this.currentUnit = null;
   this.currentCount = null;
   this.ticksArray = null;
@@ -87,6 +94,27 @@ anychart.timelineModule.Axis.prototype.SUPPORTED_CONSISTENCY_STATES =
 anychart.timelineModule.Axis.prototype.SUPPORTED_SIGNALS =
     anychart.core.VisualBase.prototype.SUPPORTED_SIGNALS |
         anychart.Signal.NEEDS_RECALCULATION;
+
+
+/**
+ * Offset is a numeric value, representing current range offset.
+ * The need for offset emerged from idea to draw only those ticks/labels, that are in current viewport.
+ * This is because on high zoom values we receive as many, as thousands and even tens thousands ticks.
+ * And drawing that much ticks/labels drastically slows rendering even with fast labels.
+ * @param {number=} opt_value
+ * @return {anychart.timelineModule.Axis|number}
+ */
+anychart.timelineModule.Axis.prototype.offset = function(opt_value) {
+  if (goog.isDef(opt_value)) {
+    if (this.offset_ != opt_value) {
+      this.offset_ = opt_value;
+      this.invalidate(anychart.ConsistencyState.APPEARANCE | anychart.ConsistencyState.AXIS_TICKS | anychart.ConsistencyState.AXIS_LABELS);
+    }
+    return this;
+  }
+
+  return this.offset_;
+};
 
 
 /**
@@ -280,6 +308,7 @@ anychart.timelineModule.Axis.prototype.getTicks = function() {
   var ticksArray = [];
   var zoomLevels = this.scale().getLevelsData();
   var totalRange = this.scale().getTotalRange();
+  var range = this.scale().getRange();
 
   for (i = 0; i < zoomLevels.length; i++) {
     ticksArray = this.scale().getTicks(void 0, void 0, zoomLevels[i].unit, zoomLevels[i].count);
@@ -301,11 +330,10 @@ anychart.timelineModule.Axis.prototype.getTicks = function() {
   var unit = zoomLevels[i].unit;
   var count = zoomLevels[i].count;
 
-  if ((this.currentCount != zoomLevels[i].count || this.currentUnit != zoomLevels[i].unit)) {
-    this.currentCount = zoomLevels[i].count;
-    this.currentUnit = zoomLevels[i].unit;
-    this.ticksArray = this.scale().getTicks(void 0, void 0, zoomLevels[i].unit, zoomLevels[i].count/*, totalRange*/);
-  }
+  //apply offset to get ticks in viewport
+  range['min'] += this.offset_;
+  range['max'] += this.offset_;
+  this.ticksArray = this.scale().getTicks(void 0, void 0, unit, count, range);
 
   return this.ticksArray;
 };
@@ -455,17 +483,6 @@ anychart.timelineModule.Axis.prototype.remove = function() {
 
 
 /** @inheritDoc */
-anychart.timelineModule.Axis.prototype.disposeInternal = function() {
-  goog.disposeAll(this.ticks_, this.line_, this.labelsSettings_, this.texts_);
-  this.ticks_ = null;
-  this.line_ = null;
-  this.labelsSettings_ = null;
-  this.texts_.length = 0;
-  anychart.timelineModule.Axis.base(this, 'disposeInternal');
-};
-
-
-/** @inheritDoc */
 anychart.timelineModule.Axis.prototype.provideMeasurements = function() {
   var ticksArray = this.getTicks();
   if (!this.texts_.length) {
@@ -517,6 +534,17 @@ anychart.timelineModule.Axis.prototype.applyLabelsStyle = function() {
 anychart.timelineModule.Axis.prototype.prepareLabels = function() {
   this.provideMeasurements();
   this.applyLabelsStyle();
+};
+
+
+/** @inheritDoc */
+anychart.timelineModule.Axis.prototype.disposeInternal = function() {
+  goog.disposeAll(this.ticks_, this.line_, this.labelsSettings_, this.texts_);
+  this.ticks_ = null;
+  this.line_ = null;
+  this.labelsSettings_ = null;
+  this.texts_.length = 0;
+  anychart.timelineModule.Axis.base(this, 'disposeInternal');
 };
 
 
