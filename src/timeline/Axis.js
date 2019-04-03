@@ -41,6 +41,12 @@ anychart.timelineModule.Axis = function() {
    */
   this.offset_ = 0;
 
+  /**
+   * Format provider for labels
+   * @private
+   */
+  this.formatProvider_ = new anychart.format.Context();
+
   this.currentUnit = null;
   this.currentCount = null;
   this.ticksArray = null;
@@ -218,7 +224,7 @@ anychart.timelineModule.Axis.prototype.labelsSettingsInvalidated_ = function(eve
 anychart.timelineModule.Axis.prototype.draw = function() {
   var scale = this.scale();
 
-  this.prepareLabels();
+  this.provideMeasurements();
 
   if (!scale) {
     anychart.core.reporting.error(anychart.enums.ErrorCode.SCALE_NOT_SET);
@@ -372,10 +378,22 @@ anychart.timelineModule.Axis.prototype.drawLabels = function() {
   var bounds = this.parentBounds();
   var height = /** @type {number} */(this.getOption('height'));
   var totalRange = this.scale().getTotalRange();
+  var labelsSettings = this.labels();
 
   for (var i = 0; i < ticksArray.length; i++) {
     var text = this.texts_[i];
 
+    var textString = this.labels().getText(this.formatProvider_.propagate({
+      'value': {
+        value: ticksArray[i]['start'],
+        type: anychart.enums.TokenType.DATE
+      }
+    }));
+
+    text.text(textString);
+    text.style(labelsSettings.flatten());
+    // text.prepareComplexity();
+    text.applySettings();
     /*
     2 small lines of code and one big hack for the gradients.
     While playing with axis labels redrawing on scroll, wild bug appeared.
@@ -402,22 +420,31 @@ anychart.timelineModule.Axis.prototype.drawLabels = function() {
     For now we skip it.*/
     if (tick['start'] < totalRange['min'])
       continue;
+
+    var textString = this.labels().getText(this.formatProvider_.propagate({
+      'value': {
+        value: tick['start'],
+        type: anychart.enums.TokenType.DATE
+      }
+    }));
+
+    text.text(textString);
+    text.style(labelsSettings.flatten());
+    // text.prepareComplexity();
+    text.applySettings();
+
     var tickRatio = this.scale_.transform(tick['start']);
     var tickEndTimestamp = Math.min(tick['end'], totalRange['max']);
     var nextTickRatio = (this.scale_.transform(tickEndTimestamp));
 
-    if (this.labels()['enabled']()) {
-      text.renderTo(this.labelsLayerEl_);
+    text.renderTo(this.labelsLayerEl_);
 
-      var x = anychart.utils.applyPixelShift(bounds.left + bounds.width * tickRatio, 1);
-      var y = Math.floor(this.zero_ - height / 2);
-      var width = (bounds.left + bounds.width * nextTickRatio) - x;
-      var textBounds = new anychart.math.Rect(x, y, width, height);
-      text.putAt(textBounds, this.rootElement.getStage());
-      text.finalizeComplexity();
-    } else {
-      text.renderTo(null);
-    }
+    var x = anychart.utils.applyPixelShift(bounds.left + bounds.width * tickRatio, 1);
+    var y = Math.floor(this.zero_ - height / 2);
+    var width = (bounds.left + bounds.width * nextTickRatio) - x;
+    var textBounds = new anychart.math.Rect(x, y, width, height);
+    text.putAt(textBounds, this.rootElement.getStage());
+    // text.finalizeComplexity();
   }
 
   for (var i = ticksArray.length; i < this.texts_.length; i++) {
@@ -555,7 +582,7 @@ anychart.timelineModule.Axis.prototype.applyLabelsStyle = function() {
  */
 anychart.timelineModule.Axis.prototype.prepareLabels = function() {
   this.provideMeasurements();
-  this.applyLabelsStyle();
+  // this.applyLabelsStyle();
 };
 
 
