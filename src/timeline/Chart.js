@@ -815,6 +815,7 @@ anychart.timelineModule.Chart.prototype.handleMouseWheel_ = function(event) {
   var currentDate, leftDate, rightDate;
 
   if (!event['shiftKey'] && this.interactivity().getOption('zoomOnMouseWheel')) {//zooming
+    event.preventDefault();
     var zoomIn = event['deltaY'] < 0;
     if ((range['min']) <= totalRange['min'] && (range['max']) >= totalRange['max'] && !zoomIn)
       return;
